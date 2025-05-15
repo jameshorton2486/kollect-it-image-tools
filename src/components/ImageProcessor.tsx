@@ -5,6 +5,9 @@ import ImageGrid from './ImageProcessing/ImageGrid';
 import EmptyState from './ImageProcessing/EmptyState';
 import BatchProcessingProgress from './ImageProcessing/BatchProcessingProgress';
 import { useImageProcessing } from '@/hooks/useImageProcessing';
+import { Button } from './ui/button';
+import { Database, RefreshCw } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 
 interface ImageProcessorProps {
   images: File[];
@@ -44,11 +47,36 @@ const ImageProcessor: React.FC<ImageProcessorProps> = ({ images, onReset }) => {
     batchProgress,
     totalItemsToProcess,
     processedItemsCount,
-    cancelBatchProcessing
+    cancelBatchProcessing,
+    // Cache management
+    clearImageCache
   } = useImageProcessing(images);
   
   return (
     <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold">Image Processor</h2>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={clearImageCache}
+                className="gap-1"
+              >
+                <Database className="h-4 w-4" />
+                <RefreshCw className="h-3 w-3" />
+                Clear Cache
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Clear image processing cache to free up browser storage</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
+      
       <CompressionSettings
         compressionLevel={compressionLevel}
         maxWidth={maxWidth}

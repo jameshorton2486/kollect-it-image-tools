@@ -4,6 +4,11 @@ import { compressImage, createObjectUrl, downloadFile } from '@/utils/imageUtils
 import { removeImageBackground } from '@/utils/backgroundRemovalApi';
 import { ProcessedImage } from '@/types/imageProcessing';
 import type { CompressionOptions } from '@/utils/imageUtils';
+import { 
+  generateCacheKey, 
+  getProcessedImageFromCache, 
+  cacheProcessedImage 
+} from '@/utils/imageCacheUtils';
 
 export async function processSingleImage(
   image: ProcessedImage,
@@ -16,6 +21,33 @@ export async function processSingleImage(
   serverUrl: string = ''
 ): Promise<ProcessedImage | null> {
   try {
+    // Generate cache key based on image and processing parameters
+    const cacheKey = generateCacheKey(
+      image.original,
+      compressionLevel,
+      maxWidth,
+      maxHeight,
+      removeBackground
+    );
+    
+    // Check if the image is in cache
+    const cachedImage = await getProcessedImageFromCache(cacheKey);
+    
+    if (cachedImage) {
+      console.log('Using cached image for', image.original.name);
+      const previewUrl = createObjectUrl(cachedImage);
+      
+      return {
+        ...image,
+        processed: cachedImage,
+        preview: previewUrl,
+        isProcessing: false,
+        hasBackgroundRemoved: removeBackground, // Assume the cached version has background removed if requested
+      };
+    }
+    
+    // Not in cache, process the image
+    console.log('Processing image', image.original.name);
     let processedFile = image.original;
     let hasBackgroundRemoved = false;
     
@@ -47,6 +79,9 @@ export async function processSingleImage(
     
     if (compressedFile) {
       const previewUrl = createObjectUrl(compressedFile);
+      
+      // Store processed result in cache
+      cacheProcessedImage(cacheKey, compressedFile, image.original.name);
       
       return {
         ...image,

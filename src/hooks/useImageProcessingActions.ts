@@ -1,4 +1,3 @@
-
 import { useCallback } from 'react';
 import { ProcessedImage } from '@/types/imageProcessing';
 import { 
@@ -8,6 +7,8 @@ import {
   downloadAllImagesUtil,
   cancelBatchProcessing
 } from './useImageProcessingUtils';
+import { clearImageCache } from '@/utils/imageCacheUtils';
+import { toast } from '@/hooks/use-toast';
 
 interface UseImageProcessingActionsProps {
   processedImages: ProcessedImage[];
@@ -126,6 +127,14 @@ export function useImageProcessingActions({
     setIsProcessing(false);
   }, [setIsProcessing]);
   
+  const handleClearImageCache = useCallback(() => {
+    clearImageCache();
+    toast({
+      title: "Cache Cleared",
+      description: "Image processing cache has been cleared"
+    });
+  }, []);
+  
   return {
     processImage,
     processAllImages,
@@ -138,6 +147,7 @@ export function useImageProcessingActions({
     toggleSelectImage,
     selectAllImages,
     toggleBeforeAfterView,
-    cancelBatchProcessing: handleCancelBatchProcessing
+    cancelBatchProcessing: handleCancelBatchProcessing,
+    clearImageCache: handleClearImageCache
   };
 }

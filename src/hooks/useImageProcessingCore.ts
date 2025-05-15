@@ -45,7 +45,8 @@ export function useImageProcessingCore(initialImages: File[]): UseImageProcessin
     toggleSelectImage,
     selectAllImages,
     toggleBeforeAfterView,
-    cancelBatchProcessing
+    cancelBatchProcessing,
+    clearImageCache
   } = useImageProcessingActions({
     processedImages,
     setProcessedImages,
@@ -94,6 +95,7 @@ export function useImageProcessingCore(initialImages: File[]): UseImageProcessin
     batchProgress,
     totalItemsToProcess,
     processedItemsCount,
-    cancelBatchProcessing
+    cancelBatchProcessing,
+    clearImageCache
   };
 }
