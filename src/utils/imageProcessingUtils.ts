@@ -20,7 +20,8 @@ export async function processSingleImage(
   removeBackground: boolean,
   apiKey: string | null,
   selfHosted: boolean = false,
-  serverUrl: string = ''
+  serverUrl: string = '',
+  backgroundRemovalModel: string = 'removebg'
 ): Promise<ProcessedImage | null> {
   try {
     const processingStartTime = performance.now();
@@ -31,7 +32,8 @@ export async function processSingleImage(
       compressionLevel,
       maxWidth,
       maxHeight,
-      removeBackground
+      removeBackground,
+      backgroundRemovalModel // Include model in cache key
     );
     
     // Check if the image is in cache
@@ -46,6 +48,7 @@ export async function processSingleImage(
         cached: true,
         imageName: image.original.name,
         imageSize: image.original.size,
+        model: backgroundRemovalModel
       });
       
       return {
@@ -53,7 +56,7 @@ export async function processSingleImage(
         processed: cachedImage,
         preview: previewUrl,
         isProcessing: false,
-        hasBackgroundRemoved: removeBackground, // Assume the cached version has background removed if requested
+        hasBackgroundRemoved: removeBackground,
       };
     }
     
@@ -70,14 +73,20 @@ export async function processSingleImage(
         const bgRemovalStartTime = performance.now();
         
         const bgRemovalResult = await retryOperation(
-          () => removeImageBackground(image.original, apiKey, selfHosted, serverUrl),
+          () => removeImageBackground(
+            image.original, 
+            apiKey, 
+            selfHosted, 
+            serverUrl,
+            backgroundRemovalModel
+          ),
           {
             maxRetries: 3,
             delayMs: 1000,
             onRetry: (attempt, error) => {
-              console.log(`Retrying background removal (attempt ${attempt}/3) for ${image.original.name}: ${error.message}`);
+              console.log(`Retrying background removal with ${backgroundRemovalModel} (attempt ${attempt}/3) for ${image.original.name}: ${error.message}`);
               toast({
-                title: "Retrying Background Removal",
+                title: `Retrying ${backgroundRemovalModel} Background Removal`,
                 description: `Attempt ${attempt}/3 for ${image.original.name}`
               });
             }
@@ -95,6 +104,7 @@ export async function processSingleImage(
             success: true,
             imageName: image.original.name,
             processingTime: bgRemovalEndTime - bgRemovalStartTime,
+            model: backgroundRemovalModel
           });
         } else {
           // If background removal failed but we want to continue with compression
@@ -108,6 +118,7 @@ export async function processSingleImage(
             success: false,
             imageName: image.original.name,
             error: 'Background removal failed',
+            model: backgroundRemovalModel
           });
         }
       } catch (error) {
@@ -124,6 +135,7 @@ export async function processSingleImage(
           success: false,
           imageName: image.original.name,
           error: 'All retry attempts failed',
+          model: backgroundRemovalModel
         });
       }
     }

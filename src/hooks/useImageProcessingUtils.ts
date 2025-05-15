@@ -1,3 +1,4 @@
+
 import { toast } from '@/components/ui/use-toast';
 import { ProcessedImage } from "@/types/imageProcessing";
 import { 
@@ -17,6 +18,7 @@ export async function processImageUtil(
   apiKey: string | null,
   selfHosted: boolean,
   serverUrl: string,
+  backgroundRemovalModel: string,
   setProcessedImages: React.Dispatch<React.SetStateAction<ProcessedImage[]>>
 ): Promise<void> {
   const image = processedImages[index];
@@ -51,7 +53,8 @@ export async function processImageUtil(
       removeBackground,
       apiKey,
       selfHosted,
-      serverUrl
+      serverUrl,
+      backgroundRemovalModel
     );
     
     clearInterval(progressUpdater);
@@ -64,7 +67,7 @@ export async function processImageUtil(
       
       toast({
         title: "Success",
-        description: `Processed ${image.original.name}${processedImage.hasBackgroundRemoved ? ' with background removal' : ''}${
+        description: `Processed ${image.original.name}${processedImage.hasBackgroundRemoved ? ` with ${backgroundRemovalModel} background removal` : ''}${
           processedImage.retryCount ? ` after ${processedImage.retryCount} retries` : ''
         }`
       });
@@ -97,6 +100,7 @@ export async function processAllImagesUtil(
   apiKey: string | null,
   selfHosted: boolean,
   serverUrl: string,
+  backgroundRemovalModel: string,
   setProcessedImages: React.Dispatch<React.SetStateAction<ProcessedImage[]>>,
   setIsProcessing: React.Dispatch<React.SetStateAction<boolean>>,
   setBatchProgress: React.Dispatch<React.SetStateAction<number>>,
@@ -132,7 +136,8 @@ export async function processAllImagesUtil(
       compressionLevel,
       maxWidth,
       maxHeight,
-      removeBackground
+      removeBackground,
+      model: removeBackground ? backgroundRemovalModel : 'none'
     });
     
     // Process images with a small delay between each to prevent overwhelming the server
@@ -148,6 +153,7 @@ export async function processAllImagesUtil(
           apiKey,
           selfHosted,
           serverUrl,
+          backgroundRemovalModel,
           setProcessedImages
         );
         
@@ -185,7 +191,8 @@ export async function processAllImagesUtil(
       failedCount,
       retriedCount,
       processingTime: batchProcessingTime,
-      cancelled: batchProcessingCancelled
+      cancelled: batchProcessingCancelled,
+      model: removeBackground ? backgroundRemovalModel : 'none'
     });
     
     if (batchProcessingCancelled) {

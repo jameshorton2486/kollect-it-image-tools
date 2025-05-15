@@ -1,6 +1,7 @@
 
 import { useState } from 'react';
 import { ProcessedImage } from '@/types/imageProcessing';
+import { DEFAULT_BACKGROUND_REMOVAL_MODEL } from '@/utils/backgroundRemovalModels';
 
 /**
  * Core state hook for image processing
@@ -20,6 +21,9 @@ export function useImageProcessingState() {
   const [batchProgress, setBatchProgress] = useState<number>(0);
   const [totalItemsToProcess, setTotalItemsToProcess] = useState<number>(0);
   const [processedItemsCount, setProcessedItemsCount] = useState<number>(0);
+  const [backgroundRemovalModel, setBackgroundRemovalModel] = useState<string>(
+    localStorage.getItem('background_removal_model') || DEFAULT_BACKGROUND_REMOVAL_MODEL
+  );
 
   return {
     processedImages, setProcessedImages,
@@ -35,6 +39,7 @@ export function useImageProcessingState() {
     showBeforeAfter, setShowBeforeAfter,
     batchProgress, setBatchProgress,
     totalItemsToProcess, setTotalItemsToProcess,
-    processedItemsCount, setProcessedItemsCount
+    processedItemsCount, setProcessedItemsCount,
+    backgroundRemovalModel, setBackgroundRemovalModel
   };
 }

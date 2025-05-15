@@ -42,6 +42,8 @@ const ImageProcessor: React.FC<ImageProcessorProps> = ({ images, onReset }) => {
     setSelfHosted,
     serverUrl,
     setServerUrl,
+    backgroundRemovalModel,
+    setBackgroundRemovalModel,
     showBeforeAfter,
     toggleBeforeAfterView,
     // Batch processing progress
@@ -111,6 +113,7 @@ const ImageProcessor: React.FC<ImageProcessorProps> = ({ images, onReset }) => {
         apiKey={apiKey}
         selfHosted={selfHosted}
         serverUrl={serverUrl}
+        backgroundRemovalModel={backgroundRemovalModel}
         onCompressionLevelChange={setCompressionLevel}
         onMaxWidthChange={setMaxWidth}
         onMaxHeightChange={setMaxHeight}
@@ -119,6 +122,7 @@ const ImageProcessor: React.FC<ImageProcessorProps> = ({ images, onReset }) => {
         onApiKeyChange={setApiKey}
         onSelfHostedChange={setSelfHosted}
         onServerUrlChange={setServerUrl}
+        onBackgroundRemovalModelChange={setBackgroundRemovalModel}
         onProcessAll={processAllImages}
         onDownloadAll={downloadAllImages}
         onSelectAll={selectAllImages}

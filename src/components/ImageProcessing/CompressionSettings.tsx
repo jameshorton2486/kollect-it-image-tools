@@ -5,9 +5,12 @@ import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Download, RefreshCw, Image } from 'lucide-react';
+import { Download, RefreshCw } from 'lucide-react';
 import { Input } from "@/components/ui/input";
 import { FormItem, FormLabel, FormControl } from "@/components/ui/form";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { BACKGROUND_REMOVAL_MODELS, getModelById } from "@/utils/backgroundRemovalModels";
 
 interface CompressionSettingsProps {
   compressionLevel: number;
@@ -19,6 +22,7 @@ interface CompressionSettingsProps {
   apiKey: string | null;
   selfHosted: boolean;
   serverUrl: string;
+  backgroundRemovalModel: string;
   onCompressionLevelChange: (value: number) => void;
   onMaxWidthChange: (value: number) => void;
   onMaxHeightChange: (value: number) => void;
@@ -27,6 +31,7 @@ interface CompressionSettingsProps {
   onApiKeyChange: (value: string) => void;
   onSelfHostedChange: (value: boolean) => void;
   onServerUrlChange: (value: string) => void;
+  onBackgroundRemovalModelChange: (value: string) => void;
   onProcessAll: () => void;
   onDownloadAll: () => void;
   onSelectAll: (selected: boolean) => void;
@@ -43,6 +48,7 @@ const CompressionSettings: React.FC<CompressionSettingsProps> = ({
   apiKey,
   selfHosted,
   serverUrl,
+  backgroundRemovalModel,
   onCompressionLevelChange,
   onMaxWidthChange,
   onMaxHeightChange,
@@ -51,11 +57,16 @@ const CompressionSettings: React.FC<CompressionSettingsProps> = ({
   onApiKeyChange,
   onSelfHostedChange,
   onServerUrlChange,
+  onBackgroundRemovalModelChange,
   onProcessAll,
   onDownloadAll,
   onSelectAll,
   onReset
 }) => {
+  // Get the current selected model details
+  const selectedModel = getModelById(backgroundRemovalModel);
+  const showApiKey = removeBackground && !selfHosted && selectedModel.apiSupport;
+
   return (
     <Card>
       <CardHeader>
@@ -73,6 +84,7 @@ const CompressionSettings: React.FC<CompressionSettingsProps> = ({
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
+          {/* Compression Quality Slider */}
           <div>
             <div className="flex justify-between mb-2">
               <span>Compression Quality: {compressionLevel}%</span>
@@ -86,6 +98,7 @@ const CompressionSettings: React.FC<CompressionSettingsProps> = ({
             />
           </div>
           
+          {/* Image Dimensions */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <div className="flex justify-between mb-2">
@@ -116,6 +129,7 @@ const CompressionSettings: React.FC<CompressionSettingsProps> = ({
             </div>
           </div>
           
+          {/* Aspect Ratio Checkbox */}
           <div className="flex items-center space-x-2">
             <Checkbox
               id="preserveAspect"
@@ -152,20 +166,48 @@ const CompressionSettings: React.FC<CompressionSettingsProps> = ({
             
             {removeBackground && (
               <div className="space-y-4 pl-2 border-l-2 border-muted p-4 rounded bg-muted/20">
+                {/* Model Selection Radio Group */}
+                <div className="mb-4">
+                  <h4 className="text-sm font-medium mb-2">Select Background Removal Model</h4>
+                  <RadioGroup 
+                    defaultValue={backgroundRemovalModel}
+                    value={backgroundRemovalModel}
+                    onValueChange={onBackgroundRemovalModelChange}
+                    className="space-y-2"
+                  >
+                    {BACKGROUND_REMOVAL_MODELS.map(model => (
+                      <div key={model.id} className="flex items-center space-x-2">
+                        <RadioGroupItem value={model.id} id={`model-${model.id}`} />
+                        <Label htmlFor={`model-${model.id}`} className="font-medium">
+                          {model.name}
+                        </Label>
+                        <span className="text-xs text-muted-foreground">- {model.description}</span>
+                      </div>
+                    ))}
+                  </RadioGroup>
+                </div>
+                
+                {/* Self-hosted Option */}
                 <div className="flex items-center space-x-2">
                   <Checkbox
                     id="self-hosted"
                     checked={selfHosted}
                     onCheckedChange={(checked) => onSelfHostedChange(checked as boolean)}
+                    disabled={backgroundRemovalModel !== 'rembg' && !getModelById(backgroundRemovalModel).selfHostedSupport}
                   />
                   <label
                     htmlFor="self-hosted"
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    className={`text-sm font-medium leading-none ${
+                      backgroundRemovalModel !== 'rembg' && !getModelById(backgroundRemovalModel).selfHostedSupport 
+                        ? 'text-muted-foreground' 
+                        : ''
+                    }`}
                   >
                     Use self-hosted Rembg service
                   </label>
                 </div>
                 
+                {/* Conditional Input for Server URL or API Key */}
                 {selfHosted ? (
                   <FormItem>
                     <FormLabel>Rembg Server URL</FormLabel>
@@ -182,20 +224,25 @@ const CompressionSettings: React.FC<CompressionSettingsProps> = ({
                       Enter the URL of your self-hosted Rembg server
                     </p>
                   </FormItem>
-                ) : (
+                ) : showApiKey && (
                   <FormItem>
-                    <FormLabel>Remove.bg API Key</FormLabel>
+                    <FormLabel>{selectedModel.name} API Key</FormLabel>
                     <FormControl>
                       <Input
                         type="password"
-                        placeholder="Enter your Remove.bg API key"
+                        placeholder={`Enter your ${selectedModel.name} API key`}
                         value={apiKey || ''}
                         onChange={(e) => onApiKeyChange(e.target.value)}
                         className="font-mono"
                       />
                     </FormControl>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Get your API key from <a href="https://www.remove.bg/api" target="_blank" rel="noopener noreferrer" className="underline">remove.bg/api</a>
+                      {selectedModel.id === 'removebg' && (
+                        <>Get your API key from <a href="https://www.remove.bg/api" target="_blank" rel="noopener noreferrer" className="underline">remove.bg/api</a></>
+                      )}
+                      {selectedModel.id === 'briaai' && (
+                        <>Get your API key from <a href="https://bria.ai" target="_blank" rel="noopener noreferrer" className="underline">bria.ai</a></>
+                      )}
                     </p>
                   </FormItem>
                 )}
@@ -203,6 +250,7 @@ const CompressionSettings: React.FC<CompressionSettingsProps> = ({
             )}
           </div>
 
+          {/* Action Buttons */}
           <div className="flex justify-between pt-4">
             <div className="space-x-2">
               <Button

@@ -1,6 +1,5 @@
 
 import { useEffect } from 'react';
-import { revokeObjectUrl } from '@/utils/imageUtils';
 import { initializeProcessedImages } from '@/utils/imageProcessingUtils';
 import { ProcessedImage } from '@/types/imageProcessing';
 
@@ -10,6 +9,7 @@ interface UseImageProcessingEffectsProps {
   apiKey: string | null;
   selfHosted: boolean;
   serverUrl: string;
+  backgroundRemovalModel: string;
   setProcessedImages: React.Dispatch<React.SetStateAction<ProcessedImage[]>>;
 }
 
@@ -22,37 +22,32 @@ export function useImageProcessingEffects({
   apiKey,
   selfHosted,
   serverUrl,
+  backgroundRemovalModel,
   setProcessedImages
 }: UseImageProcessingEffectsProps) {
-  // Initialize images on mount
+  // Initialize processed images when initial files change
   useEffect(() => {
-    if (initialImages.length > 0) {
-      const initialProcessedImages = initializeProcessedImages(initialImages);
-      setProcessedImages(initialProcessedImages);
+    if (initialImages.length > 0 && processedImages.length === 0) {
+      console.log('Initializing images:', initialImages.map(file => file.name));
+      setProcessedImages(initializeProcessedImages(initialImages));
     }
-  }, [initialImages, setProcessedImages]);
+  }, [initialImages, processedImages.length, setProcessedImages]);
   
-  // Clean up object URLs when component unmounts
-  useEffect(() => {
-    return () => {
-      processedImages.forEach(img => {
-        if (img.preview) {
-          revokeObjectUrl(img.preview);
-        }
-      });
-    };
-  }, [processedImages]);
-  
-  // Save API key and server settings to localStorage when they change
+  // Save API key and self-hosted settings to localStorage
   useEffect(() => {
     if (apiKey) {
       localStorage.setItem('removebg_api_key', apiKey);
     }
     
-    localStorage.setItem('rembg_self_hosted', selfHosted.toString());
+    localStorage.setItem('rembg_self_hosted', String(selfHosted));
     
     if (serverUrl) {
       localStorage.setItem('rembg_server_url', serverUrl);
     }
   }, [apiKey, selfHosted, serverUrl]);
+
+  // Save background removal model to localStorage
+  useEffect(() => {
+    localStorage.setItem('background_removal_model', backgroundRemovalModel);
+  }, [backgroundRemovalModel]);
 }

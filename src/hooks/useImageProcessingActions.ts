@@ -21,6 +21,7 @@ interface UseImageProcessingActionsProps {
   apiKey: string | null;
   selfHosted: boolean;
   serverUrl: string;
+  backgroundRemovalModel: string;
   isProcessing: boolean;
   setIsProcessing: React.Dispatch<React.SetStateAction<boolean>>;
   setShowBeforeAfter: React.Dispatch<React.SetStateAction<number | null>>;
@@ -42,6 +43,7 @@ export function useImageProcessingActions({
   apiKey,
   selfHosted,
   serverUrl,
+  backgroundRemovalModel,
   isProcessing,
   setIsProcessing,
   setShowBeforeAfter,
@@ -61,9 +63,10 @@ export function useImageProcessingActions({
       apiKey,
       selfHosted,
       serverUrl,
+      backgroundRemovalModel,
       setProcessedImages
     );
-  }, [processedImages, compressionLevel, maxWidth, maxHeight, removeBackground, apiKey, selfHosted, serverUrl, setProcessedImages]);
+  }, [processedImages, compressionLevel, maxWidth, maxHeight, removeBackground, apiKey, selfHosted, serverUrl, backgroundRemovalModel, setProcessedImages]);
   
   const processAllImages = useCallback(async () => {
     if (isProcessing) return;
@@ -79,6 +82,7 @@ export function useImageProcessingActions({
         apiKey,
         selfHosted,
         serverUrl,
+        backgroundRemovalModel,
         setProcessedImages,
         setIsProcessing,
         setBatchProgress,
@@ -97,6 +101,7 @@ export function useImageProcessingActions({
     apiKey, 
     selfHosted, 
     serverUrl, 
+    backgroundRemovalModel,
     isProcessing, 
     setProcessedImages, 
     setIsProcessing,

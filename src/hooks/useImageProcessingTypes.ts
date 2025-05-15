@@ -16,6 +16,7 @@ export interface UseImageProcessingState {
   batchProgress: number;
   totalItemsToProcess: number;
   processedItemsCount: number;
+  backgroundRemovalModel: string; // New field for model selection
 }
 
 export interface UseImageProcessingActions {
@@ -36,7 +37,8 @@ export interface UseImageProcessingActions {
   toggleBeforeAfterView: (index: number | null) => void;
   cancelBatchProcessing: () => void;
   clearImageCache: () => void;
-  clearAnalyticsData: () => void; // New analytics action
+  clearAnalyticsData: () => void;
+  setBackgroundRemovalModel: (model: string) => void; // New setter for model selection
 }
 
 export type UseImageProcessingResult = UseImageProcessingState & UseImageProcessingActions;

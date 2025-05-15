@@ -27,6 +27,7 @@ export interface ImageProcessingState {
   batchProgress: number; // Overall batch progress
   totalItemsToProcess: number; // Total number of items in the current batch
   processedItemsCount: number; // Number of completed items
+  backgroundRemovalModel: string; // New field for the selected background removal model
 }
 
 export interface ImageProcessingOptions {
@@ -38,6 +39,7 @@ export interface ImageProcessingOptions {
   apiKey: string | null;
   selfHosted: boolean;
   serverUrl: string;
+  backgroundRemovalModel: string; // Include the model in options
 }
 
 export interface UseImageProcessingResult extends ImageProcessingState {
@@ -58,5 +60,6 @@ export interface UseImageProcessingResult extends ImageProcessingState {
   toggleBeforeAfterView: (index: number | null) => void;
   cancelBatchProcessing: () => void;
   clearImageCache: () => void;
-  clearAnalyticsData: () => void; // New analytics action
+  clearAnalyticsData: () => void; 
+  setBackgroundRemovalModel: (model: string) => void; // New setter for the model
 }
