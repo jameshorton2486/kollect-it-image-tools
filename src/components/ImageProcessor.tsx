@@ -1,27 +1,12 @@
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent } from "@/components/ui/card";
-import { Download, Trash2, Image } from 'lucide-react';
-import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Download, RefreshCw, Trash2, Image as ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
-
-interface ProcessedImage {
-  id: string;
-  original: File;
-  preview: string;
-  processed: Blob | null;
-  processedPreview: string;
-  width: number;
-  height: number;
-  quality: number;
-  removeBackground: boolean;
-  isProcessing: boolean;
-}
+import imageCompression from 'browser-image-compression';
 
 interface ImageProcessorProps {
   images: File[];
@@ -29,693 +14,378 @@ interface ImageProcessorProps {
 }
 
 const ImageProcessor: React.FC<ImageProcessorProps> = ({ images, onReset }) => {
-  const [processedImages, setProcessedImages] = useState<ProcessedImage[]>([]);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [activeTab, setActiveTab] = useState('all');
-
-  useEffect(() => {
-    if (images.length === 0) return;
-    
-    // Initialize processed images from uploads
-    const newProcessedImages = images.map(file => {
-      const id = `${file.name}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      return {
-        id,
+  const [processedImages, setProcessedImages] = useState<{
+    original: File;
+    processed: File | null;
+    preview: string;
+    isProcessing: boolean;
+    isSelected: boolean;
+  }[]>([]);
+  
+  const [compressionLevel, setCompressionLevel] = useState<number>(80);
+  const [maxWidth, setMaxWidth] = useState<number>(1200);
+  const [maxHeight, setMaxHeight] = useState<number>(1200);
+  const [preserveAspectRatio, setPreserveAspectRatio] = useState<boolean>(true);
+  const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  
+  // Initialize images on mount
+  React.useEffect(() => {
+    if (images.length > 0) {
+      const initialImages = images.map(file => ({
         original: file,
-        preview: URL.createObjectURL(file),
         processed: null,
-        processedPreview: '',
-        width: 0,
-        height: 0,
-        quality: 80,
-        removeBackground: false,
-        isProcessing: false
-      };
-    });
-
-    setProcessedImages(prevImages => [...prevImages, ...newProcessedImages]);
+        preview: URL.createObjectURL(file),
+        isProcessing: false,
+        isSelected: true,
+      }));
+      
+      setProcessedImages(initialImages);
+    }
   }, [images]);
-
-  // Get original image dimensions
-  useEffect(() => {
-    processedImages.forEach(image => {
-      if (image.width === 0 || image.height === 0) {
-        const img = new Image();
-        img.onload = () => {
-          setProcessedImages(prev => 
-            prev.map(prevImage => 
-              prevImage.id === image.id 
-                ? { ...prevImage, width: img.naturalWidth, height: img.naturalHeight } 
-                : prevImage
-            )
-          );
-        };
-        img.src = image.preview;
-      }
-    });
-  }, [processedImages]);
-
-  // Cleanup URLs when component unmounts
-  useEffect(() => {
+  
+  // Clean up object URLs when component unmounts
+  React.useEffect(() => {
     return () => {
-      processedImages.forEach(image => {
-        URL.revokeObjectURL(image.preview);
-        if (image.processedPreview) {
-          URL.revokeObjectURL(image.processedPreview);
+      processedImages.forEach(img => {
+        if (img.preview) {
+          URL.revokeObjectURL(img.preview);
         }
       });
     };
   }, []);
-
-  const processImage = useCallback(async (image: ProcessedImage) => {
-    if (!image) return null;
-    
-    setProcessedImages(prev => 
-      prev.map(img => 
-        img.id === image.id 
-          ? { ...img, isProcessing: true } 
-          : img
-      )
-    );
-
+  
+  const compressImage = async (file: File, options: imageCompression.Options) => {
     try {
-      // Create a canvas element
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        throw new Error('Could not get canvas context');
-      }
-
-      // Load the image
-      const img = new Image();
-      await new Promise((resolve, reject) => {
-        img.onload = resolve;
-        img.onerror = reject;
-        img.src = image.preview;
-      });
-
-      // Set canvas dimensions
-      canvas.width = image.width;
-      canvas.height = image.height;
-
-      // Draw the image to the canvas
-      ctx.drawImage(img, 0, 0, image.width, image.height);
-
-      // Convert to blob with the specified quality
-      const blob = await new Promise<Blob>((resolve) => {
-        canvas.toBlob(
-          (result) => {
-            resolve(result as Blob);
-          },
-          'image/jpeg', 
-          image.quality / 100
-        );
-      });
-
-      // Update the processed image in state
-      const processedPreview = URL.createObjectURL(blob);
-
-      setProcessedImages(prev => 
-        prev.map(img => 
-          img.id === image.id 
-            ? { 
-                ...img, 
-                processed: blob, 
-                processedPreview, 
-                isProcessing: false 
-              } 
-            : img
-        )
-      );
-
-      return blob;
+      const compressedFile = await imageCompression(file, options);
+      return compressedFile;
     } catch (error) {
-      console.error('Error processing image:', error);
-      toast.error(`Failed to process ${image.original.name}`);
-      
-      setProcessedImages(prev => 
-        prev.map(img => 
-          img.id === image.id 
-            ? { ...img, isProcessing: false } 
-            : img
-        )
-      );
+      console.error("Error compressing image:", error);
+      toast.error(`Failed to compress ${file.name}`);
       return null;
     }
-  }, []);
-
-  const handleProcessAll = useCallback(async () => {
+  };
+  
+  const processImage = useCallback(async (index: number) => {
+    const image = processedImages[index];
+    if (!image || image.isProcessing) return;
+    
+    const updatedImages = [...processedImages];
+    updatedImages[index].isProcessing = true;
+    setProcessedImages(updatedImages);
+    
+    try {
+      const compressionOptions = {
+        maxSizeMB: 1,
+        maxWidthOrHeight: Math.max(maxWidth, maxHeight),
+        useWebWorker: true,
+        initialQuality: compressionLevel / 100,
+      };
+      
+      const processedFile = await compressImage(image.original, compressionOptions);
+      
+      if (processedFile) {
+        const previewUrl = URL.createObjectURL(processedFile);
+        
+        updatedImages[index] = {
+          ...updatedImages[index],
+          processed: processedFile,
+          preview: previewUrl,
+          isProcessing: false,
+        };
+        
+        setProcessedImages(updatedImages);
+        toast.success(`Processed ${image.original.name}`);
+      } else {
+        updatedImages[index].isProcessing = false;
+        setProcessedImages(updatedImages);
+      }
+    } catch (error) {
+      console.error("Error processing image:", error);
+      toast.error(`Failed to process ${image.original.name}`);
+      
+      updatedImages[index].isProcessing = false;
+      setProcessedImages(updatedImages);
+    }
+  }, [processedImages, compressionLevel, maxWidth, maxHeight]);
+  
+  const processAllImages = useCallback(async () => {
+    if (isProcessing) return;
     setIsProcessing(true);
     
     try {
-      const promises = processedImages.map(image => processImage(image));
-      await Promise.all(promises);
-      toast.success('All images processed successfully!');
-    } catch (error) {
-      console.error('Error processing images:', error);
-      toast.error('Failed to process some images');
-    } finally {
-      setIsProcessing(false);
-    }
-  }, [processedImages, processImage]);
-
-  const handleUpdateImageSettings = useCallback((id: string, updates: Partial<ProcessedImage>) => {
-    setProcessedImages(prev => 
-      prev.map(img => 
-        img.id === id 
-          ? { ...img, ...updates } 
-          : img
-      )
-    );
-  }, []);
-
-  const handleDeleteImage = useCallback((id: string) => {
-    setProcessedImages(prev => {
-      const imageToRemove = prev.find(img => img.id === id);
+      const selectedImages = processedImages.filter(img => img.isSelected);
       
-      // Revoke object URLs to prevent memory leaks
-      if (imageToRemove) {
-        URL.revokeObjectURL(imageToRemove.preview);
-        if (imageToRemove.processedPreview) {
-          URL.revokeObjectURL(imageToRemove.processedPreview);
+      if (selectedImages.length === 0) {
+        toast.info("No images selected for processing");
+        setIsProcessing(false);
+        return;
+      }
+      
+      for (let i = 0; i < processedImages.length; i++) {
+        if (processedImages[i].isSelected) {
+          await processImage(i);
         }
       }
       
-      return prev.filter(img => img.id !== id);
-    });
-  }, []);
-
-  const handleDownloadImage = useCallback((image: ProcessedImage) => {
-    if (!image.processed) {
-      // If not processed yet, process it first
-      processImage(image).then(blob => {
-        if (blob) {
-          const link = document.createElement('a');
-          link.href = URL.createObjectURL(blob);
-          link.download = `optimized-${image.original.name}`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-        }
-      });
-      return;
+      toast.success("All selected images processed successfully!");
+    } catch (error) {
+      console.error("Error in batch processing:", error);
+      toast.error("Failed to process some images");
+    } finally {
+      setIsProcessing(false);
     }
+  }, [processedImages, processImage, isProcessing]);
+  
+  const downloadImage = useCallback((index: number) => {
+    const image = processedImages[index];
+    if (!image || !image.processed) return;
     
-    // Download already processed image
     const link = document.createElement('a');
     link.href = URL.createObjectURL(image.processed);
     link.download = `optimized-${image.original.name}`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  }, [processImage]);
-
-  const handleDownloadAll = useCallback(async () => {
-    // Process any unprocessed images first
-    const unprocessedImages = processedImages.filter(img => !img.processed);
-    if (unprocessedImages.length > 0) {
-      setIsProcessing(true);
-      await Promise.all(unprocessedImages.map(img => processImage(img)));
-      setIsProcessing(false);
-    }
+    URL.revokeObjectURL(link.href);
     
-    // If there are multiple images, create a zip file
-    if (processedImages.length > 1) {
-      toast.info('Preparing zip file for download...');
-      // For a real implementation, we'd use JSZip here
-      // But for simplicity, we'll just download them individually for now
-      processedImages.forEach(img => {
-        if (img.processed) {
-          setTimeout(() => {
-            handleDownloadImage(img);
-          }, 200); // Slight delay between downloads
-        }
-      });
+    toast.success(`Downloaded ${image.original.name}`);
+  }, [processedImages]);
+  
+  const downloadAllImages = useCallback(() => {
+    const selectedImages = processedImages.filter(img => img.isSelected && img.processed);
+    
+    if (selectedImages.length === 0) {
+      toast.info("No processed images to download");
       return;
     }
     
-    // If there's just one image, download it directly
-    if (processedImages.length === 1 && processedImages[0].processed) {
-      handleDownloadImage(processedImages[0]);
-    }
-  }, [processedImages, handleDownloadImage, processImage]);
-
-  const handleReset = useCallback(() => {
-    // Clean up any object URLs
-    processedImages.forEach(image => {
-      URL.revokeObjectURL(image.preview);
-      if (image.processedPreview) {
-        URL.revokeObjectURL(image.processedPreview);
-      }
+    selectedImages.forEach((image, index) => {
+      setTimeout(() => {
+        if (image.processed) {
+          const link = document.createElement('a');
+          link.href = URL.createObjectURL(image.processed);
+          link.download = `optimized-${image.original.name}`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(link.href);
+        }
+      }, index * 100); // Stagger downloads slightly
     });
     
-    setProcessedImages([]);
-    onReset();
-  }, [processedImages, onReset]);
-
-  const filteredImages = useCallback(() => {
-    if (activeTab === 'all') return processedImages;
-    if (activeTab === 'processed') return processedImages.filter(img => img.processed);
-    if (activeTab === 'unprocessed') return processedImages.filter(img => !img.processed);
-    return processedImages;
-  }, [processedImages, activeTab]);
-
-  if (processedImages.length === 0) {
-    return null;
-  }
-
+    toast.success(`Downloading ${selectedImages.length} images`);
+  }, [processedImages]);
+  
+  const toggleSelectImage = useCallback((index: number) => {
+    const updatedImages = [...processedImages];
+    updatedImages[index].isSelected = !updatedImages[index].isSelected;
+    setProcessedImages(updatedImages);
+  }, [processedImages]);
+  
+  const selectAllImages = useCallback((selected: boolean) => {
+    const updatedImages = processedImages.map(img => ({
+      ...img,
+      isSelected: selected
+    }));
+    setProcessedImages(updatedImages);
+  }, [processedImages]);
+  
   return (
-    <div className="w-full space-y-6">
-      <div className="flex flex-row items-center justify-between">
-        <h2 className="text-2xl font-bold">Image Processor</h2>
-        <div className="flex space-x-2">
-          <Button 
-            variant="outline" 
-            onClick={handleReset}
-          >
-            Reset
-          </Button>
-          <Button 
-            variant="default" 
-            onClick={handleProcessAll}
-            disabled={isProcessing || processedImages.length === 0}
-          >
-            {isProcessing ? 'Processing...' : 'Process All'}
-          </Button>
-          <Button 
-            variant="default" 
-            onClick={handleDownloadAll}
-            disabled={isProcessing || processedImages.length === 0}
-          >
-            <Download className="mr-2 h-4 w-4" />
-            Download All
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex justify-between items-center">
+            <span>Image Processing Settings</span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onReset}
+            >
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Reset
+            </Button>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div>
+              <div className="flex justify-between mb-2">
+                <span>Compression Quality: {compressionLevel}%</span>
+              </div>
+              <Slider
+                value={[compressionLevel]} 
+                min={1}
+                max={100}
+                step={1}
+                onValueChange={(value) => setCompressionLevel(value[0])}
+              />
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <div className="flex justify-between mb-2">
+                  <span>Max Width: {maxWidth}px</span>
+                </div>
+                <Slider
+                  value={[maxWidth]} 
+                  min={100}
+                  max={3000}
+                  step={50}
+                  onValueChange={(value) => setMaxWidth(value[0])}
+                  disabled={!preserveAspectRatio}
+                />
+              </div>
+              
+              <div>
+                <div className="flex justify-between mb-2">
+                  <span>Max Height: {maxHeight}px</span>
+                </div>
+                <Slider
+                  value={[maxHeight]} 
+                  min={100}
+                  max={3000}
+                  step={50}
+                  onValueChange={(value) => setMaxHeight(value[0])}
+                  disabled={!preserveAspectRatio}
+                />
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="preserveAspect"
+                checked={preserveAspectRatio}
+                onCheckedChange={(checked) => setPreserveAspectRatio(checked as boolean)}
+              />
+              <label
+                htmlFor="preserveAspect"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                Preserve aspect ratio
+              </label>
+            </div>
+            
+            <div className="flex justify-between pt-4">
+              <div className="space-x-2">
+                <Button
+                  variant="default"
+                  onClick={processAllImages}
+                  disabled={isProcessing}
+                >
+                  {isProcessing ? 'Processing...' : 'Process All Selected'}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={downloadAllImages}
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  Download All
+                </Button>
+              </div>
+              
+              <div className="space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => selectAllImages(true)}
+                >
+                  Select All
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => selectAllImages(false)}
+                >
+                  Deselect All
+                </Button>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      
+      {processedImages.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {processedImages.map((img, index) => (
+            <Card 
+              key={index}
+              className={`overflow-hidden ${img.isSelected ? 'ring-2 ring-brand-blue' : ''}`}
+            >
+              <div className="relative aspect-square">
+                <div className="image-preview absolute inset-0">
+                  <img src={img.preview} alt={`Preview of ${img.original.name}`} />
+                </div>
+                
+                {img.isProcessing && (
+                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                    <div className="animate-pulse-opacity text-white">Processing...</div>
+                  </div>
+                )}
+              </div>
+              
+              <CardContent className="p-3">
+                <div className="flex justify-between items-center mb-2">
+                  <div className="text-xs text-gray-500 truncate" title={img.original.name}>
+                    {img.original.name}
+                  </div>
+                  <Checkbox
+                    checked={img.isSelected}
+                    onCheckedChange={() => toggleSelectImage(index)}
+                  />
+                </div>
+                
+                <div className="text-xs text-gray-500 mb-3">
+                  {img.processed ? (
+                    <div className="flex justify-between">
+                      <span>Original: {(img.original.size / 1024).toFixed(1)} KB</span>
+                      <span>New: {(img.processed.size / 1024).toFixed(1)} KB</span>
+                    </div>
+                  ) : (
+                    <span>Size: {(img.original.size / 1024).toFixed(1)} KB</span>
+                  )}
+                </div>
+                
+                <div className="flex justify-between">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-1/2 mr-1"
+                    onClick={() => processImage(index)}
+                    disabled={img.isProcessing}
+                  >
+                    <ImageIcon className="h-4 w-4 mr-1" />
+                    Process
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-1/2 ml-1"
+                    onClick={() => downloadImage(index)}
+                    disabled={!img.processed || img.isProcessing}
+                  >
+                    <Download className="h-4 w-4 mr-1" />
+                    Save
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-12">
+          <div className="text-gray-400 mb-4">
+            <ImageIcon size={48} className="mx-auto" />
+          </div>
+          <h3 className="text-lg font-medium mb-2">No Images to Process</h3>
+          <p className="text-gray-500 mb-4">
+            Upload some images to get started
+          </p>
+          <Button onClick={onReset}>
+            Upload Images
           </Button>
         </div>
-      </div>
-
-      <Tabs defaultValue="all" className="w-full" onValueChange={setActiveTab}>
-        <TabsList className="mb-4">
-          <TabsTrigger value="all">All Images ({processedImages.length})</TabsTrigger>
-          <TabsTrigger value="processed">Processed ({processedImages.filter(img => img.processed).length})</TabsTrigger>
-          <TabsTrigger value="unprocessed">Unprocessed ({processedImages.filter(img => !img.processed).length})</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="all" className="mt-0">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredImages().map(image => (
-              <Card key={image.id} className="overflow-hidden">
-                <CardContent className="p-4 space-y-4">
-                  <div className="flex space-x-4">
-                    <div className="image-preview">
-                      <img src={image.preview} alt="Original" />
-                      <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-70 text-white text-xs py-1 px-2">
-                        Original
-                      </div>
-                    </div>
-                    
-                    <div className="image-preview">
-                      {image.isProcessing ? (
-                        <div className="flex items-center justify-center h-full">
-                          <div className="animate-pulse-opacity">
-                            <Image size={48} className="text-gray-400" />
-                          </div>
-                        </div>
-                      ) : image.processedPreview ? (
-                        <>
-                          <img src={image.processedPreview} alt="Processed" />
-                          <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-70 text-white text-xs py-1 px-2">
-                            Processed
-                          </div>
-                        </>
-                      ) : (
-                        <div className="flex items-center justify-center h-full">
-                          <div className="text-gray-400">
-                            <Image size={48} />
-                            <p className="text-xs mt-2">Not processed</p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-4">
-                    <div>
-                      <span className="text-sm font-medium">{image.original.name}</span>
-                      <div className="text-xs text-gray-500">
-                        {image.width}x{image.height} · {(image.original.size / 1024).toFixed(1)} KB
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor={`quality-${image.id}`}>Quality: {image.quality}%</Label>
-                      </div>
-                      <Slider
-                        id={`quality-${image.id}`}
-                        min={10}
-                        max={100}
-                        step={1}
-                        value={[image.quality]}
-                        onValueChange={(value) => handleUpdateImageSettings(image.id, { quality: value[0] })}
-                      />
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="space-y-2">
-                        <Label htmlFor={`width-${image.id}`}>Width</Label>
-                        <Input
-                          id={`width-${image.id}`}
-                          type="number"
-                          value={image.width}
-                          onChange={(e) => handleUpdateImageSettings(image.id, { width: parseInt(e.target.value) || 0 })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor={`height-${image.id}`}>Height</Label>
-                        <Input
-                          id={`height-${image.id}`}
-                          type="number"
-                          value={image.height}
-                          onChange={(e) => handleUpdateImageSettings(image.id, { height: parseInt(e.target.value) || 0 })}
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        id={`bg-remove-${image.id}`}
-                        checked={image.removeBackground}
-                        onCheckedChange={(checked) => {
-                          toast.info("Background removal is a premium feature coming soon!");
-                          handleUpdateImageSettings(image.id, { removeBackground: checked });
-                        }}
-                      />
-                      <Label htmlFor={`bg-remove-${image.id}`}>Remove background (coming soon)</Label>
-                    </div>
-                    
-                    <div className="flex space-x-2 pt-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="flex-1"
-                        onClick={() => handleDeleteImage(image.id)}
-                      >
-                        <Trash2 className="h-4 w-4 mr-1" />
-                        Delete
-                      </Button>
-                      <Button 
-                        variant="default" 
-                        size="sm" 
-                        className="flex-1"
-                        onClick={() => processImage(image)}
-                        disabled={image.isProcessing}
-                      >
-                        {image.isProcessing ? 'Processing...' : 'Process'}
-                      </Button>
-                      <Button 
-                        variant="default" 
-                        size="sm" 
-                        className="flex-1"
-                        onClick={() => handleDownloadImage(image)}
-                        disabled={!image.processed && !image.isProcessing}
-                      >
-                        <Download className="h-4 w-4 mr-1" />
-                        Download
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="processed" className="mt-0">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredImages().map(image => (
-              <Card key={image.id} className="overflow-hidden">
-                {/* Same content as above */}
-                <CardContent className="p-4 space-y-4">
-                  {/* Duplicate the card content from above for each tab */}
-                  <div className="flex space-x-4">
-                    <div className="image-preview">
-                      <img src={image.preview} alt="Original" />
-                      <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-70 text-white text-xs py-1 px-2">
-                        Original
-                      </div>
-                    </div>
-                    
-                    <div className="image-preview">
-                      {image.isProcessing ? (
-                        <div className="flex items-center justify-center h-full">
-                          <div className="animate-pulse-opacity">
-                            <Image size={48} className="text-gray-400" />
-                          </div>
-                        </div>
-                      ) : image.processedPreview ? (
-                        <>
-                          <img src={image.processedPreview} alt="Processed" />
-                          <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-70 text-white text-xs py-1 px-2">
-                            Processed
-                          </div>
-                        </>
-                      ) : (
-                        <div className="flex items-center justify-center h-full">
-                          <div className="text-gray-400">
-                            <Image size={48} />
-                            <p className="text-xs mt-2">Not processed</p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  
-                  {/* Rest of card content */}
-                  <div className="space-y-4">
-                    <div>
-                      <span className="text-sm font-medium">{image.original.name}</span>
-                      <div className="text-xs text-gray-500">
-                        {image.width}x{image.height} · {(image.original.size / 1024).toFixed(1)} KB
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor={`quality-${image.id}-processed`}>Quality: {image.quality}%</Label>
-                      </div>
-                      <Slider
-                        id={`quality-${image.id}-processed`}
-                        min={10}
-                        max={100}
-                        step={1}
-                        value={[image.quality]}
-                        onValueChange={(value) => handleUpdateImageSettings(image.id, { quality: value[0] })}
-                      />
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="space-y-2">
-                        <Label htmlFor={`width-${image.id}-processed`}>Width</Label>
-                        <Input
-                          id={`width-${image.id}-processed`}
-                          type="number"
-                          value={image.width}
-                          onChange={(e) => handleUpdateImageSettings(image.id, { width: parseInt(e.target.value) || 0 })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor={`height-${image.id}-processed`}>Height</Label>
-                        <Input
-                          id={`height-${image.id}-processed`}
-                          type="number"
-                          value={image.height}
-                          onChange={(e) => handleUpdateImageSettings(image.id, { height: parseInt(e.target.value) || 0 })}
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        id={`bg-remove-${image.id}-processed`}
-                        checked={image.removeBackground}
-                        onCheckedChange={(checked) => {
-                          toast.info("Background removal is a premium feature coming soon!");
-                          handleUpdateImageSettings(image.id, { removeBackground: checked });
-                        }}
-                      />
-                      <Label htmlFor={`bg-remove-${image.id}-processed`}>Remove background (coming soon)</Label>
-                    </div>
-                    
-                    <div className="flex space-x-2 pt-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="flex-1"
-                        onClick={() => handleDeleteImage(image.id)}
-                      >
-                        <Trash2 className="h-4 w-4 mr-1" />
-                        Delete
-                      </Button>
-                      <Button 
-                        variant="default" 
-                        size="sm" 
-                        className="flex-1"
-                        onClick={() => processImage(image)}
-                        disabled={image.isProcessing}
-                      >
-                        {image.isProcessing ? 'Processing...' : 'Process'}
-                      </Button>
-                      <Button 
-                        variant="default" 
-                        size="sm" 
-                        className="flex-1"
-                        onClick={() => handleDownloadImage(image)}
-                        disabled={!image.processed && !image.isProcessing}
-                      >
-                        <Download className="h-4 w-4 mr-1" />
-                        Download
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="unprocessed" className="mt-0">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredImages().map(image => (
-              <Card key={image.id} className="overflow-hidden">
-                {/* Same content as above */}
-                <CardContent className="p-4 space-y-4">
-                  {/* Duplicate the card content from above for each tab */}
-                  <div className="flex space-x-4">
-                    <div className="image-preview">
-                      <img src={image.preview} alt="Original" />
-                      <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-70 text-white text-xs py-1 px-2">
-                        Original
-                      </div>
-                    </div>
-                    
-                    <div className="image-preview">
-                      {image.isProcessing ? (
-                        <div className="flex items-center justify-center h-full">
-                          <div className="animate-pulse-opacity">
-                            <Image size={48} className="text-gray-400" />
-                          </div>
-                        </div>
-                      ) : image.processedPreview ? (
-                        <>
-                          <img src={image.processedPreview} alt="Processed" />
-                          <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-70 text-white text-xs py-1 px-2">
-                            Processed
-                          </div>
-                        </>
-                      ) : (
-                        <div className="flex items-center justify-center h-full">
-                          <div className="text-gray-400">
-                            <Image size={48} />
-                            <p className="text-xs mt-2">Not processed</p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  
-                  {/* Rest of card content */}
-                  <div className="space-y-4">
-                    <div>
-                      <span className="text-sm font-medium">{image.original.name}</span>
-                      <div className="text-xs text-gray-500">
-                        {image.width}x{image.height} · {(image.original.size / 1024).toFixed(1)} KB
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor={`quality-${image.id}-unprocessed`}>Quality: {image.quality}%</Label>
-                      </div>
-                      <Slider
-                        id={`quality-${image.id}-unprocessed`}
-                        min={10}
-                        max={100}
-                        step={1}
-                        value={[image.quality]}
-                        onValueChange={(value) => handleUpdateImageSettings(image.id, { quality: value[0] })}
-                      />
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="space-y-2">
-                        <Label htmlFor={`width-${image.id}-unprocessed`}>Width</Label>
-                        <Input
-                          id={`width-${image.id}-unprocessed`}
-                          type="number"
-                          value={image.width}
-                          onChange={(e) => handleUpdateImageSettings(image.id, { width: parseInt(e.target.value) || 0 })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor={`height-${image.id}-unprocessed`}>Height</Label>
-                        <Input
-                          id={`height-${image.id}-unprocessed`}
-                          type="number"
-                          value={image.height}
-                          onChange={(e) => handleUpdateImageSettings(image.id, { height: parseInt(e.target.value) || 0 })}
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        id={`bg-remove-${image.id}-unprocessed`}
-                        checked={image.removeBackground}
-                        onCheckedChange={(checked) => {
-                          toast.info("Background removal is a premium feature coming soon!");
-                          handleUpdateImageSettings(image.id, { removeBackground: checked });
-                        }}
-                      />
-                      <Label htmlFor={`bg-remove-${image.id}-unprocessed`}>Remove background (coming soon)</Label>
-                    </div>
-                    
-                    <div className="flex space-x-2 pt-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="flex-1"
-                        onClick={() => handleDeleteImage(image.id)}
-                      >
-                        <Trash2 className="h-4 w-4 mr-1" />
-                        Delete
-                      </Button>
-                      <Button 
-                        variant="default" 
-                        size="sm" 
-                        className="flex-1"
-                        onClick={() => processImage(image)}
-                        disabled={image.isProcessing}
-                      >
-                        {image.isProcessing ? 'Processing...' : 'Process'}
-                      </Button>
-                      <Button 
-                        variant="default" 
-                        size="sm" 
-                        className="flex-1"
-                        onClick={() => handleDownloadImage(image)}
-                        disabled={!image.processed && !image.isProcessing}
-                      >
-                        <Download className="h-4 w-4 mr-1" />
-                        Download
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </TabsContent>
-      </Tabs>
+      )}
     </div>
   );
 };
