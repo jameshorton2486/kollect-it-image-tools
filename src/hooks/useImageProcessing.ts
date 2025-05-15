@@ -1,16 +1,17 @@
 
 import { useState, useCallback, useEffect } from 'react';
-import { toast } from '@/components/ui/use-toast';
-import { createObjectUrl, revokeObjectUrl } from '@/utils/imageUtils';
+import { revokeObjectUrl } from '@/utils/imageUtils';
+import { initializeProcessedImages } from '@/utils/imageProcessingUtils';
+import { ProcessedImage } from '@/types/imageProcessing';
 import { 
-  processSingleImage, 
-  initializeProcessedImages, 
-  downloadProcessedImage 
-} from '@/utils/imageProcessingUtils';
-import { 
-  ProcessedImage, 
   UseImageProcessingResult 
-} from '@/types/imageProcessing';
+} from './useImageProcessingTypes';
+import { 
+  processImageUtil, 
+  processAllImagesUtil, 
+  downloadImageUtil, 
+  downloadAllImagesUtil 
+} from './useImageProcessingUtils';
 
 export type { ProcessedImage } from '@/types/imageProcessing';
 
@@ -52,40 +53,16 @@ export function useImageProcessing(initialImages: File[]): UseImageProcessingRes
   }, [apiKey]);
   
   const processImage = useCallback(async (index: number) => {
-    const image = processedImages[index];
-    if (!image || image.isProcessing) return;
-    
-    const updatedImages = [...processedImages];
-    updatedImages[index].isProcessing = true;
-    setProcessedImages(updatedImages);
-    
-    try {
-      const processedImage = await processSingleImage(
-        image,
-        compressionLevel,
-        maxWidth,
-        maxHeight,
-        removeBackground,
-        apiKey
-      );
-      
-      if (processedImage) {
-        updatedImages[index] = processedImage;
-        setProcessedImages(updatedImages);
-        
-        toast({
-          title: "Success",
-          description: `Processed ${image.original.name}${processedImage.hasBackgroundRemoved ? ' with background removal' : ''}`
-        });
-      } else {
-        updatedImages[index].isProcessing = false;
-        setProcessedImages(updatedImages);
-      }
-    } catch (error) {
-      console.error("Error in processImage:", error);
-      updatedImages[index].isProcessing = false;
-      setProcessedImages(updatedImages);
-    }
+    await processImageUtil(
+      index,
+      processedImages,
+      compressionLevel,
+      maxWidth,
+      maxHeight,
+      removeBackground,
+      apiKey,
+      setProcessedImages
+    );
   }, [processedImages, compressionLevel, maxWidth, maxHeight, removeBackground, apiKey]);
   
   const processAllImages = useCallback(async () => {
@@ -93,69 +70,27 @@ export function useImageProcessing(initialImages: File[]): UseImageProcessingRes
     setIsProcessing(true);
     
     try {
-      const selectedImages = processedImages.filter(img => img.isSelected);
-      
-      if (selectedImages.length === 0) {
-        toast({
-          title: "No Images Selected",
-          description: "No images selected for processing"
-        });
-        setIsProcessing(false);
-        return;
-      }
-      
-      for (let i = 0; i < processedImages.length; i++) {
-        if (processedImages[i].isSelected) {
-          await processImage(i);
-        }
-      }
-      
-      toast({
-        title: "Batch Processing Complete",
-        description: "All selected images processed successfully!"
-      });
-    } catch (error) {
-      console.error("Error in batch processing:", error);
-      toast({
-        variant: "destructive",
-        title: "Batch Processing Failed",
-        description: "Failed to process some images"
-      });
+      await processAllImagesUtil(
+        processedImages,
+        compressionLevel,
+        maxWidth,
+        maxHeight,
+        removeBackground,
+        apiKey,
+        setProcessedImages,
+        setIsProcessing
+      );
     } finally {
       setIsProcessing(false);
     }
-  }, [processedImages, processImage, isProcessing]);
+  }, [processedImages, compressionLevel, maxWidth, maxHeight, removeBackground, apiKey, isProcessing]);
   
   const downloadImage = useCallback((index: number) => {
-    const image = processedImages[index];
-    if (!image || !image.processed) return;
-    
-    downloadProcessedImage(image);
+    downloadImageUtil(index, processedImages);
   }, [processedImages]);
   
   const downloadAllImages = useCallback(() => {
-    const selectedImages = processedImages.filter(img => img.isSelected && img.processed);
-    
-    if (selectedImages.length === 0) {
-      toast({
-        title: "No Images to Download",
-        description: "No processed images to download"
-      });
-      return;
-    }
-    
-    selectedImages.forEach((image, index) => {
-      setTimeout(() => {
-        if (image.processed) {
-          downloadProcessedImage(image);
-        }
-      }, index * 100); // Stagger downloads slightly
-    });
-    
-    toast({
-      title: "Bulk Download Started",
-      description: `Downloading ${selectedImages.length} images`
-    });
+    downloadAllImagesUtil(processedImages);
   }, [processedImages]);
   
   const toggleSelectImage = useCallback((index: number) => {
