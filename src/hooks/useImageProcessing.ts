@@ -1,19 +1,20 @@
+
 import { useState, useCallback, useEffect } from 'react';
 import { toast } from '@/components/ui/use-toast';
-import { compressImage, createObjectUrl, revokeObjectUrl, downloadFile } from '@/utils/imageUtils';
-import { removeImageBackground } from '@/utils/backgroundRemovalApi';
-import type { CompressionOptions } from '@/utils/imageUtils';
+import { createObjectUrl, revokeObjectUrl } from '@/utils/imageUtils';
+import { 
+  processSingleImage, 
+  initializeProcessedImages, 
+  downloadProcessedImage 
+} from '@/utils/imageProcessingUtils';
+import { 
+  ProcessedImage, 
+  UseImageProcessingResult 
+} from '@/types/imageProcessing';
 
-export interface ProcessedImage {
-  original: File;
-  processed: File | null;
-  preview: string;
-  isProcessing: boolean;
-  isSelected: boolean;
-  hasBackgroundRemoved: boolean;
-}
+export type { ProcessedImage } from '@/types/imageProcessing';
 
-export function useImageProcessing(initialImages: File[]) {
+export function useImageProcessing(initialImages: File[]): UseImageProcessingResult {
   const [processedImages, setProcessedImages] = useState<ProcessedImage[]>([]);
   const [compressionLevel, setCompressionLevel] = useState<number>(80);
   const [maxWidth, setMaxWidth] = useState<number>(1200);
@@ -27,15 +28,7 @@ export function useImageProcessing(initialImages: File[]) {
   // Initialize images on mount
   useEffect(() => {
     if (initialImages.length > 0) {
-      const initialProcessedImages = initialImages.map(file => ({
-        original: file,
-        processed: null,
-        preview: createObjectUrl(file),
-        isProcessing: false,
-        isSelected: true,
-        hasBackgroundRemoved: false,
-      }));
-      
+      const initialProcessedImages = initializeProcessedImages(initialImages);
       setProcessedImages(initialProcessedImages);
     }
   }, [initialImages]);
@@ -67,63 +60,29 @@ export function useImageProcessing(initialImages: File[]) {
     setProcessedImages(updatedImages);
     
     try {
-      let processedFile = image.original;
-      let hasBackgroundRemoved = false;
+      const processedImage = await processSingleImage(
+        image,
+        compressionLevel,
+        maxWidth,
+        maxHeight,
+        removeBackground,
+        apiKey
+      );
       
-      // Step 1: Remove background if enabled
-      if (removeBackground) {
-        const bgRemovalResult = await removeImageBackground(image.original, apiKey);
-        
-        if (bgRemovalResult.processedFile) {
-          processedFile = bgRemovalResult.processedFile;
-          hasBackgroundRemoved = true;
-        } else {
-          // If background removal failed but we want to continue with compression
-          toast({
-            title: "Background Removal Failed",
-            description: "Proceeding with compression only"
-          });
-        }
-      }
-      
-      // Step 2: Compress the image (either original or background-removed)
-      const compressionOptions: CompressionOptions = {
-        maxSizeMB: 1,
-        maxWidthOrHeight: Math.max(maxWidth, maxHeight),
-        useWebWorker: true,
-        initialQuality: compressionLevel / 100,
-      };
-      
-      const compressedFile = await compressImage(processedFile, compressionOptions);
-      
-      if (compressedFile) {
-        const previewUrl = createObjectUrl(compressedFile);
-        
-        updatedImages[index] = {
-          ...updatedImages[index],
-          processed: compressedFile,
-          preview: previewUrl,
-          isProcessing: false,
-          hasBackgroundRemoved,
-        };
-        
+      if (processedImage) {
+        updatedImages[index] = processedImage;
         setProcessedImages(updatedImages);
+        
         toast({
           title: "Success",
-          description: `Processed ${image.original.name}${hasBackgroundRemoved ? ' with background removal' : ''}`
+          description: `Processed ${image.original.name}${processedImage.hasBackgroundRemoved ? ' with background removal' : ''}`
         });
       } else {
         updatedImages[index].isProcessing = false;
         setProcessedImages(updatedImages);
       }
     } catch (error) {
-      console.error("Error processing image:", error);
-      toast({
-        variant: "destructive",
-        title: "Processing Failed",
-        description: `Failed to process ${image.original.name}`
-      });
-      
+      console.error("Error in processImage:", error);
       updatedImages[index].isProcessing = false;
       setProcessedImages(updatedImages);
     }
@@ -171,12 +130,7 @@ export function useImageProcessing(initialImages: File[]) {
     const image = processedImages[index];
     if (!image || !image.processed) return;
     
-    downloadFile(image.processed, `optimized-${image.original.name}`);
-    
-    toast({
-      title: "Download Complete",
-      description: `Downloaded ${image.original.name}`
-    });
+    downloadProcessedImage(image);
   }, [processedImages]);
   
   const downloadAllImages = useCallback(() => {
@@ -193,7 +147,7 @@ export function useImageProcessing(initialImages: File[]) {
     selectedImages.forEach((image, index) => {
       setTimeout(() => {
         if (image.processed) {
-          downloadFile(image.processed, `optimized-${image.original.name}`);
+          downloadProcessedImage(image);
         }
       }, index * 100); // Stagger downloads slightly
     });
