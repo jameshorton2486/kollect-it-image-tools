@@ -33,6 +33,10 @@ const ImageProcessor: React.FC<ImageProcessorProps> = ({ images, onReset }) => {
     setRemoveBackground,
     apiKey,
     setApiKey,
+    selfHosted,
+    setSelfHosted,
+    serverUrl,
+    setServerUrl,
     showBeforeAfter,
     toggleBeforeAfterView
   } = useImageProcessing(images);
@@ -47,12 +51,16 @@ const ImageProcessor: React.FC<ImageProcessorProps> = ({ images, onReset }) => {
         isProcessing={isProcessing}
         removeBackground={removeBackground}
         apiKey={apiKey}
+        selfHosted={selfHosted}
+        serverUrl={serverUrl}
         onCompressionLevelChange={setCompressionLevel}
         onMaxWidthChange={setMaxWidth}
         onMaxHeightChange={setMaxHeight}
         onPreserveAspectRatioChange={setPreserveAspectRatio}
         onRemoveBackgroundChange={setRemoveBackground}
         onApiKeyChange={setApiKey}
+        onSelfHostedChange={setSelfHosted}
+        onServerUrlChange={setServerUrl}
         onProcessAll={processAllImages}
         onDownloadAll={downloadAllImages}
         onSelectAll={selectAllImages}

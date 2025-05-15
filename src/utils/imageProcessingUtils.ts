@@ -11,7 +11,9 @@ export async function processSingleImage(
   maxWidth: number,
   maxHeight: number,
   removeBackground: boolean,
-  apiKey: string | null
+  apiKey: string | null,
+  selfHosted: boolean = false,
+  serverUrl: string = ''
 ): Promise<ProcessedImage | null> {
   try {
     let processedFile = image.original;
@@ -19,7 +21,7 @@ export async function processSingleImage(
     
     // Step 1: Remove background if enabled
     if (removeBackground) {
-      const bgRemovalResult = await removeImageBackground(image.original, apiKey);
+      const bgRemovalResult = await removeImageBackground(image.original, apiKey, selfHosted, serverUrl);
       
       if (bgRemovalResult.processedFile) {
         processedFile = bgRemovalResult.processedFile;

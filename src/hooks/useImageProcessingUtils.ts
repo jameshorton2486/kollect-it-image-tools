@@ -14,6 +14,8 @@ export async function processImageUtil(
   maxHeight: number,
   removeBackground: boolean,
   apiKey: string | null,
+  selfHosted: boolean,
+  serverUrl: string,
   setProcessedImages: React.Dispatch<React.SetStateAction<ProcessedImage[]>>
 ): Promise<void> {
   const image = processedImages[index];
@@ -30,7 +32,9 @@ export async function processImageUtil(
       maxWidth,
       maxHeight,
       removeBackground,
-      apiKey
+      apiKey,
+      selfHosted,
+      serverUrl
     );
     
     if (processedImage) {
@@ -59,6 +63,8 @@ export async function processAllImagesUtil(
   maxHeight: number,
   removeBackground: boolean,
   apiKey: string | null,
+  selfHosted: boolean,
+  serverUrl: string,
   setProcessedImages: React.Dispatch<React.SetStateAction<ProcessedImage[]>>,
   setIsProcessing: React.Dispatch<React.SetStateAction<boolean>>
 ): Promise<void> {
@@ -83,6 +89,8 @@ export async function processAllImagesUtil(
           maxHeight,
           removeBackground,
           apiKey,
+          selfHosted,
+          serverUrl,
           setProcessedImages
         );
       }

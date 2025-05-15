@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { revokeObjectUrl } from '@/utils/imageUtils';
 import { initializeProcessedImages } from '@/utils/imageProcessingUtils';
@@ -22,6 +21,8 @@ export function useImageProcessingState() {
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [removeBackground, setRemoveBackground] = useState<boolean>(false);
   const [apiKey, setApiKey] = useState<string | null>(localStorage.getItem('removebg_api_key'));
+  const [selfHosted, setSelfHosted] = useState<boolean>(localStorage.getItem('rembg_self_hosted') === 'true');
+  const [serverUrl, setServerUrl] = useState<string>(localStorage.getItem('rembg_server_url') || 'http://localhost:5000/remove-bg');
   const [showBeforeAfter, setShowBeforeAfter] = useState<number | null>(null);
 
   return {
@@ -33,6 +34,8 @@ export function useImageProcessingState() {
     isProcessing, setIsProcessing,
     removeBackground, setRemoveBackground,
     apiKey, setApiKey,
+    selfHosted, setSelfHosted,
+    serverUrl, setServerUrl,
     showBeforeAfter, setShowBeforeAfter
   };
 }
@@ -41,6 +44,8 @@ interface UseImageProcessingEffectsProps {
   initialImages: File[];
   processedImages: ProcessedImage[];
   apiKey: string | null;
+  selfHosted: boolean;
+  serverUrl: string;
   setProcessedImages: React.Dispatch<React.SetStateAction<ProcessedImage[]>>;
 }
 
@@ -51,6 +56,8 @@ export function useImageProcessingEffects({
   initialImages,
   processedImages,
   apiKey,
+  selfHosted,
+  serverUrl,
   setProcessedImages
 }: UseImageProcessingEffectsProps) {
   // Initialize images on mount
@@ -72,12 +79,18 @@ export function useImageProcessingEffects({
     };
   }, [processedImages]);
   
-  // Save API key to localStorage when it changes
+  // Save API key and server settings to localStorage when they change
   useEffect(() => {
     if (apiKey) {
       localStorage.setItem('removebg_api_key', apiKey);
     }
-  }, [apiKey]);
+    
+    localStorage.setItem('rembg_self_hosted', selfHosted.toString());
+    
+    if (serverUrl) {
+      localStorage.setItem('rembg_server_url', serverUrl);
+    }
+  }, [apiKey, selfHosted, serverUrl]);
 }
 
 interface UseImageProcessingActionsProps {
@@ -88,6 +101,8 @@ interface UseImageProcessingActionsProps {
   maxHeight: number;
   removeBackground: boolean;
   apiKey: string | null;
+  selfHosted: boolean;
+  serverUrl: string;
   isProcessing: boolean;
   setIsProcessing: React.Dispatch<React.SetStateAction<boolean>>;
   setShowBeforeAfter: React.Dispatch<React.SetStateAction<number | null>>;
@@ -104,6 +119,8 @@ export function useImageProcessingActions({
   maxHeight,
   removeBackground,
   apiKey,
+  selfHosted,
+  serverUrl,
   isProcessing,
   setIsProcessing,
   setShowBeforeAfter
@@ -118,9 +135,11 @@ export function useImageProcessingActions({
       maxHeight,
       removeBackground,
       apiKey,
+      selfHosted,
+      serverUrl,
       setProcessedImages
     );
-  }, [processedImages, compressionLevel, maxWidth, maxHeight, removeBackground, apiKey, setProcessedImages]);
+  }, [processedImages, compressionLevel, maxWidth, maxHeight, removeBackground, apiKey, selfHosted, serverUrl, setProcessedImages]);
   
   const processAllImages = useCallback(async () => {
     if (isProcessing) return;
@@ -134,13 +153,15 @@ export function useImageProcessingActions({
         maxHeight,
         removeBackground,
         apiKey,
+        selfHosted,
+        serverUrl,
         setProcessedImages,
         setIsProcessing
       );
     } finally {
       setIsProcessing(false);
     }
-  }, [processedImages, compressionLevel, maxWidth, maxHeight, removeBackground, apiKey, isProcessing, setProcessedImages, setIsProcessing]);
+  }, [processedImages, compressionLevel, maxWidth, maxHeight, removeBackground, apiKey, selfHosted, serverUrl, isProcessing, setProcessedImages, setIsProcessing]);
   
   const downloadImage = useCallback((index: number) => {
     downloadImageUtil(index, processedImages);

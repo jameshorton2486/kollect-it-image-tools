@@ -23,6 +23,8 @@ export function useImageProcessing(initialImages: File[]): UseImageProcessingRes
     isProcessing, setIsProcessing,
     removeBackground, setRemoveBackground,
     apiKey, setApiKey,
+    selfHosted, setSelfHosted,
+    serverUrl, setServerUrl,
     showBeforeAfter, setShowBeforeAfter
   } = useImageProcessingState();
 
@@ -31,6 +33,8 @@ export function useImageProcessing(initialImages: File[]): UseImageProcessingRes
     initialImages,
     processedImages,
     apiKey,
+    selfHosted,
+    serverUrl,
     setProcessedImages
   });
   
@@ -51,6 +55,8 @@ export function useImageProcessing(initialImages: File[]): UseImageProcessingRes
     maxHeight,
     removeBackground,
     apiKey,
+    selfHosted,
+    serverUrl,
     isProcessing,
     setIsProcessing,
     setShowBeforeAfter
@@ -77,6 +83,10 @@ export function useImageProcessing(initialImages: File[]): UseImageProcessingRes
     setRemoveBackground,
     apiKey,
     setApiKey,
+    selfHosted,
+    setSelfHosted,
+    serverUrl,
+    setServerUrl,
     showBeforeAfter,
     toggleBeforeAfterView
   };

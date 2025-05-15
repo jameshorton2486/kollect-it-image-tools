@@ -19,6 +19,8 @@ export interface ImageProcessingState {
   isProcessing: boolean;
   removeBackground: boolean;
   apiKey: string | null;
+  selfHosted: boolean;
+  serverUrl: string;
   showBeforeAfter: number | null;
 }
 
@@ -29,6 +31,8 @@ export interface ImageProcessingOptions {
   preserveAspectRatio: boolean;
   removeBackground: boolean;
   apiKey: string | null;
+  selfHosted: boolean;
+  serverUrl: string;
 }
 
 export interface UseImageProcessingResult extends ImageProcessingState {
@@ -38,6 +42,8 @@ export interface UseImageProcessingResult extends ImageProcessingState {
   setPreserveAspectRatio: (preserve: boolean) => void;
   setRemoveBackground: (remove: boolean) => void;
   setApiKey: (key: string | null) => void;
+  setSelfHosted: (selfHosted: boolean) => void;
+  setServerUrl: (url: string) => void;
   processImage: (index: number) => Promise<void>;
   processAllImages: () => Promise<void>;
   downloadImage: (index: number) => void;

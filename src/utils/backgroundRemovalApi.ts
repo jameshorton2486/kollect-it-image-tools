@@ -1,5 +1,6 @@
 
 import { toast } from '@/components/ui/use-toast';
+import { removeBackgroundWithRembg } from './rembgBackgroundRemoval';
 
 const API_ENDPOINT = 'https://api.remove.bg/v1.0/removebg';
 
@@ -9,6 +10,19 @@ export interface BackgroundRemovalResult {
 }
 
 export async function removeImageBackground(
+  imageFile: File, 
+  apiKey: string | null,
+  selfHosted: boolean = false,
+  serverUrl: string = ''
+): Promise<BackgroundRemovalResult> {
+  if (selfHosted) {
+    return removeBackgroundWithRembg(imageFile, serverUrl);
+  } else {
+    return removeImageBackgroundWithAPI(imageFile, apiKey);
+  }
+}
+
+async function removeImageBackgroundWithAPI(
   imageFile: File, 
   apiKey: string | null
 ): Promise<BackgroundRemovalResult> {

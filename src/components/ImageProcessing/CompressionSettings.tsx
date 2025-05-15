@@ -17,12 +17,16 @@ interface CompressionSettingsProps {
   isProcessing: boolean;
   removeBackground: boolean;
   apiKey: string | null;
+  selfHosted: boolean;
+  serverUrl: string;
   onCompressionLevelChange: (value: number) => void;
   onMaxWidthChange: (value: number) => void;
   onMaxHeightChange: (value: number) => void;
   onPreserveAspectRatioChange: (value: boolean) => void;
   onRemoveBackgroundChange: (value: boolean) => void;
   onApiKeyChange: (value: string) => void;
+  onSelfHostedChange: (value: boolean) => void;
+  onServerUrlChange: (value: string) => void;
   onProcessAll: () => void;
   onDownloadAll: () => void;
   onSelectAll: (selected: boolean) => void;
@@ -37,12 +41,16 @@ const CompressionSettings: React.FC<CompressionSettingsProps> = ({
   isProcessing,
   removeBackground,
   apiKey,
+  selfHosted,
+  serverUrl,
   onCompressionLevelChange,
   onMaxWidthChange,
   onMaxHeightChange,
   onPreserveAspectRatioChange,
   onRemoveBackgroundChange,
   onApiKeyChange,
+  onSelfHostedChange,
+  onServerUrlChange,
   onProcessAll,
   onDownloadAll,
   onSelectAll,
@@ -140,28 +148,59 @@ const CompressionSettings: React.FC<CompressionSettingsProps> = ({
                   Remove background from images
                 </label>
               </div>
-              
-              <div className="text-sm text-muted-foreground">
-                Powered by Remove.bg
-              </div>
             </div>
             
-            <FormItem className={removeBackground ? "opacity-100" : "opacity-50"}>
-              <FormLabel>Remove.bg API Key</FormLabel>
-              <FormControl>
-                <Input
-                  type="password"
-                  placeholder="Enter your Remove.bg API key"
-                  value={apiKey || ''}
-                  onChange={(e) => onApiKeyChange(e.target.value)}
-                  disabled={!removeBackground}
-                  className="font-mono"
-                />
-              </FormControl>
-              <p className="text-xs text-muted-foreground mt-1">
-                Get your API key from <a href="https://www.remove.bg/api" target="_blank" rel="noopener noreferrer" className="underline">remove.bg/api</a>
-              </p>
-            </FormItem>
+            {removeBackground && (
+              <div className="space-y-4 pl-2 border-l-2 border-muted p-4 rounded bg-muted/20">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="self-hosted"
+                    checked={selfHosted}
+                    onCheckedChange={(checked) => onSelfHostedChange(checked as boolean)}
+                  />
+                  <label
+                    htmlFor="self-hosted"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    Use self-hosted Rembg service
+                  </label>
+                </div>
+                
+                {selfHosted ? (
+                  <FormItem>
+                    <FormLabel>Rembg Server URL</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="text"
+                        placeholder="http://localhost:5000/remove-bg"
+                        value={serverUrl || ''}
+                        onChange={(e) => onServerUrlChange(e.target.value)}
+                        className="font-mono"
+                      />
+                    </FormControl>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Enter the URL of your self-hosted Rembg server
+                    </p>
+                  </FormItem>
+                ) : (
+                  <FormItem>
+                    <FormLabel>Remove.bg API Key</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="password"
+                        placeholder="Enter your Remove.bg API key"
+                        value={apiKey || ''}
+                        onChange={(e) => onApiKeyChange(e.target.value)}
+                        className="font-mono"
+                      />
+                    </FormControl>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Get your API key from <a href="https://www.remove.bg/api" target="_blank" rel="noopener noreferrer" className="underline">remove.bg/api</a>
+                    </p>
+                  </FormItem>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="flex justify-between pt-4">
