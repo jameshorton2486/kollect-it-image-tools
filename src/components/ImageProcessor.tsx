@@ -13,6 +13,14 @@ interface ImageProcessorProps {
   onReset: () => void;
 }
 
+// Define the options interface based on the package documentation
+interface CompressionOptions {
+  maxSizeMB: number;
+  maxWidthOrHeight: number;
+  useWebWorker: boolean;
+  initialQuality: number;
+}
+
 const ImageProcessor: React.FC<ImageProcessorProps> = ({ images, onReset }) => {
   const [processedImages, setProcessedImages] = useState<{
     original: File;
@@ -54,7 +62,7 @@ const ImageProcessor: React.FC<ImageProcessorProps> = ({ images, onReset }) => {
     };
   }, []);
   
-  const compressImage = async (file: File, options: imageCompression.Options) => {
+  const compressImage = async (file: File, options: CompressionOptions) => {
     try {
       const compressedFile = await imageCompression(file, options);
       return compressedFile;
