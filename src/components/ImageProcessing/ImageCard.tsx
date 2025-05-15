@@ -3,7 +3,8 @@ import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
-import { Download, Image as ImageIcon } from 'lucide-react';
+import { Download, Image as ImageIcon, Eye } from 'lucide-react';
+import { Badge } from "@/components/ui/badge";
 
 interface ImageCardProps {
   image: {
@@ -12,33 +13,73 @@ interface ImageCardProps {
     preview: string;
     isProcessing: boolean;
     isSelected: boolean;
+    hasBackgroundRemoved: boolean;
   };
   index: number;
+  showBeforeAfter: boolean;
   onProcess: (index: number) => void;
   onDownload: (index: number) => void;
   onToggleSelect: (index: number) => void;
+  onToggleBeforeAfter: (index: number) => void;
 }
 
 const ImageCard: React.FC<ImageCardProps> = ({ 
   image, 
   index, 
+  showBeforeAfter,
   onProcess, 
   onDownload, 
-  onToggleSelect 
+  onToggleSelect,
+  onToggleBeforeAfter
 }) => {
   return (
     <Card 
       className={`overflow-hidden ${image.isSelected ? 'ring-2 ring-brand-blue' : ''}`}
     >
       <div className="relative aspect-square">
-        <div className="image-preview absolute inset-0">
-          <img src={image.preview} alt={`Preview of ${image.original.name}`} />
-        </div>
+        {showBeforeAfter ? (
+          <div className="grid grid-cols-2 h-full">
+            <div className="relative border-r border-gray-200">
+              <img 
+                src={createObjectUrl(image.original)} 
+                alt={`Original ${image.original.name}`} 
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+              <div className="absolute bottom-1 left-1 bg-black bg-opacity-50 text-white text-xs px-1 rounded">
+                Before
+              </div>
+            </div>
+            <div className="relative">
+              <img 
+                src={image.preview} 
+                alt={`Processed ${image.original.name}`} 
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+              <div className="absolute bottom-1 right-1 bg-black bg-opacity-50 text-white text-xs px-1 rounded">
+                After
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="image-preview absolute inset-0">
+            <img src={image.preview} alt={`Preview of ${image.original.name}`} />
+          </div>
+        )}
         
         {image.isProcessing && (
           <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
             <div className="animate-pulse-opacity text-white">Processing...</div>
           </div>
+        )}
+        
+        {/* Background removed indicator */}
+        {image.hasBackgroundRemoved && !image.isProcessing && (
+          <Badge 
+            className="absolute top-2 right-2" 
+            variant="secondary"
+          >
+            Background Removed
+          </Badge>
         )}
       </div>
       
@@ -64,13 +105,13 @@ const ImageCard: React.FC<ImageCardProps> = ({
           )}
         </div>
         
-        <div className="flex justify-between">
+        <div className="grid grid-cols-3 gap-1">
           <Button
             variant="outline"
             size="sm"
-            className="w-1/2 mr-1"
             onClick={() => onProcess(index)}
             disabled={image.isProcessing}
+            className="w-full"
           >
             <ImageIcon className="h-4 w-4 mr-1" />
             Process
@@ -79,17 +120,34 @@ const ImageCard: React.FC<ImageCardProps> = ({
           <Button
             variant="outline"
             size="sm"
-            className="w-1/2 ml-1"
             onClick={() => onDownload(index)}
             disabled={!image.processed || image.isProcessing}
+            className="w-full"
           >
             <Download className="h-4 w-4 mr-1" />
             Save
           </Button>
+          
+          {image.processed && (
+            <Button
+              variant={showBeforeAfter ? "default" : "outline"}
+              size="sm"
+              onClick={() => onToggleBeforeAfter(index)}
+              className="w-full"
+            >
+              <Eye className="h-4 w-4 mr-1" />
+              Compare
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>
   );
+};
+
+// Helper function to avoid revoking URLs that we need temporarily
+const createObjectUrl = (file: File): string => {
+  return URL.createObjectURL(file);
 };
 
 export default ImageCard;

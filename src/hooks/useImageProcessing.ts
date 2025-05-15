@@ -1,7 +1,7 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { toast } from '@/components/ui/use-toast';
 import { compressImage, createObjectUrl, revokeObjectUrl, downloadFile } from '@/utils/imageUtils';
+import { removeImageBackground } from '@/utils/backgroundRemovalApi';
 import type { CompressionOptions } from '@/utils/imageUtils';
 
 export interface ProcessedImage {
@@ -10,6 +10,7 @@ export interface ProcessedImage {
   preview: string;
   isProcessing: boolean;
   isSelected: boolean;
+  hasBackgroundRemoved: boolean;
 }
 
 export function useImageProcessing(initialImages: File[]) {
@@ -19,6 +20,9 @@ export function useImageProcessing(initialImages: File[]) {
   const [maxHeight, setMaxHeight] = useState<number>(1200);
   const [preserveAspectRatio, setPreserveAspectRatio] = useState<boolean>(true);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const [removeBackground, setRemoveBackground] = useState<boolean>(false);
+  const [apiKey, setApiKey] = useState<string | null>(localStorage.getItem('removebg_api_key'));
+  const [showBeforeAfter, setShowBeforeAfter] = useState<number | null>(null);
   
   // Initialize images on mount
   useEffect(() => {
@@ -29,6 +33,7 @@ export function useImageProcessing(initialImages: File[]) {
         preview: createObjectUrl(file),
         isProcessing: false,
         isSelected: true,
+        hasBackgroundRemoved: false,
       }));
       
       setProcessedImages(initialProcessedImages);
@@ -46,6 +51,13 @@ export function useImageProcessing(initialImages: File[]) {
     };
   }, []);
   
+  // Save API key to localStorage when it changes
+  useEffect(() => {
+    if (apiKey) {
+      localStorage.setItem('removebg_api_key', apiKey);
+    }
+  }, [apiKey]);
+  
   const processImage = useCallback(async (index: number) => {
     const image = processedImages[index];
     if (!image || image.isProcessing) return;
@@ -55,6 +67,26 @@ export function useImageProcessing(initialImages: File[]) {
     setProcessedImages(updatedImages);
     
     try {
+      let processedFile = image.original;
+      let hasBackgroundRemoved = false;
+      
+      // Step 1: Remove background if enabled
+      if (removeBackground) {
+        const bgRemovalResult = await removeImageBackground(image.original, apiKey);
+        
+        if (bgRemovalResult.processedFile) {
+          processedFile = bgRemovalResult.processedFile;
+          hasBackgroundRemoved = true;
+        } else {
+          // If background removal failed but we want to continue with compression
+          toast({
+            title: "Background Removal Failed",
+            description: "Proceeding with compression only"
+          });
+        }
+      }
+      
+      // Step 2: Compress the image (either original or background-removed)
       const compressionOptions: CompressionOptions = {
         maxSizeMB: 1,
         maxWidthOrHeight: Math.max(maxWidth, maxHeight),
@@ -62,22 +94,23 @@ export function useImageProcessing(initialImages: File[]) {
         initialQuality: compressionLevel / 100,
       };
       
-      const processedFile = await compressImage(image.original, compressionOptions);
+      const compressedFile = await compressImage(processedFile, compressionOptions);
       
-      if (processedFile) {
-        const previewUrl = createObjectUrl(processedFile);
+      if (compressedFile) {
+        const previewUrl = createObjectUrl(compressedFile);
         
         updatedImages[index] = {
           ...updatedImages[index],
-          processed: processedFile,
+          processed: compressedFile,
           preview: previewUrl,
           isProcessing: false,
+          hasBackgroundRemoved,
         };
         
         setProcessedImages(updatedImages);
         toast({
           title: "Success",
-          description: `Processed ${image.original.name}`
+          description: `Processed ${image.original.name}${hasBackgroundRemoved ? ' with background removal' : ''}`
         });
       } else {
         updatedImages[index].isProcessing = false;
@@ -94,7 +127,7 @@ export function useImageProcessing(initialImages: File[]) {
       updatedImages[index].isProcessing = false;
       setProcessedImages(updatedImages);
     }
-  }, [processedImages, compressionLevel, maxWidth, maxHeight]);
+  }, [processedImages, compressionLevel, maxWidth, maxHeight, removeBackground, apiKey]);
   
   const processAllImages = useCallback(async () => {
     if (isProcessing) return;
@@ -184,7 +217,11 @@ export function useImageProcessing(initialImages: File[]) {
     }));
     setProcessedImages(updatedImages);
   }, [processedImages]);
-
+  
+  const toggleBeforeAfterView = useCallback((index: number | null) => {
+    setShowBeforeAfter(prevIndex => prevIndex === index ? null : index);
+  }, []);
+  
   return {
     processedImages,
     compressionLevel,
@@ -201,6 +238,12 @@ export function useImageProcessing(initialImages: File[]) {
     downloadImage,
     downloadAllImages,
     toggleSelectImage,
-    selectAllImages
+    selectAllImages,
+    removeBackground,
+    setRemoveBackground,
+    apiKey,
+    setApiKey,
+    showBeforeAfter,
+    toggleBeforeAfterView
   };
 }

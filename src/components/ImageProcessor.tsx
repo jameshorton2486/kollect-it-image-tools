@@ -27,7 +27,14 @@ const ImageProcessor: React.FC<ImageProcessorProps> = ({ images, onReset }) => {
     downloadImage,
     downloadAllImages,
     toggleSelectImage,
-    selectAllImages
+    selectAllImages,
+    // Background removal features
+    removeBackground,
+    setRemoveBackground,
+    apiKey,
+    setApiKey,
+    showBeforeAfter,
+    toggleBeforeAfterView
   } = useImageProcessing(images);
   
   return (
@@ -38,10 +45,14 @@ const ImageProcessor: React.FC<ImageProcessorProps> = ({ images, onReset }) => {
         maxHeight={maxHeight}
         preserveAspectRatio={preserveAspectRatio}
         isProcessing={isProcessing}
+        removeBackground={removeBackground}
+        apiKey={apiKey}
         onCompressionLevelChange={setCompressionLevel}
         onMaxWidthChange={setMaxWidth}
         onMaxHeightChange={setMaxHeight}
         onPreserveAspectRatioChange={setPreserveAspectRatio}
+        onRemoveBackgroundChange={setRemoveBackground}
+        onApiKeyChange={setApiKey}
         onProcessAll={processAllImages}
         onDownloadAll={downloadAllImages}
         onSelectAll={selectAllImages}
@@ -51,9 +62,11 @@ const ImageProcessor: React.FC<ImageProcessorProps> = ({ images, onReset }) => {
       {processedImages.length > 0 ? (
         <ImageGrid
           images={processedImages}
+          showBeforeAfterIndex={showBeforeAfter}
           onProcessImage={processImage}
           onDownloadImage={downloadImage}
           onToggleSelectImage={toggleSelectImage}
+          onToggleBeforeAfterView={toggleBeforeAfterView}
         />
       ) : (
         <EmptyState onReset={onReset} />

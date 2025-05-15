@@ -3,8 +3,11 @@ import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Download, RefreshCw } from 'lucide-react';
+import { Download, RefreshCw, Image } from 'lucide-react';
+import { Input } from "@/components/ui/input";
+import { FormItem, FormLabel, FormControl } from "@/components/ui/form";
 
 interface CompressionSettingsProps {
   compressionLevel: number;
@@ -12,10 +15,14 @@ interface CompressionSettingsProps {
   maxHeight: number;
   preserveAspectRatio: boolean;
   isProcessing: boolean;
+  removeBackground: boolean;
+  apiKey: string | null;
   onCompressionLevelChange: (value: number) => void;
   onMaxWidthChange: (value: number) => void;
   onMaxHeightChange: (value: number) => void;
   onPreserveAspectRatioChange: (value: boolean) => void;
+  onRemoveBackgroundChange: (value: boolean) => void;
+  onApiKeyChange: (value: string) => void;
   onProcessAll: () => void;
   onDownloadAll: () => void;
   onSelectAll: (selected: boolean) => void;
@@ -28,10 +35,14 @@ const CompressionSettings: React.FC<CompressionSettingsProps> = ({
   maxHeight,
   preserveAspectRatio,
   isProcessing,
+  removeBackground,
+  apiKey,
   onCompressionLevelChange,
   onMaxWidthChange,
   onMaxHeightChange,
   onPreserveAspectRatioChange,
+  onRemoveBackgroundChange,
+  onApiKeyChange,
   onProcessAll,
   onDownloadAll,
   onSelectAll,
@@ -111,6 +122,48 @@ const CompressionSettings: React.FC<CompressionSettingsProps> = ({
             </label>
           </div>
           
+          {/* Background Removal Section */}
+          <div className="border-t pt-4 mt-4">
+            <h3 className="text-lg font-medium mb-3">Background Removal</h3>
+            
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="remove-bg"
+                  checked={removeBackground}
+                  onCheckedChange={onRemoveBackgroundChange}
+                />
+                <label
+                  htmlFor="remove-bg"
+                  className="text-sm font-medium leading-none"
+                >
+                  Remove background from images
+                </label>
+              </div>
+              
+              <div className="text-sm text-muted-foreground">
+                Powered by Remove.bg
+              </div>
+            </div>
+            
+            <FormItem className={removeBackground ? "opacity-100" : "opacity-50"}>
+              <FormLabel>Remove.bg API Key</FormLabel>
+              <FormControl>
+                <Input
+                  type="password"
+                  placeholder="Enter your Remove.bg API key"
+                  value={apiKey || ''}
+                  onChange={(e) => onApiKeyChange(e.target.value)}
+                  disabled={!removeBackground}
+                  className="font-mono"
+                />
+              </FormControl>
+              <p className="text-xs text-muted-foreground mt-1">
+                Get your API key from <a href="https://www.remove.bg/api" target="_blank" rel="noopener noreferrer" className="underline">remove.bg/api</a>
+              </p>
+            </FormItem>
+          </div>
+
           <div className="flex justify-between pt-4">
             <div className="space-x-2">
               <Button
