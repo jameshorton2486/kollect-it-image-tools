@@ -5,6 +5,9 @@ import Footer from '@/components/Footer';
 import Features from '@/components/Features';
 import ImageDropzone from '@/components/ImageDropzone';
 import ImageProcessor from '@/components/ImageProcessor';
+import { Button } from '@/components/ui/button';
+import { BarChart3 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const Index = () => {
   const [uploadedImages, setUploadedImages] = useState<File[]>([]);
@@ -26,11 +29,20 @@ const Index = () => {
       
       <main className="flex-1 container py-8">
         <section className="mb-12">
-          <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold mb-4">Kollect-It Image Optimizer</h1>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Optimize, resize, and compress your images for better performance on your WordPress site.
-            </p>
+          <div className="flex justify-between items-center mb-8">
+            <div className="text-left">
+              <h1 className="text-4xl font-bold mb-4">Kollect-It Image Optimizer</h1>
+              <p className="text-xl text-gray-600 max-w-3xl">
+                Optimize, resize, and compress your images for better performance on your WordPress site.
+              </p>
+            </div>
+            
+            <Link to="/analytics">
+              <Button variant="outline" className="flex items-center gap-2">
+                <BarChart3 size={16} />
+                Analytics Dashboard
+              </Button>
+            </Link>
           </div>
           
           {!showProcessor ? (

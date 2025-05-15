@@ -35,7 +35,8 @@ export interface UseImageProcessingActions {
   selectAllImages: (selected: boolean) => void;
   toggleBeforeAfterView: (index: number | null) => void;
   cancelBatchProcessing: () => void;
-  clearImageCache: () => void; // Add new action to clear the cache
+  clearImageCache: () => void;
+  clearAnalyticsData: () => void; // New analytics action
 }
 
 export type UseImageProcessingResult = UseImageProcessingState & UseImageProcessingActions;

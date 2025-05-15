@@ -46,7 +46,8 @@ export function useImageProcessingCore(initialImages: File[]): UseImageProcessin
     selectAllImages,
     toggleBeforeAfterView,
     cancelBatchProcessing,
-    clearImageCache
+    clearImageCache,
+    clearAnalyticsData
   } = useImageProcessingActions({
     processedImages,
     setProcessedImages,
@@ -96,6 +97,7 @@ export function useImageProcessingCore(initialImages: File[]): UseImageProcessin
     totalItemsToProcess,
     processedItemsCount,
     cancelBatchProcessing,
-    clearImageCache
+    clearImageCache,
+    clearAnalyticsData
   };
 }

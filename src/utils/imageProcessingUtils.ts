@@ -10,6 +10,7 @@ import {
   cacheProcessedImage 
 } from '@/utils/imageCacheUtils';
 import { retryOperation } from '@/utils/retryUtils';
+import { trackEvent, recordCompressionStats } from '@/utils/analyticsUtils';
 
 export async function processSingleImage(
   image: ProcessedImage,
@@ -22,6 +23,8 @@ export async function processSingleImage(
   serverUrl: string = ''
 ): Promise<ProcessedImage | null> {
   try {
+    const processingStartTime = performance.now();
+    
     // Generate cache key based on image and processing parameters
     const cacheKey = generateCacheKey(
       image.original,
@@ -38,6 +41,13 @@ export async function processSingleImage(
       console.log('Using cached image for', image.original.name);
       const previewUrl = createObjectUrl(cachedImage);
       
+      // Track cache hit
+      trackEvent('process', {
+        cached: true,
+        imageName: image.original.name,
+        imageSize: image.original.size,
+      });
+      
       return {
         ...image,
         processed: cachedImage,
@@ -51,11 +61,14 @@ export async function processSingleImage(
     console.log('Processing image', image.original.name);
     let processedFile = image.original;
     let hasBackgroundRemoved = false;
+    const originalSize = image.original.size;
     
     // Step 1: Remove background if enabled
     if (removeBackground) {
       // Use retry for background removal
       try {
+        const bgRemovalStartTime = performance.now();
+        
         const bgRemovalResult = await retryOperation(
           () => removeImageBackground(image.original, apiKey, selfHosted, serverUrl),
           {
@@ -71,14 +84,30 @@ export async function processSingleImage(
           }
         );
         
+        const bgRemovalEndTime = performance.now();
+        
         if (bgRemovalResult.processedFile) {
           processedFile = bgRemovalResult.processedFile;
           hasBackgroundRemoved = true;
+          
+          // Track successful background removal
+          trackEvent('background_removal', {
+            success: true,
+            imageName: image.original.name,
+            processingTime: bgRemovalEndTime - bgRemovalStartTime,
+          });
         } else {
           // If background removal failed but we want to continue with compression
           toast({
             title: "Background Removal Failed",
             description: "Proceeding with compression only"
+          });
+          
+          // Track failed background removal
+          trackEvent('background_removal', {
+            success: false,
+            imageName: image.original.name,
+            error: 'Background removal failed',
           });
         }
       } catch (error) {
@@ -89,11 +118,20 @@ export async function processSingleImage(
           title: "Background Removal Failed",
           description: "All retry attempts failed. Proceeding with compression only."
         });
+        
+        // Track failed background removal after all retries
+        trackEvent('background_removal', {
+          success: false,
+          imageName: image.original.name,
+          error: 'All retry attempts failed',
+        });
       }
     }
     
     // Step 2: Compress the image (either original or background-removed)
     try {
+      const compressionStartTime = performance.now();
+      
       const compressionOptions: CompressionOptions = {
         maxSizeMB: 1,
         maxWidthOrHeight: Math.max(maxWidth, maxHeight),
@@ -123,6 +161,28 @@ export async function processSingleImage(
         // Store processed result in cache
         cacheProcessedImage(cacheKey, compressedFile, image.original.name);
         
+        const processingEndTime = performance.now();
+        const processingTime = processingEndTime - processingStartTime;
+        
+        // Record compression statistics
+        recordCompressionStats({
+          originalSize,
+          processedSize: compressedFile.size,
+          compressionRatio: 1 - (compressedFile.size / originalSize),
+          processingTime,
+        });
+        
+        // Track successful image processing
+        trackEvent('process', {
+          success: true,
+          imageName: image.original.name,
+          originalSize,
+          processedSize: compressedFile.size,
+          compressionRatio: 1 - (compressedFile.size / originalSize),
+          hasBackgroundRemoved,
+          processingTime,
+        });
+        
         return {
           ...image,
           processed: compressedFile,
@@ -138,6 +198,13 @@ export async function processSingleImage(
         title: "Compression Failed",
         description: `All retry attempts failed for ${image.original.name}`
       });
+      
+      // Track failed compression
+      trackEvent('process', {
+        success: false,
+        imageName: image.original.name,
+        error: 'Compression failed after all retries',
+      });
     }
     
     return null;
@@ -147,6 +214,13 @@ export async function processSingleImage(
       variant: "destructive",
       title: "Processing Failed",
       description: `Failed to process ${image.original.name}`
+    });
+    
+    // Track general processing error
+    trackEvent('process', {
+      success: false,
+      imageName: image.original.name,
+      error: String(error),
     });
     
     return null;
@@ -168,6 +242,12 @@ export function downloadProcessedImage(image: ProcessedImage): void {
   if (!image.processed) return;
   
   downloadFile(image.processed, `optimized-${image.original.name}`);
+  
+  // Track download event
+  trackEvent('download', {
+    imageName: image.original.name,
+    fileSize: image.processed.size
+  });
   
   toast({
     title: "Download Complete",

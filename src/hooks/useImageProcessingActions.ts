@@ -9,6 +9,7 @@ import {
 } from './useImageProcessingUtils';
 import { clearImageCache } from '@/utils/imageCacheUtils';
 import { toast } from '@/hooks/use-toast';
+import { clearAnalyticsData } from '@/utils/analyticsUtils';
 
 interface UseImageProcessingActionsProps {
   processedImages: ProcessedImage[];
@@ -135,6 +136,14 @@ export function useImageProcessingActions({
     });
   }, []);
   
+  const handleClearAnalyticsData = useCallback(() => {
+    clearAnalyticsData();
+    toast({
+      title: "Analytics Cleared",
+      description: "Analytics data has been reset"
+    });
+  }, []);
+  
   return {
     processImage,
     processAllImages,
@@ -148,6 +157,7 @@ export function useImageProcessingActions({
     selectAllImages,
     toggleBeforeAfterView,
     cancelBatchProcessing: handleCancelBatchProcessing,
-    clearImageCache: handleClearImageCache
+    clearImageCache: handleClearImageCache,
+    clearAnalyticsData: handleClearAnalyticsData
   };
 }

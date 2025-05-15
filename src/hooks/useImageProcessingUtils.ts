@@ -1,4 +1,3 @@
-
 import { toast } from '@/components/ui/use-toast';
 import { ProcessedImage } from "@/types/imageProcessing";
 import { 
@@ -6,6 +5,7 @@ import {
   downloadProcessedImage 
 } from '@/utils/imageProcessingUtils';
 import { retryOperation } from '@/utils/retryUtils';
+import { trackEvent } from '@/utils/analyticsUtils';
 
 export async function processImageUtil(
   index: number,
@@ -114,6 +114,8 @@ export async function processAllImagesUtil(
       return;
     }
     
+    const batchProcessingStartTime = performance.now();
+    
     batchProcessingCancelled = false;
     setTotalItemsToProcess(selectedImages.length);
     setProcessedItemsCount(0);
@@ -122,6 +124,16 @@ export async function processAllImagesUtil(
     let processedCount = 0;
     let failedCount = 0;
     let retriedCount = 0;
+    
+    // Track batch processing start
+    trackEvent('batch_process', {
+      started: true,
+      totalImages: selectedImages.length,
+      compressionLevel,
+      maxWidth,
+      maxHeight,
+      removeBackground
+    });
     
     // Process images with a small delay between each to prevent overwhelming the server
     for (let i = 0; i < processedImages.length && !batchProcessingCancelled; i++) {
@@ -162,6 +174,20 @@ export async function processAllImagesUtil(
       }
     }
     
+    const batchProcessingEndTime = performance.now();
+    const batchProcessingTime = batchProcessingEndTime - batchProcessingStartTime;
+    
+    // Track batch processing completion
+    trackEvent('batch_process', {
+      completed: true,
+      totalImages: selectedImages.length,
+      processedCount,
+      failedCount,
+      retriedCount,
+      processingTime: batchProcessingTime,
+      cancelled: batchProcessingCancelled
+    });
+    
     if (batchProcessingCancelled) {
       toast({
         title: "Processing Cancelled",
@@ -185,6 +211,11 @@ export async function processAllImagesUtil(
       variant: "destructive",
       title: "Batch Processing Failed",
       description: "Failed to process some images"
+    });
+    
+    // Track batch processing error
+    trackEvent('batch_process', {
+      error: String(error)
     });
   }
 }
@@ -211,6 +242,13 @@ export function downloadAllImagesUtil(
     });
     return;
   }
+  
+  // Track bulk download event
+  trackEvent('download', {
+    bulk: true,
+    count: selectedImages.length,
+    totalSize: selectedImages.reduce((sum, img) => sum + (img.processed?.size || 0), 0)
+  });
   
   selectedImages.forEach((image, index) => {
     setTimeout(() => {

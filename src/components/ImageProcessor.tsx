@@ -6,8 +6,9 @@ import EmptyState from './ImageProcessing/EmptyState';
 import BatchProcessingProgress from './ImageProcessing/BatchProcessingProgress';
 import { useImageProcessing } from '@/hooks/useImageProcessing';
 import { Button } from './ui/button';
-import { Database, RefreshCw } from 'lucide-react';
+import { Database, RefreshCw, BarChart3 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
+import { Link } from 'react-router-dom';
 
 interface ImageProcessorProps {
   images: File[];
@@ -48,33 +49,56 @@ const ImageProcessor: React.FC<ImageProcessorProps> = ({ images, onReset }) => {
     totalItemsToProcess,
     processedItemsCount,
     cancelBatchProcessing,
-    // Cache management
-    clearImageCache
+    // Cache and analytics management
+    clearImageCache,
+    clearAnalyticsData
   } = useImageProcessing(images);
   
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Image Processor</h2>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={clearImageCache}
-                className="gap-1"
-              >
-                <Database className="h-4 w-4" />
-                <RefreshCw className="h-3 w-3" />
-                Clear Cache
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Clear image processing cache to free up browser storage</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <div className="flex gap-2">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={clearImageCache}
+                  className="gap-1"
+                >
+                  <Database className="h-4 w-4" />
+                  <RefreshCw className="h-3 w-3" />
+                  Clear Cache
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Clear image processing cache to free up browser storage</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          
+          <Link to="/analytics">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1"
+                  >
+                    <BarChart3 className="h-4 w-4" />
+                    Analytics
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>View processing statistics and usage analytics</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </Link>
+        </div>
       </div>
       
       <CompressionSettings

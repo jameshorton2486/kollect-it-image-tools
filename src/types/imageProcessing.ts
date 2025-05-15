@@ -1,3 +1,4 @@
+
 import { CompressionOptions } from "@/utils/imageUtils";
 
 export interface ProcessedImage {
@@ -55,5 +56,7 @@ export interface UseImageProcessingResult extends ImageProcessingState {
   toggleSelectImage: (index: number) => void;
   selectAllImages: (selected: boolean) => void;
   toggleBeforeAfterView: (index: number | null) => void;
-  cancelBatchProcessing: () => void; // Add ability to cancel batch processing
+  cancelBatchProcessing: () => void;
+  clearImageCache: () => void;
+  clearAnalyticsData: () => void; // New analytics action
 }
