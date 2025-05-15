@@ -13,6 +13,9 @@ export interface UseImageProcessingState {
   selfHosted: boolean;
   serverUrl: string;
   showBeforeAfter: number | null;
+  batchProgress: number;
+  totalItemsToProcess: number;
+  processedItemsCount: number;
 }
 
 export interface UseImageProcessingActions {
@@ -31,6 +34,7 @@ export interface UseImageProcessingActions {
   toggleSelectImage: (index: number) => void;
   selectAllImages: (selected: boolean) => void;
   toggleBeforeAfterView: (index: number | null) => void;
+  cancelBatchProcessing: () => void;
 }
 
 export type UseImageProcessingResult = UseImageProcessingState & UseImageProcessingActions;

@@ -25,7 +25,10 @@ export function useImageProcessing(initialImages: File[]): UseImageProcessingRes
     apiKey, setApiKey,
     selfHosted, setSelfHosted,
     serverUrl, setServerUrl,
-    showBeforeAfter, setShowBeforeAfter
+    showBeforeAfter, setShowBeforeAfter,
+    batchProgress, setBatchProgress,
+    totalItemsToProcess, setTotalItemsToProcess,
+    processedItemsCount, setProcessedItemsCount
   } = useImageProcessingState();
 
   // Initialize and clean up effects
@@ -46,7 +49,8 @@ export function useImageProcessing(initialImages: File[]): UseImageProcessingRes
     downloadAllImages,
     toggleSelectImage,
     selectAllImages,
-    toggleBeforeAfterView
+    toggleBeforeAfterView,
+    cancelBatchProcessing
   } = useImageProcessingActions({
     processedImages,
     setProcessedImages,
@@ -59,7 +63,10 @@ export function useImageProcessing(initialImages: File[]): UseImageProcessingRes
     serverUrl,
     isProcessing,
     setIsProcessing,
-    setShowBeforeAfter
+    setShowBeforeAfter,
+    setBatchProgress,
+    setTotalItemsToProcess,
+    setProcessedItemsCount
   });
   
   return {
@@ -88,6 +95,10 @@ export function useImageProcessing(initialImages: File[]): UseImageProcessingRes
     serverUrl,
     setServerUrl,
     showBeforeAfter,
-    toggleBeforeAfterView
+    toggleBeforeAfterView,
+    batchProgress,
+    totalItemsToProcess,
+    processedItemsCount,
+    cancelBatchProcessing
   };
 }

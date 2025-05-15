@@ -6,7 +6,8 @@ import {
   processImageUtil, 
   processAllImagesUtil, 
   downloadImageUtil, 
-  downloadAllImagesUtil 
+  downloadAllImagesUtil,
+  cancelBatchProcessing
 } from './useImageProcessingUtils';
 
 /**
@@ -24,6 +25,9 @@ export function useImageProcessingState() {
   const [selfHosted, setSelfHosted] = useState<boolean>(localStorage.getItem('rembg_self_hosted') === 'true');
   const [serverUrl, setServerUrl] = useState<string>(localStorage.getItem('rembg_server_url') || 'http://localhost:5000/remove-bg');
   const [showBeforeAfter, setShowBeforeAfter] = useState<number | null>(null);
+  const [batchProgress, setBatchProgress] = useState<number>(0);
+  const [totalItemsToProcess, setTotalItemsToProcess] = useState<number>(0);
+  const [processedItemsCount, setProcessedItemsCount] = useState<number>(0);
 
   return {
     processedImages, setProcessedImages,
@@ -36,7 +40,10 @@ export function useImageProcessingState() {
     apiKey, setApiKey,
     selfHosted, setSelfHosted,
     serverUrl, setServerUrl,
-    showBeforeAfter, setShowBeforeAfter
+    showBeforeAfter, setShowBeforeAfter,
+    batchProgress, setBatchProgress,
+    totalItemsToProcess, setTotalItemsToProcess,
+    processedItemsCount, setProcessedItemsCount
   };
 }
 
@@ -106,6 +113,9 @@ interface UseImageProcessingActionsProps {
   isProcessing: boolean;
   setIsProcessing: React.Dispatch<React.SetStateAction<boolean>>;
   setShowBeforeAfter: React.Dispatch<React.SetStateAction<number | null>>;
+  setBatchProgress: React.Dispatch<React.SetStateAction<number>>;
+  setTotalItemsToProcess: React.Dispatch<React.SetStateAction<number>>;
+  setProcessedItemsCount: React.Dispatch<React.SetStateAction<number>>;
 }
 
 /**
@@ -123,7 +133,10 @@ export function useImageProcessingActions({
   serverUrl,
   isProcessing,
   setIsProcessing,
-  setShowBeforeAfter
+  setShowBeforeAfter,
+  setBatchProgress,
+  setTotalItemsToProcess,
+  setProcessedItemsCount
 }: UseImageProcessingActionsProps) {
   
   const processImage = useCallback(async (index: number) => {
@@ -156,12 +169,30 @@ export function useImageProcessingActions({
         selfHosted,
         serverUrl,
         setProcessedImages,
-        setIsProcessing
+        setIsProcessing,
+        setBatchProgress,
+        setTotalItemsToProcess,
+        setProcessedItemsCount
       );
     } finally {
       setIsProcessing(false);
     }
-  }, [processedImages, compressionLevel, maxWidth, maxHeight, removeBackground, apiKey, selfHosted, serverUrl, isProcessing, setProcessedImages, setIsProcessing]);
+  }, [
+    processedImages, 
+    compressionLevel, 
+    maxWidth, 
+    maxHeight, 
+    removeBackground, 
+    apiKey, 
+    selfHosted, 
+    serverUrl, 
+    isProcessing, 
+    setProcessedImages, 
+    setIsProcessing,
+    setBatchProgress,
+    setTotalItemsToProcess,
+    setProcessedItemsCount
+  ]);
   
   const downloadImage = useCallback((index: number) => {
     downloadImageUtil(index, processedImages);
@@ -189,13 +220,33 @@ export function useImageProcessingActions({
     setShowBeforeAfter(prevIndex => prevIndex === index ? null : index);
   }, [setShowBeforeAfter]);
   
+  const handleCancelBatchProcessing = useCallback(() => {
+    cancelBatchProcessing();
+    setIsProcessing(false);
+  }, [setIsProcessing]);
+  
   return {
     processImage,
     processAllImages,
-    downloadImage,
-    downloadAllImages,
-    toggleSelectImage,
-    selectAllImages,
-    toggleBeforeAfterView
+    downloadImage: useCallback((index: number) => {
+      downloadImageUtil(index, processedImages);
+    }, [processedImages]),
+    downloadAllImages: useCallback(() => {
+      downloadAllImagesUtil(processedImages);
+    }, [processedImages]),
+    toggleSelectImage: useCallback((index: number) => {
+      const updatedImages = [...processedImages];
+      updatedImages[index].isSelected = !updatedImages[index].isSelected;
+      setProcessedImages(updatedImages);
+    }, [processedImages, setProcessedImages]),
+    selectAllImages: useCallback((selected: boolean) => {
+      const updatedImages = processedImages.map(img => ({
+        ...img,
+        isSelected: selected
+      }));
+      setProcessedImages(updatedImages);
+    }, [processedImages, setProcessedImages]),
+    toggleBeforeAfterView,
+    cancelBatchProcessing: handleCancelBatchProcessing
   };
 }

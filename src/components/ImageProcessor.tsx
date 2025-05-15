@@ -3,6 +3,7 @@ import React from 'react';
 import CompressionSettings from './ImageProcessing/CompressionSettings';
 import ImageGrid from './ImageProcessing/ImageGrid';
 import EmptyState from './ImageProcessing/EmptyState';
+import BatchProcessingProgress from './ImageProcessing/BatchProcessingProgress';
 import { useImageProcessing } from '@/hooks/useImageProcessing';
 
 interface ImageProcessorProps {
@@ -38,7 +39,12 @@ const ImageProcessor: React.FC<ImageProcessorProps> = ({ images, onReset }) => {
     serverUrl,
     setServerUrl,
     showBeforeAfter,
-    toggleBeforeAfterView
+    toggleBeforeAfterView,
+    // Batch processing progress
+    batchProgress,
+    totalItemsToProcess,
+    processedItemsCount,
+    cancelBatchProcessing
   } = useImageProcessing(images);
   
   return (
@@ -79,6 +85,15 @@ const ImageProcessor: React.FC<ImageProcessorProps> = ({ images, onReset }) => {
       ) : (
         <EmptyState onReset={onReset} />
       )}
+      
+      {/* Batch processing progress indicator */}
+      <BatchProcessingProgress
+        isProcessing={isProcessing}
+        batchProgress={batchProgress}
+        processedItemsCount={processedItemsCount}
+        totalItemsToProcess={totalItemsToProcess}
+        onCancel={cancelBatchProcessing}
+      />
     </div>
   );
 };

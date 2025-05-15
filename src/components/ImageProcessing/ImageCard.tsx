@@ -3,7 +3,8 @@ import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
-import { Download, Image as ImageIcon, Eye } from 'lucide-react';
+import { Progress } from "@/components/ui/progress";
+import { Download, Image as ImageIcon, Eye, Loader } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 
 interface ImageCardProps {
@@ -14,6 +15,7 @@ interface ImageCardProps {
     isProcessing: boolean;
     isSelected: boolean;
     hasBackgroundRemoved: boolean;
+    processingProgress?: number;
   };
   index: number;
   showBeforeAfter: boolean;
@@ -67,8 +69,18 @@ const ImageCard: React.FC<ImageCardProps> = ({
         )}
         
         {image.isProcessing && (
-          <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-            <div className="animate-pulse-opacity text-white">Processing...</div>
+          <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center">
+            {image.processingProgress !== undefined ? (
+              <>
+                <Loader className="h-6 w-6 text-white mb-2 animate-spin" />
+                <div className="w-3/4 mb-1">
+                  <Progress value={image.processingProgress} className="h-1" />
+                </div>
+                <div className="text-white text-xs">{image.processingProgress}%</div>
+              </>
+            ) : (
+              <div className="animate-pulse-opacity text-white">Processing...</div>
+            )}
           </div>
         )}
         

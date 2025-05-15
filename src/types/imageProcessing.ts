@@ -1,4 +1,3 @@
-
 import { CompressionOptions } from "@/utils/imageUtils";
 
 export interface ProcessedImage {
@@ -8,6 +7,7 @@ export interface ProcessedImage {
   isProcessing: boolean;
   isSelected: boolean;
   hasBackgroundRemoved: boolean;
+  processingProgress?: number; // Add progress percentage
 }
 
 export interface ImageProcessingState {
@@ -22,6 +22,9 @@ export interface ImageProcessingState {
   selfHosted: boolean;
   serverUrl: string;
   showBeforeAfter: number | null;
+  batchProgress: number; // Overall batch progress
+  totalItemsToProcess: number; // Total number of items in the current batch
+  processedItemsCount: number; // Number of completed items
 }
 
 export interface ImageProcessingOptions {
@@ -51,4 +54,5 @@ export interface UseImageProcessingResult extends ImageProcessingState {
   toggleSelectImage: (index: number) => void;
   selectAllImages: (selected: boolean) => void;
   toggleBeforeAfterView: (index: number | null) => void;
+  cancelBatchProcessing: () => void; // Add ability to cancel batch processing
 }
