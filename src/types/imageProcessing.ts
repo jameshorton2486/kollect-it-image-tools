@@ -7,7 +7,8 @@ export interface ProcessedImage {
   isProcessing: boolean;
   isSelected: boolean;
   hasBackgroundRemoved: boolean;
-  processingProgress?: number; // Add progress percentage
+  processingProgress?: number; // Progress percentage
+  retryCount?: number; // Track how many retries were needed
 }
 
 export interface ImageProcessingState {

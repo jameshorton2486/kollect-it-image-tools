@@ -1,9 +1,11 @@
-import { toast } from '@/hooks/use-toast';
+
+import { toast } from '@/components/ui/use-toast';
 import { ProcessedImage } from "@/types/imageProcessing";
 import { 
   processSingleImage, 
   downloadProcessedImage 
 } from '@/utils/imageProcessingUtils';
+import { retryOperation } from '@/utils/retryUtils';
 
 export async function processImageUtil(
   index: number,
@@ -23,6 +25,7 @@ export async function processImageUtil(
   const updatedImages = [...processedImages];
   updatedImages[index].isProcessing = true;
   updatedImages[index].processingProgress = 0; // Initialize progress
+  updatedImages[index].retryCount = 0; // Reset retry count
   setProcessedImages(updatedImages);
   
   try {
@@ -39,6 +42,7 @@ export async function processImageUtil(
       });
     }, 300);
     
+    // Process with automatic retry
     const processedImage = await processSingleImage(
       image,
       compressionLevel,
@@ -54,12 +58,15 @@ export async function processImageUtil(
     
     if (processedImage) {
       processedImage.processingProgress = 100; // Mark as complete
+      processedImage.retryCount = updatedImages[index].retryCount || 0; // Preserve retry count
       updatedImages[index] = processedImage;
       setProcessedImages(updatedImages);
       
       toast({
         title: "Success",
-        description: `Processed ${image.original.name}${processedImage.hasBackgroundRemoved ? ' with background removal' : ''}`
+        description: `Processed ${image.original.name}${processedImage.hasBackgroundRemoved ? ' with background removal' : ''}${
+          processedImage.retryCount ? ` after ${processedImage.retryCount} retries` : ''
+        }`
       });
     } else {
       updatedImages[index].isProcessing = false;
@@ -113,6 +120,8 @@ export async function processAllImagesUtil(
     setBatchProgress(0);
     
     let processedCount = 0;
+    let failedCount = 0;
+    let retriedCount = 0;
     
     // Process images with a small delay between each to prevent overwhelming the server
     for (let i = 0; i < processedImages.length && !batchProcessingCancelled; i++) {
@@ -130,7 +139,19 @@ export async function processAllImagesUtil(
           setProcessedImages
         );
         
-        processedCount++;
+        // Check if the image was successfully processed
+        const latestImages = processedImages[i];
+        
+        if (latestImages.retryCount && latestImages.retryCount > 0) {
+          retriedCount++;
+        }
+        
+        if (latestImages.processed) {
+          processedCount++;
+        } else {
+          failedCount++;
+        }
+        
         setProcessedItemsCount(processedCount);
         setBatchProgress(Math.round((processedCount / selectedImages.length) * 100));
         
@@ -144,12 +165,15 @@ export async function processAllImagesUtil(
     if (batchProcessingCancelled) {
       toast({
         title: "Processing Cancelled",
-        description: `Processed ${processedCount} of ${selectedImages.length} images`
+        description: `Processed ${processedCount} of ${selectedImages.length} images` + 
+                    (failedCount > 0 ? ` (${failedCount} failed)` : "")
       });
     } else {
       toast({
         title: "Batch Processing Complete",
-        description: "All selected images processed successfully!"
+        description: `Successfully processed ${processedCount} images` + 
+                    (failedCount > 0 ? `, ${failedCount} failed` : "") +
+                    (retriedCount > 0 ? `, ${retriedCount} recovered via retry` : "")
       });
     }
     

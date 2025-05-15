@@ -9,6 +9,7 @@ import {
   getProcessedImageFromCache, 
   cacheProcessedImage 
 } from '@/utils/imageCacheUtils';
+import { retryOperation } from '@/utils/retryUtils';
 
 export async function processSingleImage(
   image: ProcessedImage,
@@ -53,43 +54,90 @@ export async function processSingleImage(
     
     // Step 1: Remove background if enabled
     if (removeBackground) {
-      const bgRemovalResult = await removeImageBackground(image.original, apiKey, selfHosted, serverUrl);
-      
-      if (bgRemovalResult.processedFile) {
-        processedFile = bgRemovalResult.processedFile;
-        hasBackgroundRemoved = true;
-      } else {
-        // If background removal failed but we want to continue with compression
+      // Use retry for background removal
+      try {
+        const bgRemovalResult = await retryOperation(
+          () => removeImageBackground(image.original, apiKey, selfHosted, serverUrl),
+          {
+            maxRetries: 3,
+            delayMs: 1000,
+            onRetry: (attempt, error) => {
+              console.log(`Retrying background removal (attempt ${attempt}/3) for ${image.original.name}: ${error.message}`);
+              toast({
+                title: "Retrying Background Removal",
+                description: `Attempt ${attempt}/3 for ${image.original.name}`
+              });
+            }
+          }
+        );
+        
+        if (bgRemovalResult.processedFile) {
+          processedFile = bgRemovalResult.processedFile;
+          hasBackgroundRemoved = true;
+        } else {
+          // If background removal failed but we want to continue with compression
+          toast({
+            title: "Background Removal Failed",
+            description: "Proceeding with compression only"
+          });
+        }
+      } catch (error) {
+        // All retries failed
+        console.error("All background removal attempts failed:", error);
         toast({
+          variant: "destructive", 
           title: "Background Removal Failed",
-          description: "Proceeding with compression only"
+          description: "All retry attempts failed. Proceeding with compression only."
         });
       }
     }
     
     // Step 2: Compress the image (either original or background-removed)
-    const compressionOptions: CompressionOptions = {
-      maxSizeMB: 1,
-      maxWidthOrHeight: Math.max(maxWidth, maxHeight),
-      useWebWorker: true,
-      initialQuality: compressionLevel / 100,
-    };
-    
-    const compressedFile = await compressImage(processedFile, compressionOptions);
-    
-    if (compressedFile) {
-      const previewUrl = createObjectUrl(compressedFile);
-      
-      // Store processed result in cache
-      cacheProcessedImage(cacheKey, compressedFile, image.original.name);
-      
-      return {
-        ...image,
-        processed: compressedFile,
-        preview: previewUrl,
-        isProcessing: false,
-        hasBackgroundRemoved,
+    try {
+      const compressionOptions: CompressionOptions = {
+        maxSizeMB: 1,
+        maxWidthOrHeight: Math.max(maxWidth, maxHeight),
+        useWebWorker: true,
+        initialQuality: compressionLevel / 100,
       };
+      
+      // Use retry for compression
+      const compressedFile = await retryOperation(
+        () => compressImage(processedFile, compressionOptions),
+        {
+          maxRetries: 2,
+          delayMs: 800,
+          onRetry: (attempt) => {
+            console.log(`Retrying compression (attempt ${attempt}/2) for ${image.original.name}`);
+            toast({
+              title: "Retrying Compression",
+              description: `Attempt ${attempt}/2 for ${image.original.name}`
+            });
+          }
+        }
+      );
+      
+      if (compressedFile) {
+        const previewUrl = createObjectUrl(compressedFile);
+        
+        // Store processed result in cache
+        cacheProcessedImage(cacheKey, compressedFile, image.original.name);
+        
+        return {
+          ...image,
+          processed: compressedFile,
+          preview: previewUrl,
+          isProcessing: false,
+          hasBackgroundRemoved,
+        };
+      }
+    } catch (error) {
+      console.error("All compression attempts failed:", error);
+      toast({
+        variant: "destructive",
+        title: "Compression Failed",
+        description: `All retry attempts failed for ${image.original.name}`
+      });
     }
     
     return null;
