@@ -7,6 +7,8 @@ import { FormItem, FormLabel, FormControl } from "@/components/ui/form";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { BACKGROUND_REMOVAL_MODELS, getModelById } from "@/utils/backgroundRemovalModels";
+import { InfoIcon } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface BackgroundRemovalSectionProps {
   removeBackground: boolean;
@@ -36,6 +38,7 @@ const BackgroundRemovalSection: React.FC<BackgroundRemovalSectionProps> = ({
   // Get the current selected model details
   const selectedModel = getModelById(backgroundRemovalModel);
   const showApiKey = removeBackground && !selfHosted && selectedModel.apiSupport;
+  const showSelfHostedOption = removeBackground && selectedModel.id === 'rembg';
 
   return (
     <div className="border-t pt-4 mt-4">
@@ -61,7 +64,21 @@ const BackgroundRemovalSection: React.FC<BackgroundRemovalSectionProps> = ({
         <div className="space-y-4 pl-2 border-l-2 border-muted p-4 rounded bg-muted/20">
           {/* Model Selection Radio Group */}
           <div className="mb-4">
-            <h4 className="text-sm font-medium mb-2">Select Background Removal Model</h4>
+            <div className="flex items-center gap-2 mb-2">
+              <h4 className="text-sm font-medium">Select Background Removal Model</h4>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <InfoIcon size={14} className="text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="max-w-xs">
+                      Choose a model to remove image backgrounds. The browser option works offline but has limited accuracy.
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
             <RadioGroup 
               defaultValue={backgroundRemovalModel}
               value={backgroundRemovalModel}
@@ -80,25 +97,22 @@ const BackgroundRemovalSection: React.FC<BackgroundRemovalSectionProps> = ({
             </RadioGroup>
           </div>
           
-          {/* Self-hosted Option */}
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="self-hosted"
-              checked={selfHosted}
-              onCheckedChange={(checked) => onSelfHostedChange(checked as boolean)}
-              disabled={backgroundRemovalModel !== 'rembg' && !getModelById(backgroundRemovalModel).selfHostedSupport}
-            />
-            <label
-              htmlFor="self-hosted"
-              className={`text-sm font-medium leading-none ${
-                backgroundRemovalModel !== 'rembg' && !getModelById(backgroundRemovalModel).selfHostedSupport 
-                  ? 'text-muted-foreground' 
-                  : ''
-              }`}
-            >
-              Use self-hosted Rembg service
-            </label>
-          </div>
+          {/* Self-hosted Option - only show for Rembg */}
+          {showSelfHostedOption && (
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="self-hosted"
+                checked={selfHosted}
+                onCheckedChange={(checked) => onSelfHostedChange(checked as boolean)}
+              />
+              <label
+                htmlFor="self-hosted"
+                className="text-sm font-medium leading-none"
+              >
+                Use self-hosted Rembg service
+              </label>
+            </div>
+          )}
           
           {/* Conditional Input for Server URL or API Key */}
           {selfHosted ? (
@@ -138,6 +152,16 @@ const BackgroundRemovalSection: React.FC<BackgroundRemovalSectionProps> = ({
                 )}
               </p>
             </FormItem>
+          )}
+          
+          {/* In-browser processing note */}
+          {backgroundRemovalModel === 'browser' && (
+            <div className="bg-blue-50 border border-blue-200 rounded p-3">
+              <p className="text-sm text-blue-800">
+                <strong>Browser Processing:</strong> This option processes images entirely within your browser - no API key required. 
+                Results may vary depending on image complexity.
+              </p>
+            </div>
           )}
         </div>
       )}

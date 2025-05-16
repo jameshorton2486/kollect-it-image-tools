@@ -21,14 +21,18 @@ export async function processSingleImage(
   backgroundRemovalModel: string
 ): Promise<File | null> {
   // Process image logic implementation
-  // This would contain the actual image processing code
   try {
+    console.log(`Processing image: ${file.name}`);
+    console.log(`Settings: compression=${compressionLevel}, maxWidth=${maxWidth}, maxHeight=${maxHeight}, removeBackground=${removeBackgroundFlag}`);
+    console.log(`Background removal model: ${backgroundRemovalModel}, selfHosted: ${selfHosted}`);
+    
     const startTime = performance.now();
     
     let processedFile = file;
     
     // Step 1: Remove background if requested
     if (removeBackgroundFlag) {
+      console.log(`Starting background removal with ${backgroundRemovalModel} model`);
       const bgRemovalResult = await removeImageBackground(
         processedFile,
         apiKey,
@@ -38,26 +42,33 @@ export async function processSingleImage(
       );
       
       if (bgRemovalResult.processedFile) {
+        console.log('Background removal successful');
         processedFile = bgRemovalResult.processedFile;
+      } else {
+        console.error('Background removal failed:', bgRemovalResult.error);
       }
     }
     
     // Step 2: Compress the image
+    console.log('Starting image compression');
     const compressedFile = await handleCompression(
       processedFile,
       compressionLevel,
       maxWidth,
       maxHeight
     );
+    console.log(`Compression complete: ${compressedFile.size} bytes`);
     
     const endTime = performance.now();
+    const totalTime = endTime - startTime;
+    console.log(`Total processing time: ${totalTime.toFixed(2)}ms`);
     
     // Record compression statistics
     recordCompressionStats({
       originalSize: file.size,
       processedSize: compressedFile.size,
       compressionRatio: 1 - (compressedFile.size / file.size),
-      processingTime: endTime - startTime
+      processingTime: totalTime
     });
     
     return compressedFile;

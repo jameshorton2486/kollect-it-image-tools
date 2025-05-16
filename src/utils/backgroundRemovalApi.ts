@@ -1,6 +1,8 @@
+
 import { toast } from '@/components/ui/use-toast';
 import { removeBackgroundWithRembg } from './rembgBackgroundRemoval';
 import { removeBackgroundWithBriaAi } from './briaBackgroundRemoval';
+import { removeBackgroundInBrowser } from './browserBackgroundRemoval';
 
 const API_ENDPOINT = 'https://api.remove.bg/v1.0/removebg';
 
@@ -16,17 +18,28 @@ export async function removeImageBackground(
   serverUrl: string = '',
   model: string = 'removebg'
 ): Promise<BackgroundRemovalResult> {
-  // If selfHosted is true, always use rembg regardless of the selected model
+  console.log(`Removing background using model: ${model}, selfHosted: ${selfHosted}`);
+  
+  // If self-hosted is true, always use rembg regardless of the selected model
   if (selfHosted) {
+    console.log('Using self-hosted Rembg service');
     return removeBackgroundWithRembg(imageFile, serverUrl);
   }
   
   // Otherwise, use the selected model's API
   switch(model) {
+    case 'browser':
+      console.log('Using in-browser background removal');
+      return removeBackgroundInBrowser(imageFile);
     case 'briaai':
+      console.log('Using Bria AI background removal');
       return removeBackgroundWithBriaAi(imageFile, apiKey);
+    case 'rembg':
+      console.log('Using Rembg background removal service');
+      return removeBackgroundWithRembg(imageFile, serverUrl);
     case 'removebg':
     default:
+      console.log('Using Remove.bg API for background removal');
       return removeImageBackgroundWithAPI(imageFile, apiKey);
   }
 }

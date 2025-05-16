@@ -5,6 +5,7 @@ export interface BackgroundRemovalModel {
   description: string;
   selfHostedSupport: boolean;
   apiSupport: boolean;
+  browserSupport?: boolean;
 }
 
 export const BACKGROUND_REMOVAL_MODELS: BackgroundRemovalModel[] = [
@@ -28,6 +29,14 @@ export const BACKGROUND_REMOVAL_MODELS: BackgroundRemovalModel[] = [
     description: 'High quality AI-powered background removal',
     selfHostedSupport: false,
     apiSupport: true
+  },
+  {
+    id: 'browser',
+    name: 'In-Browser',
+    description: 'Process images directly in your browser - no API needed',
+    selfHostedSupport: false,
+    apiSupport: false,
+    browserSupport: true
   }
 ];
 
