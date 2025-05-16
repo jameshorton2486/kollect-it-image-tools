@@ -2,9 +2,9 @@
 import browserImageCompression from 'browser-image-compression';
 import { ProcessedImage } from '@/types/imageProcessing';
 import { createObjectUrl } from '@/utils/imageUtils';
-import { getCachedImage, cacheProcessedImage } from '@/utils/imageCacheUtils';
+import { cacheProcessedImage } from '@/utils/imageCacheUtils';
 import { recordCompressionStats } from '@/utils/analyticsUtils';
-import { removeBackground } from '@/utils/backgroundRemovalApi';
+import { removeImageBackground } from '@/utils/backgroundRemovalApi';
 
 /**
  * Process a single image with the provided settings
@@ -29,7 +29,7 @@ export async function processSingleImage(
     
     // Step 1: Remove background if requested
     if (removeBackgroundFlag) {
-      const bgRemovedFile = await handleBackgroundRemoval(
+      const bgRemovalResult = await removeImageBackground(
         processedFile,
         apiKey,
         selfHosted,
@@ -37,8 +37,8 @@ export async function processSingleImage(
         backgroundRemovalModel
       );
       
-      if (bgRemovedFile) {
-        processedFile = bgRemovedFile;
+      if (bgRemovalResult.processedFile) {
+        processedFile = bgRemovalResult.processedFile;
       }
     }
     
@@ -78,12 +78,8 @@ export async function handleBackgroundRemoval(
   backgroundRemovalModel: string
 ): Promise<File | null> {
   try {
-    return await removeBackground(file, {
-      apiKey: apiKey || undefined,
-      selfHosted,
-      serverUrl,
-      model: backgroundRemovalModel
-    });
+    const result = await removeImageBackground(file, apiKey, selfHosted, serverUrl, backgroundRemovalModel);
+    return result.processedFile;
   } catch (error) {
     console.error('Background removal failed:', error);
     return null;

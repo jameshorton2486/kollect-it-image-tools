@@ -1,5 +1,5 @@
 
-import { toast } from '@/hooks/use-toast';
+import { toast } from '@/components/ui/use-toast';
 import { ProcessedImage } from "@/types/imageProcessing";
 import { processSingleImage } from '@/utils/imageProcessingUtils';
 
@@ -39,9 +39,9 @@ export async function processImageUtil(
       });
     }, 300);
     
-    // Process with automatic retry
-    const processedImage = await processSingleImage(
-      image,
+    // Process with automatic retry - pass the original File from the ProcessedImage
+    const processedResult = await processSingleImage(
+      image.original, // Pass the File, not the whole ProcessedImage
       compressionLevel,
       maxWidth,
       maxHeight,
@@ -54,16 +54,16 @@ export async function processImageUtil(
     
     clearInterval(progressUpdater);
     
-    if (processedImage) {
-      processedImage.processingProgress = 100; // Mark as complete
-      processedImage.retryCount = updatedImages[index].retryCount || 0; // Preserve retry count
-      updatedImages[index] = processedImage;
+    if (processedResult) {
+      updatedImages[index].processed = processedResult;
+      updatedImages[index].processingProgress = 100; // Mark as complete
+      updatedImages[index].hasBackgroundRemoved = removeBackground;
       setProcessedImages(updatedImages);
       
       toast({
         title: "Success",
-        description: `Processed ${image.original.name}${processedImage.hasBackgroundRemoved ? ` with ${backgroundRemovalModel} background removal` : ''}${
-          processedImage.retryCount ? ` after ${processedImage.retryCount} retries` : ''
+        description: `Processed ${image.original.name}${removeBackground ? ` with ${backgroundRemovalModel} background removal` : ''}${
+          updatedImages[index].retryCount ? ` after ${updatedImages[index].retryCount} retries` : ''
         }`
       });
     } else {
