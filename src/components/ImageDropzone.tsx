@@ -21,6 +21,7 @@ const ImageDropzone: React.FC<ImageDropzoneProps> = ({
   maxFiles = 10
 }) => {
   const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const handleDragEnter = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -95,12 +96,21 @@ const ImageDropzone: React.FC<ImageDropzoneProps> = ({
     }
     
     // Reset the input value so the same file can be uploaded again if needed
-    e.target.value = '';
+    if (e.target) {
+      e.target.value = '';
+    }
   }, [onImageUpload, validateFiles]);
+  
+  const handleSelectButtonClick = useCallback(() => {
+    // Programmatically click the file input
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  }, []);
 
   return (
     <div
-      className={`drop-area ${isDragging ? 'active' : ''}`}
+      className={`drop-area border-2 border-dashed rounded-lg p-8 flex flex-col items-center justify-center ${isDragging ? 'border-primary bg-primary/5' : 'border-gray-300'}`}
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
       onDragOver={handleDragOver}
@@ -113,19 +123,21 @@ const ImageDropzone: React.FC<ImageDropzoneProps> = ({
       </p>
       
       <input
+        ref={fileInputRef}
         type="file"
         accept={acceptedFileTypes.join(',')}
         multiple
         className="hidden"
-        id="file-upload"
         onChange={handleFileInputChange}
       />
       
-      <label htmlFor="file-upload">
-        <Button variant="default" className="cursor-pointer">
-          Select Files
-        </Button>
-      </label>
+      <Button 
+        variant="default" 
+        className="cursor-pointer"
+        onClick={handleSelectButtonClick}
+      >
+        Select Files
+      </Button>
     </div>
   );
 };
