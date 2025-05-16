@@ -55,8 +55,7 @@ export async function processSingleImage(
         apiKey,
         selfHosted,
         serverUrl,
-        backgroundRemovalModel,
-        bgRemovalOptions
+        backgroundRemovalModel
       );
       
       if (bgRemovalResult.processedFile) {
@@ -104,11 +103,10 @@ export async function handleBackgroundRemoval(
   apiKey: string | null,
   selfHosted: boolean,
   serverUrl: string,
-  backgroundRemovalModel: string,
-  options = {}
+  backgroundRemovalModel: string
 ): Promise<File | null> {
   try {
-    const result = await removeImageBackground(file, apiKey, selfHosted, serverUrl, backgroundRemovalModel, options);
+    const result = await removeImageBackground(file, apiKey, selfHosted, serverUrl, backgroundRemovalModel);
     return result.processedFile;
   } catch (error) {
     console.error('Background removal failed:', error);
