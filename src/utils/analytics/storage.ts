@@ -48,5 +48,11 @@ export function saveAnalyticsData(data: AnalyticsData): void {
  * Clear all analytics data
  */
 export function clearAnalyticsData(): void {
-  localStorage.removeItem(STORAGE_KEY);
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+    console.log('Analytics data successfully cleared');
+  } catch (e) {
+    console.error('Failed to clear analytics data:', e);
+    throw new Error('Failed to clear analytics data');
+  }
 }

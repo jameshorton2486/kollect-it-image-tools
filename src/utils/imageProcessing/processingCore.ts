@@ -33,12 +33,30 @@ export async function processSingleImage(
     // Step 1: Remove background if requested
     if (removeBackgroundFlag) {
       console.log(`Starting background removal with ${backgroundRemovalModel} model`);
+      
+      // Get browser background removal settings if using browser model
+      let bgRemovalOptions = {};
+      if (backgroundRemovalModel === 'browser') {
+        const sensitivityLevel = parseInt(localStorage.getItem('bg_removal_sensitivity') || '50', 10);
+        const detailLevel = parseInt(localStorage.getItem('bg_removal_detail') || '50', 10);
+        const processMethod = localStorage.getItem('bg_removal_method') || 'brightness';
+        
+        bgRemovalOptions = {
+          sensitivityLevel,
+          preserveDetailsLevel: detailLevel,
+          processMethod
+        };
+        
+        console.log('Browser background removal options:', bgRemovalOptions);
+      }
+      
       const bgRemovalResult = await removeImageBackground(
         processedFile,
         apiKey,
         selfHosted,
         serverUrl,
-        backgroundRemovalModel
+        backgroundRemovalModel,
+        bgRemovalOptions
       );
       
       if (bgRemovalResult.processedFile) {
@@ -86,10 +104,11 @@ export async function handleBackgroundRemoval(
   apiKey: string | null,
   selfHosted: boolean,
   serverUrl: string,
-  backgroundRemovalModel: string
+  backgroundRemovalModel: string,
+  options = {}
 ): Promise<File | null> {
   try {
-    const result = await removeImageBackground(file, apiKey, selfHosted, serverUrl, backgroundRemovalModel);
+    const result = await removeImageBackground(file, apiKey, selfHosted, serverUrl, backgroundRemovalModel, options);
     return result.processedFile;
   } catch (error) {
     console.error('Background removal failed:', error);
