@@ -102,7 +102,9 @@ export function useImageProcessingCore(initialImages: File[]): UseImageProcessin
     setShowBeforeAfter,
     setBatchProgress,
     setTotalItemsToProcess,
-    setProcessedItemsCount
+    setProcessedItemsCount,
+    exportPath,
+    setExportPath
   });
   
   return {

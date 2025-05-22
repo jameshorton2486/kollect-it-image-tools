@@ -1,4 +1,3 @@
-
 import { useCallback } from 'react';
 import { ProcessedImage } from '@/types/imageProcessing';
 import { 
@@ -33,6 +32,8 @@ interface UseImageProcessingActionsProps {
   setBatchProgress: React.Dispatch<React.SetStateAction<number>>;
   setTotalItemsToProcess: React.Dispatch<React.SetStateAction<number>>;
   setProcessedItemsCount: React.Dispatch<React.SetStateAction<number>>;
+  exportPath: string;
+  setExportPath: React.Dispatch<React.SetStateAction<string>>;
 }
 
 /**
@@ -58,7 +59,9 @@ export function useImageProcessingActions({
   setShowBeforeAfter,
   setBatchProgress,
   setTotalItemsToProcess,
-  setProcessedItemsCount
+  setProcessedItemsCount,
+  exportPath,
+  setExportPath
 }: UseImageProcessingActionsProps) {
   
   const processImage = useCallback(async (index: number) => {
@@ -192,38 +195,11 @@ export function useImageProcessingActions({
     downloadAllImages: useCallback(() => {
       downloadAllImagesUtil(processedImages);
     }, [processedImages]),
-    toggleSelectImage: useCallback((index: number) => {
-      const updatedImages = [...processedImages];
-      updatedImages[index].isSelected = !updatedImages[index].isSelected;
-      setProcessedImages(updatedImages);
-    }, [processedImages, setProcessedImages]),
-    selectAllImages: useCallback((selected: boolean) => {
-      const updatedImages = processedImages.map(img => ({
-        ...img,
-        isSelected: selected
-      }));
-      setProcessedImages(updatedImages);
-    }, [processedImages, setProcessedImages]),
-    toggleBeforeAfterView: useCallback((index: number | null) => {
-      setShowBeforeAfter(prevIndex => prevIndex === index ? null : index);
-    }, [setShowBeforeAfter]),
-    cancelBatchProcessing: useCallback(() => {
-      cancelBatchProcessing();
-      setIsProcessing(false);
-    }, [setIsProcessing]),
-    clearImageCache: useCallback(() => {
-      clearImageCache();
-      toast({
-        title: "Cache Cleared",
-        description: "Image processing cache has been cleared"
-      });
-    }, []),
-    clearAnalyticsData: useCallback(() => {
-      clearAnalyticsData();
-      toast({
-        title: "Analytics Cleared",
-        description: "Analytics data has been reset"
-      });
-    }, [])
+    toggleSelectImage,
+    selectAllImages,
+    toggleBeforeAfterView,
+    cancelBatchProcessing: handleCancelBatchProcessing,
+    clearImageCache: handleClearImageCache,
+    clearAnalyticsData: handleClearAnalyticsData
   };
 }
