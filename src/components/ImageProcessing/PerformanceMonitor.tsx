@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Activity, AlertTriangle, Cpu, Memory } from "lucide-react";
+import { Activity, AlertTriangle, Cpu, MemoryStick } from "lucide-react";
 import { getPerformanceStats, getMemoryUsage, detectPerformanceIssues } from "@/utils/performanceUtils";
 
 interface PerformanceMonitorProps {
@@ -76,7 +76,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({ isProcessing, i
               <>
                 <div className="flex justify-between text-xs mb-1">
                   <span className="flex items-center">
-                    <Memory className="h-3 w-3 mr-1" /> Memory Usage
+                    <MemoryStick className="h-3 w-3 mr-1" /> Memory Usage
                   </span>
                   <span>
                     {memoryUsage.usedJSHeapSize ? 
