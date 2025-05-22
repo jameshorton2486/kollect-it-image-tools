@@ -3,6 +3,7 @@ import { toast } from '@/components/ui/use-toast';
 import { ProcessedImage } from "@/types/imageProcessing";
 import { processSingleImage } from '@/utils/imageProcessingUtils';
 import { createObjectUrl } from '@/utils/imageUtils';
+import { startMeasuring, endMeasuring } from '@/utils/performanceUtils';
 
 export async function processImageUtil(
   index: number,
@@ -30,6 +31,16 @@ export async function processImageUtil(
   setProcessedImages(updatedImages);
   
   try {
+    // Start performance measurement
+    const originalSize = image.original.size;
+    const imageResolution = `${image.original.width || '?'}x${image.original.height || '?'}`;
+    
+    const perfMeasurement = startMeasuring(
+      `image-processing${removeBackground ? '-with-bg-removal' : ''}`,
+      originalSize,
+      imageResolution
+    );
+    
     // Update progress in steps to show activity
     const progressUpdater = setInterval(() => {
       setProcessedImages(current => {
@@ -72,6 +83,9 @@ export async function processImageUtil(
     );
     
     clearInterval(progressUpdater);
+    
+    // Complete performance measurement
+    endMeasuring(perfMeasurement);
     
     if (processedResult) {
       updatedImages[index].processed = processedResult;

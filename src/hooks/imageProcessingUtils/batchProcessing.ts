@@ -1,8 +1,8 @@
-
 import { toast } from '@/hooks/use-toast';
 import { ProcessedImage } from "@/types/imageProcessing";
 import { trackEvent } from '@/utils/analyticsUtils';
 import { processImageUtil } from './singleProcessing';
+import { startMeasuring, endMeasuring, getOptimalProcessingSettings } from '@/utils/performanceUtils';
 
 // Keep a reference to the cancellation flag
 let batchProcessingCancelled = false;
@@ -41,7 +41,11 @@ export async function processAllImagesUtil(
       return;
     }
     
-    const batchProcessingStartTime = performance.now();
+    // Get optimal processing settings based on device capabilities
+    const optimalSettings = getOptimalProcessingSettings();
+    
+    // Start performance measurement
+    const batchPerfMeasurement = startMeasuring('batch-processing', undefined, `${selectedImages.length} images`);
     
     batchProcessingCancelled = false;
     setTotalItemsToProcess(selectedImages.length);
@@ -64,11 +68,20 @@ export async function processAllImagesUtil(
       backgroundType: removeBackground ? backgroundType : 'none'
     });
     
-    // Process images with a small delay between each to prevent overwhelming the server
-    for (let i = 0; i < processedImages.length && !batchProcessingCancelled; i++) {
-      if (processedImages[i].isSelected) {
+    // Process images in batches to prevent overwhelming system resources
+    const maxConcurrent = optimalSettings.maxConcurrentProcessing;
+    const selectedIndices = processedImages
+      .map((img, idx) => img.isSelected ? idx : -1)
+      .filter(idx => idx !== -1);
+    
+    // Process in batches based on device capabilities
+    for (let i = 0; i < selectedIndices.length && !batchProcessingCancelled; i += maxConcurrent) {
+      const batch = selectedIndices.slice(i, i + maxConcurrent);
+      
+      // Process this batch concurrently
+      await Promise.all(batch.map(async (idx) => {
         await processImageUtil(
-          i,
+          idx,
           processedImages,
           compressionLevel,
           maxWidth,
@@ -85,7 +98,7 @@ export async function processAllImagesUtil(
         );
         
         // Check if the image was successfully processed
-        const latestImages = processedImages[i];
+        const latestImages = processedImages[idx];
         
         if (latestImages.retryCount && latestImages.retryCount > 0) {
           retriedCount++;
@@ -99,16 +112,16 @@ export async function processAllImagesUtil(
         
         setProcessedItemsCount(processedCount);
         setBatchProgress(Math.round((processedCount / selectedImages.length) * 100));
-        
-        // Small delay between processing tasks
-        if (i < processedImages.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 100));
-        }
+      }));
+      
+      // Small delay between batches to let the UI update
+      if (i + maxConcurrent < selectedIndices.length) {
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
     }
     
-    const batchProcessingEndTime = performance.now();
-    const batchProcessingTime = batchProcessingEndTime - batchProcessingStartTime;
+    // Complete performance measurement
+    endMeasuring(batchPerfMeasurement);
     
     // Track batch processing completion
     trackEvent('batch_process', {
@@ -117,7 +130,7 @@ export async function processAllImagesUtil(
       processedCount,
       failedCount,
       retriedCount,
-      processingTime: batchProcessingTime,
+      processingTime: batchPerfMeasurement.endTime! - batchPerfMeasurement.startTime,
       cancelled: batchProcessingCancelled,
       model: removeBackground ? backgroundRemovalModel : 'none',
       backgroundType: removeBackground ? backgroundType : 'none'

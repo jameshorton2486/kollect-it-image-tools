@@ -141,14 +141,15 @@ const BatchUploadSection: React.FC<BatchUploadSectionProps> = ({
               className="hidden"
             />
             
+            {/* Fix for the TypeScript error: using a workaround to support the webkitdirectory attribute */}
             <input
               ref={folderInputRef}
               type="file"
               multiple
               accept="image/*"
-              webkitdirectory=""
               onChange={handleFileUpload}
               className="hidden"
+              {...{ webkitdirectory: "", directory: "" } as any}
             />
           </div>
         </div>
