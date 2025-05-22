@@ -1,5 +1,6 @@
 import { toast } from '@/components/ui/use-toast';
 import { BackgroundRemovalResult } from './backgroundRemovalApi';
+import { logger, handleError } from './logging';
 
 // Default threshold for simple background removal
 const DEFAULT_BRIGHTNESS_THRESHOLD = 240;
@@ -15,25 +16,43 @@ export async function removeBackgroundInBrowser(
   options: BackgroundRemovalOptions = {}
 ): Promise<BackgroundRemovalResult> {
   try {
+    logger.info(`Starting browser background removal for ${imageFile.name}`, {
+      module: 'BrowserBackgroundRemoval',
+      data: { fileSize: imageFile.size, options }
+    });
+    
     // Convert File to Image element
-    const image = await loadImage(imageFile);
+    const image = await loadImage(imageFile).catch(err => {
+      throw new Error(`Failed to load image: ${err.message}`);
+    });
     
     // Process the image to remove background
+    logger.info('Image loaded, starting background removal process', { module: 'BrowserBackgroundRemoval' });
     const processedBlob = await removeBackground(image, options);
     
     // Create a new file with the processed image
     const filename = imageFile.name.replace(/\.[^/.]+$/, '') + '-nobg.png';
     const processedFile = new File([processedBlob], filename, { type: 'image/png' });
 
+    logger.info(`Background removal complete for ${filename}`, { 
+      module: 'BrowserBackgroundRemoval',
+      data: { originalSize: imageFile.size, processedSize: processedFile.size }
+    });
+
     return { processedFile };
   } catch (error) {
-    console.error('Browser background removal error:', error);
+    const handledError = handleError(error, `Browser background removal for ${imageFile.name}`, false);
+    
     toast({
       variant: "destructive",
       title: "Background Removal Error",
-      description: error instanceof Error ? error.message : "Browser processing failed"
+      description: handledError.message || "Browser processing failed"
     });
-    return { processedFile: null, error: error instanceof Error ? error.message : "Browser processing failed" };
+    
+    return { 
+      processedFile: null, 
+      error: handledError.message || "Browser processing failed" 
+    };
   }
 }
 
@@ -41,8 +60,15 @@ export async function removeBackgroundInBrowser(
 export const loadImage = (file: File): Promise<HTMLImageElement> => {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.onload = () => resolve(img);
-    img.onerror = reject;
+    img.onload = () => {
+      logger.debug(`Image loaded: ${file.name}, dimensions: ${img.naturalWidth}x${img.naturalHeight}`, {
+        module: 'BrowserBackgroundRemoval'
+      });
+      resolve(img);
+    };
+    img.onerror = (e) => {
+      reject(new Error(`Image loading failed: ${e}`));
+    };
     img.src = URL.createObjectURL(file);
   });
 };
@@ -53,7 +79,10 @@ export const removeBackground = async (
   options: BackgroundRemovalOptions = {}
 ): Promise<Blob> => {
   try {
-    console.log('Starting enhanced background removal process with options:', options);
+    logger.info('Starting enhanced background removal process', { 
+      module: 'BrowserBackgroundRemoval',
+      data: { options, dimensions: `${imageElement.naturalWidth}x${imageElement.naturalHeight}` }
+    });
     
     // Default options - increase sensitivity for better results
     const sensitivity = options.sensitivityLevel !== undefined ? options.sensitivityLevel : 70; // Increased from 50
@@ -81,7 +110,7 @@ export const removeBackground = async (
     
     // Use improved processing approach for the image you shared
     if (method === 'smart') {
-      console.log('Using smart background removal processing');
+      logger.debug('Using smart background removal processing', { module: 'BrowserBackgroundRemoval' });
       
       // First detect if the image likely has a wood-like background (like a table)
       let hasWoodBackground = false;
@@ -106,7 +135,7 @@ export const removeBackground = async (
       hasWoodBackground = brownRatio > 0.25; // If >25% of sampled pixels are wood-colored
       
       if (hasWoodBackground) {
-        console.log('Detected wooden background, applying specialized processing');
+        logger.info('Detected wooden background, applying specialized processing', { module: 'BrowserBackgroundRemoval' });
         
         // Get the edge pixels to analyze background color
         const edgePixels = [];
@@ -148,7 +177,7 @@ export const removeBackground = async (
         const avgG = totalG / edgePixels.length;
         const avgB = totalB / edgePixels.length;
         
-        console.log(`Detected background color: RGB(${avgR.toFixed(0)}, ${avgG.toFixed(0)}, ${avgB.toFixed(0)})`);
+        logger.log(`Detected background color: RGB(${avgR.toFixed(0)}, ${avgG.toFixed(0)}, ${avgB.toFixed(0)})`);
         
         // Color similarity threshold - more aggressive
         const similarityThreshold = 65;
@@ -175,7 +204,7 @@ export const removeBackground = async (
         }
       } else {
         // Not a wood background, use combination approach
-        console.log('Using regular background removal approach');
+        logger.info('Using regular background removal approach', { module: 'BrowserBackgroundRemoval' });
         
         // Get background color from corners (average of 4 corners)
         const cornerPixels = [
@@ -328,25 +357,35 @@ export const removeBackground = async (
     }
     
     ctx.putImageData(imageData, 0, 0);
-    console.log(`Background removal completed using ${method} method`);
+    logger.info(`Background removal completed using ${method} method`, { module: 'BrowserBackgroundRemoval' });
     
     // Convert canvas to blob
     return new Promise((resolve, reject) => {
-      canvas.toBlob(
-        (blob) => {
-          if (blob) {
-            console.log('Successfully created final blob');
-            resolve(blob);
-          } else {
-            reject(new Error('Failed to create blob'));
-          }
-        },
-        'image/png',
-        1.0
-      );
+      try {
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              logger.debug('Successfully created final blob', { 
+                module: 'BrowserBackgroundRemoval',
+                data: { blobSize: blob.size }
+              });
+              resolve(blob);
+            } else {
+              reject(new Error('Failed to create blob'));
+            }
+          },
+          'image/png',
+          1.0
+        );
+      } catch (canvasError) {
+        reject(new Error(`Canvas to blob conversion failed: ${canvasError.message}`));
+      }
     });
   } catch (error) {
-    console.error('Error removing background:', error);
+    logger.error(`Error removing background: ${error instanceof Error ? error.message : String(error)}`, {
+      module: 'BrowserBackgroundRemoval',
+      data: { error }
+    });
     throw error;
   }
 };

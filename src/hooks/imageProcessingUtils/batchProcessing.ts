@@ -1,15 +1,22 @@
-
 import { toast } from '@/hooks/use-toast';
 import { ProcessedImage } from "@/types/imageProcessing";
 import { trackEvent } from '@/utils/analyticsUtils';
 import { processImageUtil } from './singleProcessing';
 import { startMeasuring, endMeasuring, getOptimalProcessingSettings } from '@/utils/performanceUtils';
+import { logger, handleError } from '@/utils/logging';
 
 // Keep a reference to the cancellation flag
 let batchProcessingCancelled = false;
+// Keep reference to active batch ID to prevent overlap
+let activeBatchId: string | null = null;
 
 export function cancelBatchProcessing() {
-  batchProcessingCancelled = true;
+  if (activeBatchId) {
+    logger.info(`Cancelling batch processing: ${activeBatchId}`, { 
+      module: 'BatchProcessing' 
+    });
+    batchProcessingCancelled = true;
+  }
 }
 
 export async function processAllImagesUtil(
@@ -32,16 +39,38 @@ export async function processAllImagesUtil(
   setTotalItemsToProcess: React.Dispatch<React.SetStateAction<number>>,
   setProcessedItemsCount: React.Dispatch<React.SetStateAction<number>>
 ): Promise<void> {
+  // Generate a unique batch ID
+  const batchId = `batch_${Date.now()}`;
+  activeBatchId = batchId;
+  
   try {
     const selectedImages = processedImages.filter(img => img.isSelected);
     
     if (selectedImages.length === 0) {
+      logger.warn("Batch processing called with no selected images", { 
+        module: 'BatchProcessing' 
+      });
+      
       toast({
         title: "No Images Selected",
         description: "No images selected for processing"
       });
       return;
     }
+    
+    // Log batch processing start
+    logger.info(`Starting batch processing of ${selectedImages.length} images`, {
+      module: 'BatchProcessing',
+      data: {
+        batchId,
+        imageCount: selectedImages.length,
+        compressionLevel,
+        maxWidth,
+        maxHeight,
+        removeBackground,
+        backgroundRemovalModel: removeBackground ? backgroundRemovalModel : 'none'
+      }
+    });
     
     // Get optimal processing settings based on device capabilities
     const optimalSettings = getOptimalProcessingSettings();
@@ -61,6 +90,7 @@ export async function processAllImagesUtil(
     let processedCount = 0;
     let failedCount = 0;
     let retriedCount = 0;
+    const errors: {index: number, message: string}[] = [];
     
     // Track batch processing start
     trackEvent('batch_process', {
@@ -81,40 +111,62 @@ export async function processAllImagesUtil(
       .filter(idx => idx !== -1);
     
     // Process in batches based on device capabilities
-    for (let i = 0; i < selectedIndices.length && !batchProcessingCancelled; i += maxConcurrent) {
+    for (let i = 0; i < selectedIndices.length && !batchProcessingCancelled && activeBatchId === batchId; i += maxConcurrent) {
       const batch = selectedIndices.slice(i, i + maxConcurrent);
+      logger.info(`Processing batch ${Math.floor(i/maxConcurrent) + 1} of ${Math.ceil(selectedIndices.length/maxConcurrent)}`, { 
+        module: 'BatchProcessing',
+        data: { batchSize: batch.length }
+      });
       
       // Process this batch concurrently
-      await Promise.all(batch.map(async (idx) => {
-        await processImageUtil(
-          idx,
-          processedImages,
-          compressionLevel,
-          maxWidth,
-          maxHeight,
-          removeBackground,
-          apiKey,
-          selfHosted,
-          serverUrl,
-          backgroundRemovalModel,
-          backgroundType,
-          backgroundColor,
-          backgroundOpacity,
-          backgroundImage,
-          setProcessedImages
-        );
-        
-        // Check if the image was successfully processed
-        const latestImages = processedImages[idx];
-        
-        if (latestImages.retryCount && latestImages.retryCount > 0) {
-          retriedCount++;
-        }
-        
-        if (latestImages.processed) {
-          processedCount++;
-        } else {
+      await Promise.allSettled(batch.map(async (idx) => {
+        try {
+          await processImageUtil(
+            idx,
+            processedImages,
+            compressionLevel,
+            maxWidth,
+            maxHeight,
+            removeBackground,
+            apiKey,
+            selfHosted,
+            serverUrl,
+            backgroundRemovalModel,
+            backgroundType,
+            backgroundColor,
+            backgroundOpacity,
+            backgroundImage,
+            setProcessedImages
+          );
+          
+          // Check if the image was successfully processed
+          const latestImages = processedImages[idx];
+          
+          if (latestImages.retryCount && latestImages.retryCount > 0) {
+            retriedCount++;
+            logger.info(`Image at index ${idx} was processed after ${latestImages.retryCount} retries`, {
+              module: 'BatchProcessing'
+            });
+          }
+          
+          if (latestImages.processed) {
+            processedCount++;
+          } else {
+            failedCount++;
+            errors.push({
+              index: idx, 
+              message: latestImages.processingError || "Unknown error"
+            });
+            logger.error(`Failed to process image at index ${idx}`, {
+              module: 'BatchProcessing',
+              data: { error: latestImages.processingError }
+            });
+          }
+        } catch (error) {
           failedCount++;
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          errors.push({index: idx, message: errorMessage});
+          handleError(error, `Batch processing error for image at index ${idx}`, false);
         }
         
         setProcessedItemsCount(processedCount);
@@ -122,13 +174,34 @@ export async function processAllImagesUtil(
       }));
       
       // Small delay between batches to let the UI update
-      if (i + maxConcurrent < selectedIndices.length) {
+      if (i + maxConcurrent < selectedIndices.length && !batchProcessingCancelled) {
         await new Promise(resolve => setTimeout(resolve, 100));
       }
     }
     
     // Complete performance measurement
     endMeasuring(batchPerfMeasurement);
+    
+    // Log batch processing completion
+    logger.info(`Batch processing completed: ${processedCount}/${selectedImages.length} images processed successfully`, {
+      module: 'BatchProcessing',
+      data: {
+        batchId,
+        processedCount,
+        failedCount,
+        retriedCount,
+        processingTime: batchPerfMeasurement.endTime! - batchPerfMeasurement.startTime,
+        cancelled: batchProcessingCancelled
+      }
+    });
+    
+    // Log errors if any
+    if (errors.length > 0) {
+      logger.error(`Batch processing had ${errors.length} errors`, {
+        module: 'BatchProcessing',
+        data: { errors }
+      });
+    }
     
     // Track batch processing completion
     trackEvent('batch_process', {
@@ -156,21 +229,30 @@ export async function processAllImagesUtil(
                     (failedCount > 0 ? `, ${failedCount} failed` : "") +
                     (retriedCount > 0 ? `, ${retriedCount} recovered via retry` : "")
       });
+      
+      // If there were failures but some successes, offer guidance
+      if (failedCount > 0 && processedCount > 0) {
+        setTimeout(() => {
+          toast({
+            title: "Processing Issues",
+            description: "Some images couldn't be processed. Try adjusting settings or using a different background removal model.",
+            duration: 6000
+          });
+        }, 1000);
+      }
     }
-    
-    // Reset cancellation flag
-    batchProcessingCancelled = false;
   } catch (error) {
-    console.error("Error in batch processing:", error);
-    toast({
-      variant: "destructive",
-      title: "Batch Processing Failed",
-      description: "Failed to process some images"
-    });
+    handleError(error, "Error in batch processing", true);
     
     // Track batch processing error
     trackEvent('batch_process', {
       error: String(error)
     });
+  } finally {
+    // Reset flags and variables
+    if (activeBatchId === batchId) {
+      activeBatchId = null;
+      batchProcessingCancelled = false;
+    }
   }
 }

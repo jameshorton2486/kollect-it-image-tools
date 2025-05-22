@@ -1,9 +1,20 @@
+
+import { logger } from './logging';
+
 const CACHE_NAME = 'image-processing-cache';
 const CACHE_VERSION = '2'; // Increment when cache structure changes
 const MAX_CACHE_ENTRIES = 50; // Maximum number of images to store in cache
 
 export async function openCache(): Promise<Cache> {
-  return await caches.open(`${CACHE_NAME}-${CACHE_VERSION}`);
+  try {
+    return await caches.open(`${CACHE_NAME}-${CACHE_VERSION}`);
+  } catch (error) {
+    logger.error('Failed to open cache', {
+      module: 'ImageCache',
+      data: { error }
+    });
+    throw new Error(`Failed to open cache: ${error instanceof Error ? error.message : String(error)}`);
+  }
 }
 
 export function generateCacheKey(
@@ -25,17 +36,33 @@ export async function getProcessedImageFromCache(key: string): Promise<File | nu
     const response = await cache.match(new Request(`cache/${key}`));
     
     if (response && response.ok) {
-      const blob = await response.blob();
-      const metadata = await response.json();
+      logger.info(`Cache hit for key: ${key.substring(0, 20)}...`, { module: 'ImageCache' });
       
-      if (blob && metadata && metadata.filename) {
-        return new File([blob], metadata.filename, { type: blob.type });
+      try {
+        const blob = await response.clone().blob();
+        const metadata = await response.json();
+        
+        if (blob && metadata && metadata.filename) {
+          return new File([blob], metadata.filename, { type: blob.type });
+        }
+      } catch (parseError) {
+        logger.warn(`Cache entry corrupted for key: ${key.substring(0, 20)}...`, {
+          module: 'ImageCache',
+          data: { error: parseError }
+        });
+        // Attempt to remove corrupted entry
+        await cache.delete(new Request(`cache/${key}`));
       }
+    } else {
+      logger.debug(`Cache miss for key: ${key.substring(0, 20)}...`, { module: 'ImageCache' });
     }
     
     return null;
   } catch (error) {
-    console.error('Error retrieving from cache:', error);
+    logger.error('Error retrieving from cache', {
+      module: 'ImageCache',
+      data: { error, key: key.substring(0, 20) }
+    });
     return null;
   }
 }
@@ -45,24 +72,43 @@ export async function cacheProcessedImage(key: string, file: File, originalName:
     const cache = await openCache();
     
     // Store blob data
-    const blobResponse = new Response(file);
-    await cache.put(new Request(`cache/${key}/data`), blobResponse);
-    
-    // Store metadata separately
-    const metadata = {
-      filename: file.name,
-      originalName,
-      timestamp: Date.now()
-    };
-    const metadataResponse = new Response(JSON.stringify(metadata), {
-      headers: { 'Content-Type': 'application/json' }
-    });
-    await cache.put(new Request(`cache/${key}`), metadataResponse);
-    
-    // Clean up old cache entries if needed
-    await cleanupCache();
+    try {
+      // Store blob data
+      const blobResponse = new Response(file);
+      await cache.put(new Request(`cache/${key}/data`), blobResponse);
+      
+      // Store metadata separately
+      const metadata = {
+        filename: file.name,
+        originalName,
+        timestamp: Date.now()
+      };
+      const metadataResponse = new Response(JSON.stringify(metadata), {
+        headers: { 'Content-Type': 'application/json' }
+      });
+      await cache.put(new Request(`cache/${key}`), metadataResponse);
+      
+      logger.info(`Saved to cache: ${key.substring(0, 20)}...`, {
+        module: 'ImageCache',
+        data: { 
+          originalName,
+          fileSize: file.size
+        }
+      });
+      
+      // Clean up old cache entries if needed
+      await cleanupCache();
+    } catch (putError) {
+      logger.error('Failed to store in cache', {
+        module: 'ImageCache',
+        data: { error: putError, key: key.substring(0, 20) }
+      });
+    }
   } catch (error) {
-    console.error('Error storing in cache:', error);
+    logger.error('Error storing in cache', {
+      module: 'ImageCache',
+      data: { error }
+    });
   }
 }
 
@@ -75,6 +121,10 @@ async function cleanupCache(): Promise<void> {
     const metadataKeys = keys.filter(key => !key.url.includes('/data'));
     
     if (metadataKeys.length > MAX_CACHE_ENTRIES) {
+      logger.info(`Cache cleanup needed: ${metadataKeys.length} entries (limit: ${MAX_CACHE_ENTRIES})`, {
+        module: 'ImageCache'
+      });
+      
       // Get all cache entries with timestamps
       const entries = await Promise.all(
         metadataKeys.map(async (key) => {
@@ -100,6 +150,8 @@ async function cleanupCache(): Promise<void> {
         .slice(0, entries.length - MAX_CACHE_ENTRIES)
         .map(entry => entry.key);
       
+      logger.info(`Removing ${toRemove.length} oldest cache entries`, { module: 'ImageCache' });
+      
       // Delete the old entries and their data
       for (const key of toRemove) {
         const url = key.url;
@@ -108,7 +160,10 @@ async function cleanupCache(): Promise<void> {
       }
     }
   } catch (error) {
-    console.error('Error cleaning cache:', error);
+    logger.error('Error cleaning cache', {
+      module: 'ImageCache',
+      data: { error }
+    });
   }
 }
 
@@ -117,9 +172,14 @@ export async function clearImageCache(): Promise<void> {
     const cacheKeys = await caches.keys();
     const imageCacheKeys = cacheKeys.filter(key => key.startsWith(CACHE_NAME));
     
+    logger.info(`Clearing ${imageCacheKeys.length} image cache entries`, { module: 'ImageCache' });
+    
     await Promise.all(imageCacheKeys.map(key => caches.delete(key)));
     console.log('Image cache cleared');
   } catch (error) {
-    console.error('Error clearing cache:', error);
+    logger.error('Error clearing cache', {
+      module: 'ImageCache',
+      data: { error }
+    });
   }
 }
