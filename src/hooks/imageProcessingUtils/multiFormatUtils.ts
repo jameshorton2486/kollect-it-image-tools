@@ -1,275 +1,43 @@
 
-import { trackEvent } from '@/utils/analytics';
-import JSZip from 'jszip';
-import { saveAs } from 'file-saver';
+import { toast } from 'sonner';
 import { ProcessedImage } from '@/types/imageProcessing';
+import { downloadFile } from '@/utils/imageUtils';
 
 /**
- * Utility function to download a specific format of a processed image
+ * Download a specific format of a processed image
  */
-export const downloadFormatUtil = (index: number, format: string, processedImages: ProcessedImage[]) => {
+export function downloadFormatUtil(index: number, format: string, processedImages: ProcessedImage[]): void {
+  const image = processedImages[index];
+  if (!image || !image.processedFormats || !image.processedFormats[format]) {
+    toast.error(`${format.toUpperCase()} version not available`);
+    return;
+  }
+  
+  const formatFile = image.processedFormats[format];
+  downloadFile(formatFile, `${formatFile.name}`);
+  
+  toast.success(`Downloaded ${format.toUpperCase()} version`);
+}
+
+/**
+ * Download all available formats of a processed image
+ */
+export function downloadAllFormatsUtil(index: number, processedImages: ProcessedImage[]): void {
   const image = processedImages[index];
   if (!image || !image.processedFormats) {
-    console.error('Cannot download format: Image or processed formats not available');
-    return;
-  }
-
-  // Get the requested format
-  const formatFile = image.processedFormats[format as keyof typeof image.processedFormats];
-  
-  if (!formatFile) {
-    console.error(`Format ${format} not available for this image`);
+    toast.error('No processed formats available');
     return;
   }
   
-  // Generate download filename
-  let filename = image.newFilename || image.original.name;
+  const formats = Object.entries(image.processedFormats);
+  if (formats.length === 0) {
+    toast.error('No processed formats available');
+    return;
+  }
   
-  // Ensure filename has the correct extension
-  const nameWithoutExtension = filename.replace(/\.[^/.]+$/, "");
-  filename = `${nameWithoutExtension}.${format}`;
-
-  // Create download link and trigger download
-  const url = URL.createObjectURL(formatFile);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  
-  // Revoke object URL to free memory
-  setTimeout(() => {
-    URL.revokeObjectURL(url);
-  }, 1000);
-  
-  // Track download event
-  trackEvent("download", {
-    format: format,
-    fileSize: formatFile.size,
-    filename: filename,
-    isFormatDownload: true
+  formats.forEach(([format, file]) => {
+    downloadFile(file, `${file.name}`);
   });
   
-  return filename;
-};
-
-/**
- * Utility function to generate WordPress SEO friendly filename
- */
-export const generateWPFilename = (name: string, width: number, height: number, format: string) => {
-  // Remove extension if present
-  const baseName = name.replace(/\.[^/.]+$/, "");
-  
-  // Convert to lowercase, replace spaces with hyphens, and remove special characters
-  const sanitizedName = baseName.toLowerCase()
-    .replace(/\s+/g, '-')
-    .replace(/[^a-z0-9-]/g, '');
-  
-  return `${sanitizedName}-${width}x${height}.${format}`;
-};
-
-/**
- * Utility function to generate HTML code for the picture element
- * including srcset for responsive images
- */
-export const generatePictureHtml = (image: ProcessedImage, includeRetina: boolean = false): string => {
-  if (!image.processedFormats) {
-    return '';
-  }
-  
-  const baseFilename = image.newFilename || image.original.name.replace(/\.[^/.]+$/, "");
-  const width = image.dimensions?.width || 0;
-  const height = image.dimensions?.height || 0;
-  
-  let html = '<picture>\n';
-  
-  // Add AVIF source if available
-  if (image.processedFormats.avif) {
-    html += `  <source srcset="${baseFilename}.avif`;
-    
-    // Add retina variants if requested
-    if (includeRetina) {
-      html += `, ${baseFilename}@2x.avif 2x, ${baseFilename}@3x.avif 3x`;
-    }
-    
-    html += `" type="image/avif">\n`;
-  }
-  
-  // Add WebP source if available
-  if (image.processedFormats.webp) {
-    html += `  <source srcset="${baseFilename}.webp`;
-    
-    // Add retina variants if requested
-    if (includeRetina) {
-      html += `, ${baseFilename}@2x.webp 2x, ${baseFilename}@3x.webp 3x`;
-    }
-    
-    html += `" type="image/webp">\n`;
-  }
-  
-  // Add fallback img tag (always use jpeg if available, otherwise use original)
-  const fallbackFormat = image.processedFormats.jpeg ? 'jpeg' : 'jpg';
-  const dimensions = image.dimensions ? 
-    `width="${image.dimensions.width}" height="${image.dimensions.height}"` : '';
-  
-  html += `  <img src="${baseFilename}.${fallbackFormat}" alt="" ${dimensions} loading="lazy"`;
-  
-  // Add srcset for responsive images if requested
-  if (includeRetina) {
-    html += ` srcset="${baseFilename}.${fallbackFormat}, ${baseFilename}@2x.${fallbackFormat} 2x, ${baseFilename}@3x.${fallbackFormat} 3x"`;
-  }
-  
-  // Add sizes attribute for responsive images
-  html += ` sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"`;
-  
-  html += ">\n";
-  html += '</picture>';
-  
-  return html;
-};
-
-/**
- * Utility function to generate WordPress compatible metadata
- */
-export const generateWPMetadata = (image: ProcessedImage): string => {
-  if (!image.dimensions) {
-    return JSON.stringify({});
-  }
-  
-  const baseFilename = image.newFilename || image.original.name.replace(/\.[^/.]+$/, "");
-  const width = image.dimensions.width;
-  const height = image.dimensions.height;
-  const processedWidth = image.processedDimensions?.width || width;
-  const processedHeight = image.processedDimensions?.height || height;
-  
-  const metadata = {
-    file: `${baseFilename}.${image.outputFormat || 'jpg'}`,
-    width: processedWidth,
-    height: processedHeight,
-    filesize: image.processed?.size || 0,
-    mime_type: `image/${image.outputFormat || 'jpeg'}`,
-    sizes: {
-      full: {
-        file: `${baseFilename}.${image.outputFormat || 'jpg'}`,
-        width: processedWidth,
-        height: processedHeight,
-        mime_type: `image/${image.outputFormat || 'jpeg'}`
-      },
-      thumbnail: {
-        file: `${baseFilename}-150x150.${image.outputFormat || 'jpg'}`,
-        width: 150,
-        height: 150,
-        mime_type: `image/${image.outputFormat || 'jpeg'}`
-      },
-      medium: {
-        file: `${baseFilename}-300x300.${image.outputFormat || 'jpg'}`,
-        width: 300,
-        height: Math.round((300 / processedWidth) * processedHeight),
-        mime_type: `image/${image.outputFormat || 'jpeg'}`
-      }
-    }
-  };
-  
-  return JSON.stringify(metadata, null, 2);
-};
-
-/**
- * Utility function to download all available formats for an image as a ZIP
- * including WordPress HTML and metadata
- */
-export const downloadAllFormatsUtil = async (index: number, processedImages: ProcessedImage[]) => {
-  const image = processedImages[index];
-  if (!image || !image.processedFormats) {
-    console.error('Cannot download formats: Image or processed formats not available');
-    return;
-  }
-  
-  // Create a new JSZip instance
-  const zip = new JSZip();
-  
-  // Base filename without extension
-  const baseFilename = image.newFilename || image.original.name.replace(/\.[^/.]+$/, "");
-  
-  // Create WordPress folder structure
-  const wpFolder = zip.folder("wordpress");
-  const htmlFolder = zip.folder("html");
-  
-  // Add each available format to the zip
-  let formatCount = 0;
-  if (image.processedFormats.avif) {
-    zip.file(`${baseFilename}.avif`, image.processedFormats.avif);
-    if (wpFolder) {
-      const wpFilename = generateWPFilename(
-        baseFilename, 
-        image.processedDimensions?.width || image.dimensions?.width || 0,
-        image.processedDimensions?.height || image.dimensions?.height || 0,
-        "avif"
-      );
-      wpFolder.file(wpFilename, image.processedFormats.avif);
-    }
-    formatCount++;
-  }
-  
-  if (image.processedFormats.webp) {
-    zip.file(`${baseFilename}.webp`, image.processedFormats.webp);
-    if (wpFolder) {
-      const wpFilename = generateWPFilename(
-        baseFilename, 
-        image.processedDimensions?.width || image.dimensions?.width || 0,
-        image.processedDimensions?.height || image.dimensions?.height || 0,
-        "webp"
-      );
-      wpFolder.file(wpFilename, image.processedFormats.webp);
-    }
-    formatCount++;
-  }
-  
-  if (image.processedFormats.jpeg) {
-    zip.file(`${baseFilename}.jpg`, image.processedFormats.jpeg);
-    if (wpFolder) {
-      const wpFilename = generateWPFilename(
-        baseFilename, 
-        image.processedDimensions?.width || image.dimensions?.width || 0,
-        image.processedDimensions?.height || image.dimensions?.height || 0,
-        "jpg"
-      );
-      wpFolder.file(wpFilename, image.processedFormats.jpeg);
-    }
-    formatCount++;
-  }
-  
-  // Add the HTML snippets
-  const regularHtmlSnippet = generatePictureHtml(image, false);
-  const retinaHtmlSnippet = generatePictureHtml(image, true);
-  zip.file(`${baseFilename}-html-snippet.html`, regularHtmlSnippet);
-  
-  if (htmlFolder) {
-    htmlFolder.file("standard.html", regularHtmlSnippet);
-    htmlFolder.file("responsive-retina.html", retinaHtmlSnippet);
-  }
-  
-  // Add WordPress metadata
-  const wpMetadata = generateWPMetadata(image);
-  if (wpFolder) {
-    wpFolder.file(`${baseFilename}-metadata.json`, wpMetadata);
-  }
-  
-  // Generate the zip file
-  const content = await zip.generateAsync({ type: 'blob' });
-  
-  // Save the zip file
-  saveAs(content, `${baseFilename}-all-formats.zip`);
-  
-  // Track download event
-  trackEvent("download", {
-    bulk: true,
-    formats: formatCount,
-    imageIndex: index,
-    includesAvif: !!image.processedFormats.avif,
-    includesWebp: !!image.processedFormats.webp,
-    includesJpeg: !!image.processedFormats.jpeg
-  });
-  
-  return `${baseFilename}-all-formats.zip`;
-};
+  toast.success(`Downloaded ${formats.length} format${formats.length !== 1 ? 's' : ''}`);
+}

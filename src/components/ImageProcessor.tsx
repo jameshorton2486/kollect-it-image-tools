@@ -9,9 +9,14 @@ import '../styles/gridOverlay.css';
 interface ImageProcessorProps {
   images: File[];
   onReset: () => void;
+  onProcessingStateChange?: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-const ImageProcessor: React.FC<ImageProcessorProps> = ({ images, onReset }) => {
+const ImageProcessor: React.FC<ImageProcessorProps> = ({ 
+  images, 
+  onReset,
+  onProcessingStateChange 
+}) => {
   const [allImages, setAllImages] = React.useState<File[]>(images);
   const [isProcessing, setIsProcessing] = React.useState<boolean>(false);
   
@@ -25,6 +30,13 @@ const ImageProcessor: React.FC<ImageProcessorProps> = ({ images, onReset }) => {
   const handleMoreImagesSelected = (newImages: File[]) => {
     setAllImages(prevImages => [...prevImages, ...newImages]);
   };
+
+  // Update parent component's processing state when local state changes
+  React.useEffect(() => {
+    if (onProcessingStateChange) {
+      onProcessingStateChange(isProcessing);
+    }
+  }, [isProcessing, onProcessingStateChange]);
   
   return (
     <div className="space-y-6">

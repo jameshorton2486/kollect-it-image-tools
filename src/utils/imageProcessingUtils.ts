@@ -3,3 +3,9 @@
 // while splitting the implementation into smaller files
 export { processSingleImage, handleBackgroundRemoval, handleCompression } from './imageProcessing/processingCore';
 export { initializeProcessedImages, downloadProcessedImage } from './imageProcessing/processingHelpers';
+export { 
+  processSingleImageInMultipleFormats,
+  estimateImageSizes,
+  convertToFormat
+} from './imageProcessing/multiFormatProcessing';
+

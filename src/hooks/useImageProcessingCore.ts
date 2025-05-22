@@ -3,9 +3,11 @@ import { UseImageProcessingResult } from './useImageProcessingTypes';
 import { useImageProcessingState } from './useImageProcessingState';
 import { useImageProcessingEffects } from './useImageProcessingEffects';
 import { useImageProcessingActions } from './useImageProcessingActions';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { WordPressPreset } from '@/types/imageProcessing';
 import { WORDPRESS_SIZE_PRESETS } from '@/types/imageResizing';
+import { estimateImageSizes } from '@/utils/imageProcessing/multiFormatProcessing';
+import useImageResizer from './useImageResizer';
 
 /**
  * Core hook for image processing that combines state, effects, and actions
@@ -46,6 +48,37 @@ export function useImageProcessingCore(initialImages: File[]): UseImageProcessin
     resizeUnit, setResizeUnit,
     resizeQuality, setResizeQuality
   } = useImageProcessingState();
+  
+  // Resizer hook for size estimation
+  const { estimateFileSizes } = useImageResizer();
+  
+  // Update estimated sizes when compression settings or selected image changes
+  useEffect(() => {
+    // Get first selected image for size estimation
+    const selectedImage = processedImages.find(img => img.isSelected);
+    if (selectedImage?.original) {
+      // Estimate sizes for the selected image
+      estimateImageSizes(
+        selectedImage.original,
+        maxWidth,
+        maxHeight,
+        compressionSettings
+      ).then(sizes => {
+        setEstimatedSizes(sizes);
+      }).catch(err => {
+        console.error("Failed to estimate image sizes:", err);
+      });
+    }
+  }, [
+    processedImages, 
+    maxWidth, 
+    maxHeight, 
+    compressionSettings.jpeg.quality, 
+    compressionSettings.webp.quality, 
+    compressionSettings.avif.quality,
+    compressionSettings.webp.lossless,
+    compressionSettings.avif.lossless
+  ]);
 
   // Initialize and clean up effects
   useImageProcessingEffects({
