@@ -16,10 +16,14 @@ export interface UseImageProcessingState {
   batchProgress: number;
   totalItemsToProcess: number;
   processedItemsCount: number;
-  backgroundRemovalModel: string; // New field for model selection
+  backgroundRemovalModel: string;
+  backgroundType: string;
+  backgroundColor: string;
+  backgroundOpacity: number;
 }
 
 export interface UseImageProcessingActions {
+  setProcessedImages: React.Dispatch<React.SetStateAction<ProcessedImage[]>>;
   setCompressionLevel: (level: number) => void;
   setMaxWidth: (width: number) => void;
   setMaxHeight: (height: number) => void;
@@ -38,7 +42,10 @@ export interface UseImageProcessingActions {
   cancelBatchProcessing: () => void;
   clearImageCache: () => void;
   clearAnalyticsData: () => void;
-  setBackgroundRemovalModel: (model: string) => void; // New setter for model selection
+  setBackgroundRemovalModel: (model: string) => void;
+  setBackgroundType: (type: string) => void;
+  setBackgroundColor: (color: string) => void;
+  setBackgroundOpacity: (opacity: number) => void;
 }
 
 export type UseImageProcessingResult = UseImageProcessingState & UseImageProcessingActions;

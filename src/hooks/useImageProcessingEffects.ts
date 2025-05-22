@@ -10,6 +10,9 @@ interface UseImageProcessingEffectsProps {
   selfHosted: boolean;
   serverUrl: string;
   backgroundRemovalModel: string;
+  backgroundType: string;
+  backgroundColor: string;
+  backgroundOpacity: number;
   setProcessedImages: React.Dispatch<React.SetStateAction<ProcessedImage[]>>;
 }
 
@@ -23,6 +26,9 @@ export function useImageProcessingEffects({
   selfHosted,
   serverUrl,
   backgroundRemovalModel,
+  backgroundType,
+  backgroundColor,
+  backgroundOpacity,
   setProcessedImages
 }: UseImageProcessingEffectsProps) {
   // Initialize processed images when initial files change
@@ -49,5 +55,8 @@ export function useImageProcessingEffects({
   // Save background removal model to localStorage
   useEffect(() => {
     localStorage.setItem('background_removal_model', backgroundRemovalModel);
-  }, [backgroundRemovalModel]);
+    localStorage.setItem('background_type', backgroundType);
+    localStorage.setItem('background_color', backgroundColor);
+    localStorage.setItem('background_opacity', backgroundOpacity.toString());
+  }, [backgroundRemovalModel, backgroundType, backgroundColor, backgroundOpacity]);
 }

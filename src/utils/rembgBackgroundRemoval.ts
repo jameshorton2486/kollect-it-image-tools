@@ -25,18 +25,27 @@ export async function removeBackgroundWithRembg(
     const formData = new FormData();
     formData.append('image', imageFile);
 
-    // Set a timeout for the fetch request - 5 seconds
+    // Set a timeout for the fetch request - increase to 15 seconds for larger images
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
 
+    console.log(`Connecting to Rembg server at ${serverUrl}...`);
+    
     const response = await fetch(serverUrl, {
       method: 'POST',
       body: formData,
       signal: controller.signal
     }).catch(error => {
       // Connection error, try browser fallback
-      console.log('Rembg server connection failed, using browser fallback');
+      console.log('Rembg server connection failed:', error);
       clearTimeout(timeoutId);
+      
+      toast({
+        title: "Rembg Server Not Available",
+        description: "Connection failed. Using browser processing as fallback",
+        variant: "destructive"
+      });
+      
       return null;
     });
     
@@ -45,10 +54,21 @@ export async function removeBackgroundWithRembg(
     // If fetch failed or returned an error, use browser fallback
     if (!response || !response.ok) {
       console.log('Using browser fallback for background removal');
+      
+      let errorMessage = "Server unavailable";
+      if (response) {
+        try {
+          const errorData = await response.text();
+          errorMessage = `Server error: ${errorData || response.statusText}`;
+          console.error('Server error:', errorMessage);
+        } catch (e) {
+          errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        }
+      }
+      
       toast({
-        title: "Rembg Server Not Available",
-        description: "Using browser processing as fallback",
-        // Fixed the TypeScript error by using a valid variant
+        title: "Rembg Server Error",
+        description: "Using browser processing as fallback. " + errorMessage,
         variant: "destructive"
       });
       
@@ -56,6 +76,7 @@ export async function removeBackgroundWithRembg(
       return await removeBackgroundInBrowser(imageFile);
     }
 
+    console.log('Rembg server processing successful');
     // Get the processed image
     const blob = await response.blob();
     // Create a new file with the processed image
@@ -70,8 +91,7 @@ export async function removeBackgroundWithRembg(
     console.log('Error with Rembg server, using browser fallback');
     toast({
       title: "Background Removal Fallback",
-      description: "Server not available. Using browser processing instead.",
-      // Fixed the TypeScript error by using a valid variant
+      description: "Server error occurred. Using browser processing instead.",
       variant: "destructive"
     });
     

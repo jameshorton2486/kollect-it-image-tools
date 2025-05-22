@@ -1,4 +1,3 @@
-
 import { UseImageProcessingResult } from './useImageProcessingTypes';
 import { useImageProcessingState } from './useImageProcessingState';
 import { useImageProcessingEffects } from './useImageProcessingEffects';
@@ -92,6 +91,7 @@ export function useImageProcessingCore(initialImages: File[]): UseImageProcessin
   
   return {
     processedImages,
+    setProcessedImages,
     compressionLevel,
     setCompressionLevel,
     maxWidth,

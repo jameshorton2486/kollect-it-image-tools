@@ -3,7 +3,9 @@ import CompressionSettings from './ImageProcessing/CompressionSettings';
 import ImageGrid from './ImageProcessing/ImageGrid';
 import EmptyState from './ImageProcessing/EmptyState';
 import BatchProcessingProgress from './ImageProcessing/BatchProcessingProgress';
+import BatchUploadSection from './ImageProcessing/BatchUploadSection';
 import { useImageProcessing } from '@/hooks/useImageProcessing';
+import { ProcessedImage } from '@/types/imageProcessing';
 import { Button } from './ui/button';
 import { Database, RefreshCw, BarChart3 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
@@ -17,6 +19,7 @@ interface ImageProcessorProps {
 const ImageProcessor: React.FC<ImageProcessorProps> = ({ images, onReset }) => {
   const {
     processedImages,
+    setProcessedImages,
     compressionLevel,
     setCompressionLevel,
     maxWidth,
@@ -62,6 +65,22 @@ const ImageProcessor: React.FC<ImageProcessorProps> = ({ images, onReset }) => {
     clearImageCache,
     clearAnalyticsData
   } = useImageProcessing(images);
+  
+  // Handler for batch upload
+  const handleAdditionalFilesUploaded = (newFiles: File[]) => {
+    // Create new processed image entries for the newly added files
+    const newProcessedImages = newFiles.map(file => ({
+      original: file,
+      processed: null,
+      preview: URL.createObjectURL(file),
+      isProcessing: false,
+      isSelected: true,
+      hasBackgroundRemoved: false,
+    }));
+    
+    // Add to the existing list
+    setProcessedImages([...processedImages, ...newProcessedImages]);
+  };
   
   return (
     <div className="space-y-6">
@@ -110,37 +129,48 @@ const ImageProcessor: React.FC<ImageProcessorProps> = ({ images, onReset }) => {
         </div>
       </div>
       
-      <CompressionSettings
-        compressionLevel={compressionLevel}
-        maxWidth={maxWidth}
-        maxHeight={maxHeight}
-        preserveAspectRatio={preserveAspectRatio}
-        isProcessing={isProcessing}
-        removeBackground={removeBackground}
-        apiKey={apiKey}
-        selfHosted={selfHosted}
-        serverUrl={serverUrl}
-        backgroundRemovalModel={backgroundRemovalModel}
-        backgroundType={backgroundType}
-        backgroundColor={backgroundColor}
-        backgroundOpacity={backgroundOpacity}
-        onCompressionLevelChange={setCompressionLevel}
-        onMaxWidthChange={setMaxWidth}
-        onMaxHeightChange={setMaxHeight}
-        onPreserveAspectRatioChange={setPreserveAspectRatio}
-        onRemoveBackgroundChange={setRemoveBackground}
-        onApiKeyChange={setApiKey}
-        onSelfHostedChange={setSelfHosted}
-        onServerUrlChange={setServerUrl}
-        onBackgroundRemovalModelChange={setBackgroundRemovalModel}
-        onBackgroundTypeChange={setBackgroundType}
-        onBackgroundColorChange={setBackgroundColor}
-        onBackgroundOpacityChange={setBackgroundOpacity}
-        onProcessAll={processAllImages}
-        onDownloadAll={downloadAllImages}
-        onSelectAll={selectAllImages}
-        onReset={onReset}
-      />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="md:col-span-2">
+          <CompressionSettings
+            compressionLevel={compressionLevel}
+            maxWidth={maxWidth}
+            maxHeight={maxHeight}
+            preserveAspectRatio={preserveAspectRatio}
+            isProcessing={isProcessing}
+            removeBackground={removeBackground}
+            apiKey={apiKey}
+            selfHosted={selfHosted}
+            serverUrl={serverUrl}
+            backgroundRemovalModel={backgroundRemovalModel}
+            backgroundType={backgroundType}
+            backgroundColor={backgroundColor}
+            backgroundOpacity={backgroundOpacity}
+            onCompressionLevelChange={setCompressionLevel}
+            onMaxWidthChange={setMaxWidth}
+            onMaxHeightChange={setMaxHeight}
+            onPreserveAspectRatioChange={setPreserveAspectRatio}
+            onRemoveBackgroundChange={setRemoveBackground}
+            onApiKeyChange={setApiKey}
+            onSelfHostedChange={setSelfHosted}
+            onServerUrlChange={setServerUrl}
+            onBackgroundRemovalModelChange={setBackgroundRemovalModel}
+            onBackgroundTypeChange={setBackgroundType}
+            onBackgroundColorChange={setBackgroundColor}
+            onBackgroundOpacityChange={setBackgroundOpacity}
+            onProcessAll={processAllImages}
+            onDownloadAll={downloadAllImages}
+            onSelectAll={selectAllImages}
+            onReset={onReset}
+          />
+        </div>
+        
+        <div>
+          <BatchUploadSection 
+            onFilesUploaded={handleAdditionalFilesUploaded} 
+            isProcessing={isProcessing} 
+          />
+        </div>
+      </div>
       
       {processedImages.length > 0 ? (
         <ImageGrid

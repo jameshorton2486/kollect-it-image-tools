@@ -45,7 +45,7 @@ export async function processSingleImage(
       if (backgroundRemovalModel === 'browser') {
         const sensitivityLevel = parseInt(localStorage.getItem('bg_removal_sensitivity') || '50', 10);
         const detailLevel = parseInt(localStorage.getItem('bg_removal_detail') || '50', 10);
-        const processMethod = localStorage.getItem('bg_removal_method') || 'brightness';
+        const processMethod = localStorage.getItem('bg_removal_method') || 'smart';
         
         bgRemovalOptions = {
           sensitivityLevel,
