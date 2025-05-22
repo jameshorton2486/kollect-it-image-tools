@@ -1,13 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import ProcessorHeader from './ProcessorHeader';
 import ProcessingTabs from './ProcessingTabs';
 import ProcessorBody from './ProcessorBody';
 import BatchProcessingProgress from '@/components/ImageProcessing/BatchProcessingProgress';
 import EmptyState from '@/components/ImageProcessing/EmptyState';
-import { ImageProcessorProps, ProcessedImage, ProcessorBodyProps } from '@/types/imageProcessing';
+import { ImageProcessorProps, ProcessedImage } from '@/types/imageProcessing';
 import { clearImageCache } from '@/utils/imageCacheUtils';
 import { clearAnalyticsData } from '@/utils/analytics';
 import { normalizeProcessedImage } from '@/utils/imageProcessing/batchProcessingHelper';
@@ -84,7 +84,7 @@ const MainProcessor: React.FC<ImageProcessorProps> = ({ images, onReset, onProce
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       <Card className="w-full shadow-md border-border">
         <CardHeader className="border-b border-gray-100 bg-muted/30">
           <ProcessorHeader 

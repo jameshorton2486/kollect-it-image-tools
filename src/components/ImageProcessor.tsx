@@ -40,7 +40,7 @@ const ImageProcessor: React.FC<ImageProcessorProps> = ({
   }, [isProcessing, onProcessingStateChange]);
   
   return (
-    <div className="space-y-6 w-full max-w-7xl mx-auto px-4 sm:px-6 animate-fade-in">
+    <div className="space-y-6 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 animate-fade-in">
       <div className="grid grid-cols-1 gap-6">
         <Card className="overflow-hidden shadow-md border-border">
           <DirectorySourceSection 

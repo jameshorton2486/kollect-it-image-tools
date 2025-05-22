@@ -14,7 +14,6 @@ export interface ProcessedImage {
   averageCompressionRate: number;
   totalSizeReduction: number;
   status: 'pending' | 'processing' | 'success' | 'error';
-  processed: boolean;
   isProcessing: boolean;
   isSelected: boolean;
   originalWidth: number;
@@ -38,6 +37,9 @@ export interface ProcessedImage {
   hasBackgroundRemoved?: boolean;
   compressionStats?: CompressionStats;
   processedFormats?: Record<string, ProcessedFormat>;
+  format?: string;
+  finalWidth?: number;
+  finalHeight?: number;
 }
 
 export interface ProcessedFormat {
@@ -46,6 +48,7 @@ export interface ProcessedFormat {
   size: number;
   format: string;
   quality: number;
+  name?: string;
 }
 
 export interface CompressionStats {
@@ -91,6 +94,14 @@ export interface WordPressPreset {
   quality: number;
   format: string;
   description: string;
+  sizes?: {
+    width: number;
+    height: number;
+  };
+  compressionSettings?: CompressionSettings;
+  stripMetadata?: boolean;
+  progressiveLoading?: boolean;
+  outputFormat?: OutputFormat;
 }
 
 // Image Processing Types
@@ -106,6 +117,21 @@ export interface ImageProcessingOptions {
   resizeMode: ResizeMode;
   resizeQuality: number;
   compressionLevel: number;
+}
+
+// Use this type instead of ImageProcessingSettings which seems to be causing errors
+export type ImageProcessingSettings = ImageProcessingOptions;
+
+export interface ProcessingResult {
+  success: boolean;
+  blob?: Blob;
+  url?: string;
+  error?: string;
+  size?: number;
+  format?: string;
+  width?: number;
+  height?: number;
+  processingTime?: number;
 }
 
 export interface ImageProcessorProps {

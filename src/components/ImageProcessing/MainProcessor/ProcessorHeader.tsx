@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Settings, RefreshCw, Download, FileDigit } from 'lucide-react';
+import { Settings, RefreshCw, Download, FileDigit, BarChart2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { 
   DropdownMenu, 
@@ -10,6 +10,7 @@ import {
   DropdownMenuItem, 
   DropdownMenuSeparator 
 } from '@/components/ui/dropdown-menu';
+import { Link } from 'react-router-dom';
 
 interface ProcessorHeaderProps {
   clearImageCache: () => void;
@@ -38,25 +39,36 @@ const ProcessorHeader: React.FC<ProcessorHeaderProps> = ({
           Clear Cache
         </Button>
         
+        <Link to="/analytics">
+          <Button
+            variant="outline"
+            size="sm"
+            className="hidden sm:flex gap-1 items-center"
+          >
+            <BarChart2 className="h-4 w-4" />
+            Analytics
+          </Button>
+        </Link>
+        
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon">
               <Settings className="h-5 w-5 text-muted-foreground" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
+          <DropdownMenuContent align="end" className="w-56 bg-background border-border shadow-md">
             <DropdownMenuLabel>Image Processor Settings</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={clearImageCache}>
+            <DropdownMenuItem onClick={clearImageCache} className="cursor-pointer">
               <RefreshCw className="h-4 w-4 mr-2" />
               Clear Image Cache
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={clearAnalyticsData}>
+            <DropdownMenuItem onClick={clearAnalyticsData} className="cursor-pointer">
               <RefreshCw className="h-4 w-4 mr-2" />
               Reset Analytics Data
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem className="cursor-pointer">
               <Download className="h-4 w-4 mr-2" />
               Download All Processed
             </DropdownMenuItem>
