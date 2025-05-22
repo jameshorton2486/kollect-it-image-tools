@@ -4,6 +4,7 @@ import { Card } from '@/components/ui/card';
 import MainProcessor from './ImageProcessing/MainProcessor';
 import DirectorySourceSection from './ImageProcessing/SourceDirectory/DirectorySourceSection';
 import { ensureFolderStructure } from '@/utils/googleDriveUtils';
+import '../styles/gridOverlay.css';
 
 interface ImageProcessorProps {
   images: File[];
@@ -12,6 +13,7 @@ interface ImageProcessorProps {
 
 const ImageProcessor: React.FC<ImageProcessorProps> = ({ images, onReset }) => {
   const [allImages, setAllImages] = React.useState<File[]>(images);
+  const [isProcessing, setIsProcessing] = React.useState<boolean>(false);
   
   // Initialize Google Drive folder structure on component mount
   useEffect(() => {
@@ -28,9 +30,13 @@ const ImageProcessor: React.FC<ImageProcessorProps> = ({ images, onReset }) => {
     <div className="space-y-6">
       <DirectorySourceSection 
         onImagesSelected={handleMoreImagesSelected}
-        isProcessing={false} // You'll need to pass this from the MainProcessor
+        isProcessing={isProcessing}
       />
-      <MainProcessor images={allImages} onReset={onReset} />
+      <MainProcessor 
+        images={allImages} 
+        onReset={onReset}
+        onProcessingStateChange={setIsProcessing} 
+      />
     </div>
   );
 };

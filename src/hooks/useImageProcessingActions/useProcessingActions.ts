@@ -122,7 +122,14 @@ export function useProcessingActions({
         selfHosted,
         serverUrl,
         backgroundRemovalModel,
-        setProcessedImages
+        setProcessedImages,
+        null, // Processing progress callback
+        null, // On complete callback
+        true, // Should update preview
+        false, // Is batch processing
+        false, // Should save
+        null, // Save path
+        null // Filename
       );
 
       // After processing, save to Google Drive
@@ -228,7 +235,14 @@ export function useProcessingActions({
         setIsProcessing,
         setBatchProgress,
         setTotalItemsToProcess,
-        setProcessedItemsCount
+        setProcessedItemsCount,
+        null, // Pre-processing hook
+        null, // Post-processing hook
+        true, // Should update preview
+        false, // Should save
+        null, // Save path
+        null, // File naming pattern
+        false // Skip already processed
       );
 
       // After batch processing, save all to Google Drive
