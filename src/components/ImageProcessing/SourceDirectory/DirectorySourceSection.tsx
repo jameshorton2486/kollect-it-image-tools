@@ -7,23 +7,23 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Folder, GitBranch, RefreshCw, Upload } from "lucide-react";
 import { toast } from 'sonner';
+import { RAW_UPLOADS_PATH } from '@/utils/googleDriveUtils';
+import GitHubConnector from './GitHubConnector';
 
 interface DirectorySourceSectionProps {
   onImagesSelected: (files: File[]) => void;
   isProcessing: boolean;
 }
 
-const DEFAULT_LOCAL_PATH = "G:\\My Drive\\Kollect-It\\Kollect-It Media\\Raw Uploads";
 const DEFAULT_REPO_URL = "https://github.com/jameshorton2486/kollect-it-image-tools.git";
 
 const DirectorySourceSection: React.FC<DirectorySourceSectionProps> = ({ 
   onImagesSelected,
   isProcessing
 }) => {
-  const [localPath, setLocalPath] = useState(DEFAULT_LOCAL_PATH);
-  const [repoUrl, setRepoUrl] = useState(DEFAULT_REPO_URL);
-  const [isLoadingImages, setIsLoadingImages] = useState(false);
+  const [localPath, setLocalPath] = useState(RAW_UPLOADS_PATH);
   const [useGitRepo, setUseGitRepo] = useState(false);
+  const [isLoadingImages, setIsLoadingImages] = useState(false);
   const [availableImages, setAvailableImages] = useState<string[]>([]);
   
   // In a real application, this would interact with a backend or Electron API
@@ -89,8 +89,21 @@ const DirectorySourceSection: React.FC<DirectorySourceSectionProps> = ({
         );
       });
       
-      onImagesSelected(files);
-      toast.success(`Loaded ${files.length} images`);
+      // Add source information to track where these images came from
+      const sourceFiles = files.map(file => {
+        const fileWithSource = new File([file], file.name, { type: file.type });
+        Object.defineProperty(fileWithSource, 'source', {
+          value: {
+            path: useGitRepo ? 'github-repo' : localPath,
+            repository: useGitRepo ? DEFAULT_REPO_URL : undefined,
+          },
+          writable: true
+        });
+        return fileWithSource;
+      });
+      
+      onImagesSelected(sourceFiles);
+      toast.success(`Loaded ${sourceFiles.length} images from ${useGitRepo ? 'GitHub' : 'local folder'}`);
     } catch (error) {
       toast.error(`Error loading images: ${error instanceof Error ? error.message : 'Unknown error'}`);
       console.error("Error loading selected images:", error);
@@ -124,31 +137,36 @@ const DirectorySourceSection: React.FC<DirectorySourceSectionProps> = ({
           <Label htmlFor="use-git-repo">Use GitHub repository</Label>
         </div>
         
-        <div className="space-y-2">
-          <Label htmlFor="source-path">
-            {useGitRepo ? 'Repository URL' : 'Local Directory Path'}
-          </Label>
-          <div className="flex gap-2">
-            <Input 
-              id="source-path"
-              value={useGitRepo ? repoUrl : localPath}
-              onChange={(e) => useGitRepo ? setRepoUrl(e.target.value) : setLocalPath(e.target.value)}
-              placeholder={useGitRepo ? 'https://github.com/user/repo.git' : 'C:\\Path\\To\\Images'}
-              disabled={isProcessing || isLoadingImages}
-              className="flex-grow"
-            />
-            <Button 
-              onClick={browseFolderOrRepo}
-              disabled={isProcessing || isLoadingImages}
-              variant="outline"
-            >
-              {isLoadingImages ? <RefreshCw size={16} className="mr-2 animate-spin" /> : <Folder size={16} className="mr-2" />}
-              Browse
-            </Button>
+        {useGitRepo ? (
+          <GitHubConnector 
+            defaultRepo="jameshorton2486/kollect-it-image-tools" 
+            onImagesLoaded={onImagesSelected}
+          />
+        ) : (
+          <div className="space-y-2">
+            <Label htmlFor="source-path">Local Directory Path</Label>
+            <div className="flex gap-2">
+              <Input 
+                id="source-path"
+                value={localPath}
+                onChange={(e) => setLocalPath(e.target.value)}
+                placeholder="C:\\Path\\To\\Images"
+                disabled={isProcessing || isLoadingImages}
+                className="flex-grow"
+              />
+              <Button 
+                onClick={browseFolderOrRepo}
+                disabled={isProcessing || isLoadingImages}
+                variant="outline"
+              >
+                {isLoadingImages ? <RefreshCw size={16} className="mr-2 animate-spin" /> : <Folder size={16} className="mr-2" />}
+                Browse
+              </Button>
+            </div>
           </div>
-        </div>
+        )}
         
-        {availableImages.length > 0 && (
+        {!useGitRepo && availableImages.length > 0 && (
           <div className="space-y-3">
             <div className="flex justify-between items-center">
               <Label>Available Images ({availableImages.length})</Label>

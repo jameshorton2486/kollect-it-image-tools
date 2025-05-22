@@ -55,6 +55,7 @@ export interface ProcessedImage {
     path?: string;
     gitUrl?: string;
   };
+  productId?: string; // Added product ID for folder organization
 }
 
 export interface ImageProcessingOptions {
