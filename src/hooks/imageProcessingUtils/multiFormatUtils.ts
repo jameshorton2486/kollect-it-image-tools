@@ -1,7 +1,20 @@
 
 import { toast } from 'sonner';
-import { ProcessedImage } from '@/types/imageProcessing';
-import { downloadFile } from '@/utils/imageUtils';
+import { ProcessedImage, ProcessedFormat } from '@/types/imageProcessing';
+
+/**
+ * Helper function to download a file
+ */
+const downloadBlob = (blob: Blob, fileName: string): void => {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+};
 
 /**
  * Download a specific format of a processed image
@@ -14,7 +27,8 @@ export function downloadFormatUtil(index: number, format: string, processedImage
   }
   
   const formatFile = image.processedFormats[format];
-  downloadFile(formatFile, `${formatFile.name}`);
+  const fileName = formatFile.name || `image-${index}-${format}.${format}`;
+  downloadBlob(formatFile.blob, fileName);
   
   toast.success(`Downloaded ${format.toUpperCase()} version`);
 }
@@ -36,7 +50,8 @@ export function downloadAllFormatsUtil(index: number, processedImages: Processed
   }
   
   formats.forEach(([format, file]) => {
-    downloadFile(file, `${file.name}`);
+    const fileName = file.name || `image-${index}-${format}.${format}`;
+    downloadBlob(file.blob, fileName);
   });
   
   toast.success(`Downloaded ${formats.length} format${formats.length !== 1 ? 's' : ''}`);

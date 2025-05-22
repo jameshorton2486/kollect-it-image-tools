@@ -1,9 +1,10 @@
 
-import { UseImageProcessingResult } from './useImageProcessingTypes';
 import { useImageProcessingCore } from './useImageProcessingCore';
+import { UseImageProcessingResult } from './useImageProcessingTypes';
 
-export type { ProcessedImage } from '@/types/imageProcessing';
-
+/**
+ * Main hook for image processing that wraps useImageProcessingCore
+ */
 export function useImageProcessing(initialImages: File[]): UseImageProcessingResult {
   return useImageProcessingCore(initialImages);
 }

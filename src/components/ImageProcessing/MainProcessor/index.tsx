@@ -1,10 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import ProcessorHeader from './ProcessorHeader';
-import ProcessingTabs from './ProcessingTabs';
-import ProcessorBody from './ProcessorBody';
 import BatchProcessingProgress from '@/components/ImageProcessing/BatchProcessingProgress';
 import EmptyState from '@/components/ImageProcessing/EmptyState';
 import { ImageProcessorProps, ProcessedImage } from '@/types/imageProcessing';
@@ -12,6 +9,7 @@ import { clearImageCache } from '@/utils/imageCacheUtils';
 import { clearAnalyticsData } from '@/utils/analytics';
 import { normalizeProcessedImage } from '@/utils/imageProcessing/batchProcessingHelper';
 import { useToast } from '@/hooks/use-toast';
+import { useImageProcessing } from '@/hooks/useImageProcessing';
 
 const MainProcessor: React.FC<ImageProcessorProps> = ({ images, onReset, onProcessingStateChange }) => {
   const [processedImages, setProcessedImages] = useState<ProcessedImage[]>([]);
@@ -19,6 +17,9 @@ const MainProcessor: React.FC<ImageProcessorProps> = ({ images, onReset, onProce
   const [batchProgress, setBatchProgress] = useState<number>(0);
   const [processedCount, setProcessedCount] = useState<number>(0);
   const { toast } = useToast();
+  
+  // Use our main processing hook
+  const processingHook = useImageProcessing(images);
 
   // Initialize with uploaded images
   useEffect(() => {
@@ -67,11 +68,6 @@ const MainProcessor: React.FC<ImageProcessorProps> = ({ images, onReset, onProce
     });
   };
 
-  // Update processed images
-  const handleUpdateProcessedImages = (updatedImages: ProcessedImage[]) => {
-    setProcessedImages(updatedImages);
-  };
-
   // Handle batch processing progress
   const handleBatchProgress = (progress: number, count: number) => {
     setBatchProgress(progress);
@@ -97,12 +93,9 @@ const MainProcessor: React.FC<ImageProcessorProps> = ({ images, onReset, onProce
           {processedImages.length === 0 ? (
             <EmptyState onReset={onReset} />
           ) : (
-            <ProcessorBody 
-              images={processedImages}
-              onUpdateImages={handleUpdateProcessedImages}
-              onBatchProgress={handleBatchProgress}
-              onProcessingStateChange={handleProcessingStateChange}
-            />
+            <div>{/* Use the processingHook context to handle processing */}
+              {/* This is a placeholder - we'll need to implement the proper processor body */}
+            </div>
           )}
         </CardContent>
       </Card>

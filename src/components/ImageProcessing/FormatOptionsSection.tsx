@@ -18,7 +18,7 @@ interface FormatOptionsSectionProps {
   outputFormat: OutputFormat;
   onOutputFormatChange: (format: OutputFormat) => void;
   compressionSettings: CompressionSettings;
-  onCompressionSettingsChange: (settings: Partial<CompressionSettings>) => void;
+  onCompressionSettingsChange: (settings: CompressionSettings) => void;
   stripMetadata: boolean;
   onStripMetadataChange: (strip: boolean) => void;
   progressiveLoading: boolean;
@@ -70,11 +70,13 @@ const FormatOptionsSection: React.FC<FormatOptionsSectionProps> = ({
     avif: '79.15%'
   };
 
-  const formatDescription = {
+  // Define format descriptions as a record with proper type
+  const formatDescription: Record<OutputFormat, string> = {
     'auto': 'Automatically selects the best format based on file size and browser support',
     'avif': 'Best compression (up to 90% reduction), modern browsers only',
     'webp': 'Good compression (up to 80% reduction), wide browser support',
-    'jpeg': 'Universal compatibility, moderate compression (up to 70% reduction)'
+    'jpeg': 'Universal compatibility, moderate compression (up to 70% reduction)',
+    'original': 'Keeps the original format without conversion'
   };
 
   return (
@@ -119,6 +121,7 @@ const FormatOptionsSection: React.FC<FormatOptionsSectionProps> = ({
               <SelectItem value="avif">AVIF Only</SelectItem>
               <SelectItem value="webp">WebP Only</SelectItem>
               <SelectItem value="jpeg">JPEG Only</SelectItem>
+              <SelectItem value="original">Original Format</SelectItem>
             </SelectContent>
           </Select>
           <p className="text-xs text-muted-foreground mt-1">

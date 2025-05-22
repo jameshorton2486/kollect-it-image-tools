@@ -1,4 +1,3 @@
-
 import { ResizeMode, ResizeUnit } from './imageResizing';
 
 // Core Types
@@ -117,6 +116,14 @@ export interface ImageProcessingOptions {
   resizeMode: ResizeMode;
   resizeQuality: number;
   compressionLevel: number;
+  // Additional properties needed by processing functions
+  backgroundType?: string;
+  backgroundColor?: string;
+  backgroundOpacity?: number;
+  backgroundImage?: File | null;
+  preserveTransparency?: boolean;
+  useMultiFormat?: boolean;
+  cropSettings?: any;
 }
 
 // Use this type instead of ImageProcessingSettings which seems to be causing errors

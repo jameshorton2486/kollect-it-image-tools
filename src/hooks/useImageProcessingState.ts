@@ -67,8 +67,8 @@ export function useImageProcessingState() {
   const [outputFormat, setOutputFormat] = useState<OutputFormat>('auto');
   const [compressionSettings, setCompressionSettings] = useState<CompressionSettings>({
     jpeg: { quality: 80 },
-    webp: { quality: 80 },
-    avif: { quality: 70 }
+    webp: { quality: 80, lossless: false },
+    avif: { quality: 70, lossless: false }
   });
   const [stripMetadata, setStripMetadata] = useState<boolean>(true);
   const [progressiveLoading, setProgressiveLoading] = useState<boolean>(true);
