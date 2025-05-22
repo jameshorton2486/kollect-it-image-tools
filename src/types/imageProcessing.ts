@@ -12,6 +12,13 @@ export interface ProcessedImage {
     width: number;
     height: number;
   };
+  processingStats?: {
+    duration?: number;
+    originalSize: number;
+    processedSize?: number;
+    compressionRatio?: number;
+    optimizations?: string[];
+  };
 }
 
 export interface ProcessingOptions {
@@ -23,4 +30,10 @@ export interface ProcessingOptions {
   backgroundColor?: string;
   backgroundOpacity?: number;
   backgroundImage?: File | null;
+  performanceOptimizations?: {
+    useDownsampling: boolean;
+    samplingFactor: number;
+    useProgressiveProcessing: boolean;
+    useWebWorkers: boolean;
+  };
 }

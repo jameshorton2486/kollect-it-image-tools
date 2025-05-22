@@ -24,6 +24,7 @@ interface CompressionSettingsProps {
   backgroundType: string;
   backgroundColor: string;
   backgroundOpacity: number;
+  backgroundImage: File | null;
   onCompressionLevelChange: (value: number) => void;
   onMaxWidthChange: (value: number) => void;
   onMaxHeightChange: (value: number) => void;
@@ -36,6 +37,7 @@ interface CompressionSettingsProps {
   onBackgroundTypeChange: (value: string) => void;
   onBackgroundColorChange: (value: string) => void;
   onBackgroundOpacityChange: (value: number) => void;
+  onBackgroundImageChange: (file: File | null) => void;
   onProcessAll: () => void;
   onDownloadAll: () => void;
   onSelectAll: (selected: boolean) => void;

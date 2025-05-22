@@ -1,3 +1,4 @@
+
 import { toast } from '@/hooks/use-toast';
 import { ProcessedImage } from "@/types/imageProcessing";
 import { trackEvent } from '@/utils/analyticsUtils';
@@ -24,6 +25,7 @@ export async function processAllImagesUtil(
   backgroundType: string,
   backgroundColor: string,
   backgroundOpacity: number,
+  backgroundImage: File | null,
   setProcessedImages: React.Dispatch<React.SetStateAction<ProcessedImage[]>>,
   setIsProcessing: React.Dispatch<React.SetStateAction<boolean>>,
   setBatchProgress: React.Dispatch<React.SetStateAction<number>>,
@@ -45,7 +47,11 @@ export async function processAllImagesUtil(
     const optimalSettings = getOptimalProcessingSettings();
     
     // Start performance measurement
-    const batchPerfMeasurement = startMeasuring('batch-processing', undefined, `${selectedImages.length} images`);
+    const batchPerfMeasurement = startMeasuring(
+      'batch-processing', 
+      undefined, 
+      `${selectedImages.length} images`
+    );
     
     batchProcessingCancelled = false;
     setTotalItemsToProcess(selectedImages.length);
@@ -94,6 +100,7 @@ export async function processAllImagesUtil(
           backgroundType,
           backgroundColor,
           backgroundOpacity,
+          backgroundImage,
           setProcessedImages
         );
         

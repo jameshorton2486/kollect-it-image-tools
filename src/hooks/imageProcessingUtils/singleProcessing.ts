@@ -3,7 +3,13 @@ import { toast } from '@/components/ui/use-toast';
 import { ProcessedImage } from "@/types/imageProcessing";
 import { processSingleImage } from '@/utils/imageProcessingUtils';
 import { createObjectUrl } from '@/utils/imageUtils';
-import { startMeasuring, endMeasuring } from '@/utils/performanceUtils';
+import { 
+  startMeasuring, 
+  endMeasuring, 
+  getOptimalProcessingSettings, 
+  categorizeResolution,
+  getProcessingOptimizations 
+} from '@/utils/performanceUtils';
 
 export async function processImageUtil(
   index: number,
@@ -32,6 +38,12 @@ export async function processImageUtil(
   setProcessedImages(updatedImages);
   
   try {
+    // Get image dimensions if available
+    const imageWidth = image.dimensions?.width || 0;
+    const imageHeight = image.dimensions?.height || 0;
+    const resolutionCategory = imageWidth && imageHeight ? 
+      categorizeResolution(imageWidth, imageHeight) : 'mediumRes';
+    
     // Start performance measurement
     const originalSize = image.original.size;
     const imageResolution = image.dimensions ? 
@@ -43,6 +55,18 @@ export async function processImageUtil(
       originalSize,
       imageResolution
     );
+    
+    // Get optimal processing settings
+    const optimalSettings = getOptimalProcessingSettings(imageWidth, imageHeight);
+    
+    // Get processing optimizations
+    const processingOptimizations = imageWidth && imageHeight ?
+      getProcessingOptimizations(image.original, imageWidth, imageHeight) :
+      null;
+    
+    if (processingOptimizations?.shouldDownsampleFirst) {
+      console.log(`Large image detected (${imageResolution}), applying optimization strategies`);
+    }
     
     // Update progress in steps to show activity
     const progressUpdater = setInterval(() => {
@@ -67,6 +91,14 @@ export async function processImageUtil(
       
       // Use browser model as fallback
       backgroundRemovalModel = 'browser';
+    }
+    
+    // Performance note for high-resolution images
+    if (optimalSettings.useDownsampling) {
+      toast({
+        title: "Processing High-Resolution Image",
+        description: `Optimizing processing for ${imageResolution} image.`,
+      });
     }
     
     // Process with automatic retry - pass the original File from the ProcessedImage
