@@ -6,8 +6,10 @@ import Features from '@/components/Features';
 import ImageDropzone from '@/components/ImageDropzone';
 import ImageProcessor from '@/components/ImageProcessor';
 import { Button } from '@/components/ui/button';
-import { BarChart3 } from 'lucide-react';
+import { BarChart3, HelpCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Steps, Step } from '@/components/ui/steps';
 
 const Index = () => {
   const [uploadedImages, setUploadedImages] = useState<File[]>([]);
@@ -37,18 +39,48 @@ const Index = () => {
               </p>
             </div>
             
-            <Link to="/analytics">
-              <Button variant="outline" className="flex items-center gap-2">
-                <BarChart3 size={16} />
-                Analytics Dashboard
+            <div className="flex gap-2">
+              <Link to="/analytics">
+                <Button variant="outline" className="flex items-center gap-2">
+                  <BarChart3 size={16} />
+                  Analytics
+                </Button>
+              </Link>
+              
+              <Button 
+                variant="ghost" 
+                className="flex items-center gap-2"
+                onClick={() => window.open('https://docs.kollect-it.com/image-processor', '_blank')}
+              >
+                <HelpCircle size={16} />
+                Help
               </Button>
-            </Link>
+            </div>
           </div>
           
           {!showProcessor ? (
-            <div className="max-w-3xl mx-auto">
-              <ImageDropzone onImageUpload={handleImageUpload} />
-            </div>
+            <Card className="max-w-4xl mx-auto shadow-sm border-brand-blue/20">
+              <CardHeader>
+                <CardTitle className="text-2xl font-bold text-center">Get Started</CardTitle>
+                <CardDescription className="text-center text-base">
+                  Upload your images to begin optimizing them for better performance
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="mb-8">
+                  <Steps className="max-w-2xl mx-auto">
+                    <Step title="Upload Images" description="Select or drag & drop your images" />
+                    <Step title="Adjust Settings" description="Choose compression and resize options" />
+                    <Step title="Process" description="Optimize individual or batch process" />
+                    <Step title="Download" description="Save your optimized images" />
+                  </Steps>
+                </div>
+                
+                <div className="max-w-3xl mx-auto">
+                  <ImageDropzone onImageUpload={handleImageUpload} />
+                </div>
+              </CardContent>
+            </Card>
           ) : (
             <ImageProcessor images={uploadedImages} onReset={handleReset} />
           )}

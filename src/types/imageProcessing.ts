@@ -5,7 +5,7 @@ export interface ProcessedImage {
   preview: string;
   isProcessing: boolean;
   isSelected: boolean;
-  hasBackgroundRemoved?: boolean;
+  hasBackgroundRemoved: boolean; // Changed from optional to required
   retryCount?: number;
   processingProgress?: number;
   dimensions?: {

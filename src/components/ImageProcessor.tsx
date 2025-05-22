@@ -1,3 +1,4 @@
+
 import React from 'react';
 import CompressionSettings from './ImageProcessing/CompressionSettings';
 import ImageGrid from './ImageProcessing/ImageGrid';
@@ -7,9 +8,11 @@ import BatchUploadSection from './ImageProcessing/BatchUploadSection';
 import { useImageProcessing } from '@/hooks/useImageProcessing';
 import { ProcessedImage } from '@/types/imageProcessing';
 import { Button } from './ui/button';
-import { Database, RefreshCw, BarChart3 } from 'lucide-react';
+import { Database, RefreshCw, BarChart3, HelpCircle } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { Link } from 'react-router-dom';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 
 interface ImageProcessorProps {
   images: File[];
@@ -84,93 +87,128 @@ const ImageProcessor: React.FC<ImageProcessorProps> = ({ images, onReset }) => {
   
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Image Processor</h2>
-        <div className="flex gap-2">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={clearImageCache}
-                  className="gap-1"
-                >
-                  <Database className="h-4 w-4" />
-                  <RefreshCw className="h-3 w-3" />
-                  Clear Cache
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Clear image processing cache to free up browser storage</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          
-          <Link to="/analytics">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="gap-1"
-                  >
-                    <BarChart3 className="h-4 w-4" />
-                    Analytics
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>View processing statistics and usage analytics</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </Link>
-        </div>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="md:col-span-2">
-          <CompressionSettings
-            compressionLevel={compressionLevel}
-            maxWidth={maxWidth}
-            maxHeight={maxHeight}
-            preserveAspectRatio={preserveAspectRatio}
-            isProcessing={isProcessing}
-            removeBackground={removeBackground}
-            apiKey={apiKey}
-            selfHosted={selfHosted}
-            serverUrl={serverUrl}
-            backgroundRemovalModel={backgroundRemovalModel}
-            backgroundType={backgroundType}
-            backgroundColor={backgroundColor}
-            backgroundOpacity={backgroundOpacity}
-            onCompressionLevelChange={setCompressionLevel}
-            onMaxWidthChange={setMaxWidth}
-            onMaxHeightChange={setMaxHeight}
-            onPreserveAspectRatioChange={setPreserveAspectRatio}
-            onRemoveBackgroundChange={setRemoveBackground}
-            onApiKeyChange={setApiKey}
-            onSelfHostedChange={setSelfHosted}
-            onServerUrlChange={setServerUrl}
-            onBackgroundRemovalModelChange={setBackgroundRemovalModel}
-            onBackgroundTypeChange={setBackgroundType}
-            onBackgroundColorChange={setBackgroundColor}
-            onBackgroundOpacityChange={setBackgroundOpacity}
-            onProcessAll={processAllImages}
-            onDownloadAll={downloadAllImages}
-            onSelectAll={selectAllImages}
-            onReset={onReset}
-          />
-        </div>
+      <Card className="mb-4">
+        <CardHeader className="pb-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <CardTitle className="text-2xl font-bold">Image Processor</CardTitle>
+              <CardDescription className="text-muted-foreground mt-1">
+                Optimize and process images for your WordPress site
+              </CardDescription>
+            </div>
+            <div className="flex gap-2">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={clearImageCache}
+                      className="gap-1"
+                    >
+                      <Database className="h-4 w-4" />
+                      <RefreshCw className="h-3 w-3" />
+                      Clear Cache
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Clear image processing cache to free up browser storage</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              
+              <Link to="/analytics">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-1"
+                      >
+                        <BarChart3 className="h-4 w-4" />
+                        Analytics
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>View processing statistics and usage analytics</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </Link>
+              
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-1"
+                      onClick={() => window.open('https://docs.kollect-it.com/image-processor', '_blank')}
+                    >
+                      <HelpCircle className="h-4 w-4" />
+                      Help
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>View user guide and documentation</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+          </div>
+        </CardHeader>
         
-        <div>
-          <BatchUploadSection 
-            onFilesUploaded={handleAdditionalFilesUploaded} 
-            isProcessing={isProcessing} 
-          />
-        </div>
-      </div>
+        <CardContent>
+          <Tabs defaultValue="settings" className="space-y-4">
+            <TabsList className="grid grid-cols-2 w-full max-w-md mb-2">
+              <TabsTrigger value="settings">Processing Settings</TabsTrigger>
+              <TabsTrigger value="batch">Batch Upload</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="settings" className="space-y-4">
+              <CompressionSettings
+                compressionLevel={compressionLevel}
+                maxWidth={maxWidth}
+                maxHeight={maxHeight}
+                preserveAspectRatio={preserveAspectRatio}
+                isProcessing={isProcessing}
+                removeBackground={removeBackground}
+                apiKey={apiKey}
+                selfHosted={selfHosted}
+                serverUrl={serverUrl}
+                backgroundRemovalModel={backgroundRemovalModel}
+                backgroundType={backgroundType}
+                backgroundColor={backgroundColor}
+                backgroundOpacity={backgroundOpacity}
+                onCompressionLevelChange={setCompressionLevel}
+                onMaxWidthChange={setMaxWidth}
+                onMaxHeightChange={setMaxHeight}
+                onPreserveAspectRatioChange={setPreserveAspectRatio}
+                onRemoveBackgroundChange={setRemoveBackground}
+                onApiKeyChange={setApiKey}
+                onSelfHostedChange={setSelfHosted}
+                onServerUrlChange={setServerUrl}
+                onBackgroundRemovalModelChange={setBackgroundRemovalModel}
+                onBackgroundTypeChange={setBackgroundType}
+                onBackgroundColorChange={setBackgroundColor}
+                onBackgroundOpacityChange={setBackgroundOpacity}
+                onProcessAll={processAllImages}
+                onDownloadAll={downloadAllImages}
+                onSelectAll={selectAllImages}
+                onReset={onReset}
+              />
+            </TabsContent>
+            
+            <TabsContent value="batch" className="space-y-4">
+              <BatchUploadSection 
+                onFilesUploaded={handleAdditionalFilesUploaded} 
+                isProcessing={isProcessing} 
+              />
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
       
       {processedImages.length > 0 ? (
         <ImageGrid
