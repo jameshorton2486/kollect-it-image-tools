@@ -1,10 +1,10 @@
-
 import React from 'react';
 import CompressionSettings from './ImageProcessing/CompressionSettings';
 import ImageGrid from './ImageProcessing/ImageGrid';
 import EmptyState from './ImageProcessing/EmptyState';
 import BatchProcessingProgress from './ImageProcessing/BatchProcessingProgress';
 import BatchUploadSection from './ImageProcessing/BatchUploadSection';
+import KollectItIntegrationSection from './ImageProcessing/KollectItIntegrationSection';
 import { useImageProcessing } from '@/hooks/useImageProcessing';
 import { ProcessedImage } from '@/types/imageProcessing';
 import { Button } from './ui/button';
@@ -49,13 +49,20 @@ const ImageProcessor: React.FC<ImageProcessorProps> = ({ images, onReset }) => {
     setServerUrl,
     backgroundRemovalModel,
     setBackgroundRemovalModel,
-    // New background options
+    // Background options
     backgroundType,
     setBackgroundType,
     backgroundColor,
     setBackgroundColor,
     backgroundOpacity,
     setBackgroundOpacity,
+    backgroundImage,
+    setBackgroundImage,
+    // Kollect-It integration
+    kollectItApiKey,
+    setKollectItApiKey,
+    kollectItUploadUrl,
+    setKollectItUploadUrl,
     // Other features
     showBeforeAfter,
     toggleBeforeAfterView,
@@ -161,9 +168,10 @@ const ImageProcessor: React.FC<ImageProcessorProps> = ({ images, onReset }) => {
         
         <CardContent>
           <Tabs defaultValue="settings" className="space-y-4">
-            <TabsList className="grid grid-cols-2 w-full max-w-md mb-2">
+            <TabsList className="grid grid-cols-3 w-full max-w-md mb-2">
               <TabsTrigger value="settings">Processing Settings</TabsTrigger>
               <TabsTrigger value="batch">Batch Upload</TabsTrigger>
+              <TabsTrigger value="integration">Kollect-It</TabsTrigger>
             </TabsList>
             
             <TabsContent value="settings" className="space-y-4">
@@ -181,6 +189,7 @@ const ImageProcessor: React.FC<ImageProcessorProps> = ({ images, onReset }) => {
                 backgroundType={backgroundType}
                 backgroundColor={backgroundColor}
                 backgroundOpacity={backgroundOpacity}
+                backgroundImage={backgroundImage}
                 onCompressionLevelChange={setCompressionLevel}
                 onMaxWidthChange={setMaxWidth}
                 onMaxHeightChange={setMaxHeight}
@@ -193,6 +202,7 @@ const ImageProcessor: React.FC<ImageProcessorProps> = ({ images, onReset }) => {
                 onBackgroundTypeChange={setBackgroundType}
                 onBackgroundColorChange={setBackgroundColor}
                 onBackgroundOpacityChange={setBackgroundOpacity}
+                onBackgroundImageChange={setBackgroundImage}
                 onProcessAll={processAllImages}
                 onDownloadAll={downloadAllImages}
                 onSelectAll={selectAllImages}
@@ -204,6 +214,16 @@ const ImageProcessor: React.FC<ImageProcessorProps> = ({ images, onReset }) => {
               <BatchUploadSection 
                 onFilesUploaded={handleAdditionalFilesUploaded} 
                 isProcessing={isProcessing} 
+              />
+            </TabsContent>
+            
+            <TabsContent value="integration" className="space-y-4">
+              <KollectItIntegrationSection 
+                processedImages={processedImages}
+                apiKey={kollectItApiKey || ''}
+                uploadUrl={kollectItUploadUrl || 'https://api.kollect-it.com/upload'}
+                onApiKeyChange={setKollectItApiKey || (() => {})}
+                onUploadUrlChange={setKollectItUploadUrl || (() => {})}
               />
             </TabsContent>
           </Tabs>

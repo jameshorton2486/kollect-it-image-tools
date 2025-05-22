@@ -5,7 +5,7 @@ export interface ProcessedImage {
   preview: string;
   isProcessing: boolean;
   isSelected: boolean;
-  hasBackgroundRemoved: boolean; // Changed from optional to required
+  hasBackgroundRemoved: boolean;
   retryCount?: number;
   processingProgress?: number;
   dimensions?: {
@@ -19,4 +19,8 @@ export interface ProcessingOptions {
   maxWidth: number;
   maxHeight: number;
   removeBackground: boolean;
+  backgroundType?: string;
+  backgroundColor?: string;
+  backgroundOpacity?: number;
+  backgroundImage?: File | null;
 }

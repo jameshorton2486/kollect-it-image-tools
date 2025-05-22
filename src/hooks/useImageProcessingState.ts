@@ -25,10 +25,25 @@ export function useImageProcessingState() {
     localStorage.getItem('background_removal_model') || DEFAULT_BACKGROUND_REMOVAL_MODEL
   );
   
-  // New state for background options
-  const [backgroundType, setBackgroundType] = useState<string>('none');
-  const [backgroundColor, setBackgroundColor] = useState<string>('#FFFFFF');
-  const [backgroundOpacity, setBackgroundOpacity] = useState<number>(100);
+  // Background options
+  const [backgroundType, setBackgroundType] = useState<string>(
+    localStorage.getItem('background_type') || 'none'
+  );
+  const [backgroundColor, setBackgroundColor] = useState<string>(
+    localStorage.getItem('background_color') || '#FFFFFF'
+  );
+  const [backgroundOpacity, setBackgroundOpacity] = useState<number>(
+    parseInt(localStorage.getItem('background_opacity') || '100', 10)
+  );
+  const [backgroundImage, setBackgroundImage] = useState<File | null>(null);
+  
+  // New state for Kollect-It platform integration
+  const [kollectItApiKey, setKollectItApiKey] = useState<string | null>(
+    localStorage.getItem('kollect_it_api_key')
+  );
+  const [kollectItUploadUrl, setKollectItUploadUrl] = useState<string>(
+    localStorage.getItem('kollect_it_upload_url') || 'https://api.kollect-it.com/upload'
+  );
 
   return {
     processedImages, setProcessedImages,
@@ -48,6 +63,9 @@ export function useImageProcessingState() {
     backgroundRemovalModel, setBackgroundRemovalModel,
     backgroundType, setBackgroundType,
     backgroundColor, setBackgroundColor,
-    backgroundOpacity, setBackgroundOpacity
+    backgroundOpacity, setBackgroundOpacity,
+    backgroundImage, setBackgroundImage,
+    kollectItApiKey, setKollectItApiKey,
+    kollectItUploadUrl, setKollectItUploadUrl
   };
 }

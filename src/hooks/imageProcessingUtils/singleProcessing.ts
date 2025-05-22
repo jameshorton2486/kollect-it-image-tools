@@ -19,6 +19,7 @@ export async function processImageUtil(
   backgroundType: string = 'none',
   backgroundColor: string = '#FFFFFF',
   backgroundOpacity: number = 100,
+  backgroundImage: File | null = null,
   setProcessedImages: React.Dispatch<React.SetStateAction<ProcessedImage[]>>
 ): Promise<void> {
   const image = processedImages[index];
@@ -81,7 +82,8 @@ export async function processImageUtil(
       backgroundRemovalModel,
       backgroundType,
       backgroundColor,
-      backgroundOpacity
+      backgroundOpacity,
+      backgroundImage
     );
     
     clearInterval(progressUpdater);

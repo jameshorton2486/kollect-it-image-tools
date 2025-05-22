@@ -26,6 +26,7 @@ interface UseImageProcessingActionsProps {
   backgroundType: string;
   backgroundColor: string;
   backgroundOpacity: number;
+  backgroundImage?: File | null;
   isProcessing: boolean;
   setIsProcessing: React.Dispatch<React.SetStateAction<boolean>>;
   setShowBeforeAfter: React.Dispatch<React.SetStateAction<number | null>>;
@@ -51,6 +52,7 @@ export function useImageProcessingActions({
   backgroundType,
   backgroundColor,
   backgroundOpacity,
+  backgroundImage,
   isProcessing,
   setIsProcessing,
   setShowBeforeAfter,
@@ -74,38 +76,9 @@ export function useImageProcessingActions({
       backgroundType,
       backgroundColor,
       backgroundOpacity,
+      backgroundImage,
       setProcessedImages
     );
-  }, [processedImages, compressionLevel, maxWidth, maxHeight, removeBackground, apiKey, selfHosted, 
-      serverUrl, backgroundRemovalModel, backgroundType, backgroundColor, backgroundOpacity, setProcessedImages]);
-  
-  const processAllImages = useCallback(async () => {
-    if (isProcessing) return;
-    setIsProcessing(true);
-    
-    try {
-      await processAllImagesUtil(
-        processedImages,
-        compressionLevel,
-        maxWidth,
-        maxHeight,
-        removeBackground,
-        apiKey,
-        selfHosted,
-        serverUrl,
-        backgroundRemovalModel,
-        backgroundType,
-        backgroundColor,
-        backgroundOpacity,
-        setProcessedImages,
-        setIsProcessing,
-        setBatchProgress,
-        setTotalItemsToProcess,
-        setProcessedItemsCount
-      );
-    } finally {
-      setIsProcessing(false);
-    }
   }, [
     processedImages, 
     compressionLevel, 
@@ -115,16 +88,12 @@ export function useImageProcessingActions({
     apiKey, 
     selfHosted, 
     serverUrl, 
-    backgroundRemovalModel,
-    backgroundType,
-    backgroundColor,
+    backgroundRemovalModel, 
+    backgroundType, 
+    backgroundColor, 
     backgroundOpacity,
-    isProcessing, 
-    setProcessedImages, 
-    setIsProcessing,
-    setBatchProgress,
-    setTotalItemsToProcess,
-    setProcessedItemsCount
+    backgroundImage,
+    setProcessedImages
   ]);
   
   const toggleSelectImage = useCallback((index: number) => {
@@ -168,7 +137,55 @@ export function useImageProcessingActions({
   
   return {
     processImage,
-    processAllImages,
+    processAllImages: useCallback(async () => {
+      if (isProcessing) return;
+      setIsProcessing(true);
+      
+      try {
+        await processAllImagesUtil(
+          processedImages,
+          compressionLevel,
+          maxWidth,
+          maxHeight,
+          removeBackground,
+          apiKey,
+          selfHosted,
+          serverUrl,
+          backgroundRemovalModel,
+          backgroundType,
+          backgroundColor,
+          backgroundOpacity,
+          backgroundImage,
+          setProcessedImages,
+          setIsProcessing,
+          setBatchProgress,
+          setTotalItemsToProcess,
+          setProcessedItemsCount
+        );
+      } finally {
+        setIsProcessing(false);
+      }
+    }, [
+      processedImages, 
+      compressionLevel, 
+      maxWidth, 
+      maxHeight, 
+      removeBackground, 
+      apiKey, 
+      selfHosted, 
+      serverUrl, 
+      backgroundRemovalModel,
+      backgroundType,
+      backgroundColor,
+      backgroundOpacity,
+      backgroundImage,
+      isProcessing, 
+      setProcessedImages, 
+      setIsProcessing,
+      setBatchProgress,
+      setTotalItemsToProcess,
+      setProcessedItemsCount
+    ]),
     downloadImage: useCallback((index: number) => {
       downloadImageUtil(index, processedImages);
     }, [processedImages]),

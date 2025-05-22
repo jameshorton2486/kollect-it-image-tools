@@ -1,51 +1,52 @@
 
-import { ProcessedImage } from "@/types/imageProcessing";
+import { ProcessedImage } from '@/types/imageProcessing';
 
-export interface UseImageProcessingState {
+export interface UseImageProcessingResult {
   processedImages: ProcessedImage[];
-  compressionLevel: number;
-  maxWidth: number;
-  maxHeight: number;
-  preserveAspectRatio: boolean;
-  isProcessing: boolean;
-  removeBackground: boolean;
-  apiKey: string | null;
-  selfHosted: boolean;
-  serverUrl: string;
-  showBeforeAfter: number | null;
-  batchProgress: number;
-  totalItemsToProcess: number;
-  processedItemsCount: number;
-  backgroundRemovalModel: string;
-  backgroundType: string;
-  backgroundColor: string;
-  backgroundOpacity: number;
-}
-
-export interface UseImageProcessingActions {
   setProcessedImages: React.Dispatch<React.SetStateAction<ProcessedImage[]>>;
-  setCompressionLevel: (level: number) => void;
-  setMaxWidth: (width: number) => void;
-  setMaxHeight: (height: number) => void;
-  setPreserveAspectRatio: (preserve: boolean) => void;
-  setRemoveBackground: (remove: boolean) => void;
-  setApiKey: (key: string | null) => void;
-  setSelfHosted: (selfHosted: boolean) => void;
-  setServerUrl: (url: string) => void;
+  compressionLevel: number;
+  setCompressionLevel: React.Dispatch<React.SetStateAction<number>>;
+  maxWidth: number;
+  setMaxWidth: React.Dispatch<React.SetStateAction<number>>;
+  maxHeight: number;
+  setMaxHeight: React.Dispatch<React.SetStateAction<number>>;
+  preserveAspectRatio: boolean;
+  setPreserveAspectRatio: React.Dispatch<React.SetStateAction<boolean>>;
+  isProcessing: boolean;
   processImage: (index: number) => Promise<void>;
-  processAllImages: () => Promise<void>;
+  processAllImages: () => void;
   downloadImage: (index: number) => void;
   downloadAllImages: () => void;
   toggleSelectImage: (index: number) => void;
   selectAllImages: (selected: boolean) => void;
+  removeBackground: boolean;
+  setRemoveBackground: React.Dispatch<React.SetStateAction<boolean>>;
+  apiKey: string | null;
+  setApiKey: React.Dispatch<React.SetStateAction<string | null>>;
+  selfHosted: boolean;
+  setSelfHosted: React.Dispatch<React.SetStateAction<boolean>>;
+  serverUrl: string;
+  setServerUrl: React.Dispatch<React.SetStateAction<string>>;
+  backgroundRemovalModel: string;
+  setBackgroundRemovalModel: React.Dispatch<React.SetStateAction<string>>;
+  backgroundType: string;
+  setBackgroundType: React.Dispatch<React.SetStateAction<string>>;
+  backgroundColor: string;
+  setBackgroundColor: React.Dispatch<React.SetStateAction<string>>;
+  backgroundOpacity: number;
+  setBackgroundOpacity: React.Dispatch<React.SetStateAction<number>>;
+  backgroundImage?: File | null;
+  setBackgroundImage?: React.Dispatch<React.SetStateAction<File | null>>;
+  kollectItApiKey?: string | null;
+  setKollectItApiKey?: React.Dispatch<React.SetStateAction<string | null>>;
+  kollectItUploadUrl?: string;
+  setKollectItUploadUrl?: React.Dispatch<React.SetStateAction<string>>;
+  showBeforeAfter: number | null;
   toggleBeforeAfterView: (index: number | null) => void;
+  batchProgress: number;
+  totalItemsToProcess: number;
+  processedItemsCount: number;
   cancelBatchProcessing: () => void;
   clearImageCache: () => void;
   clearAnalyticsData: () => void;
-  setBackgroundRemovalModel: (model: string) => void;
-  setBackgroundType: (type: string) => void;
-  setBackgroundColor: (color: string) => void;
-  setBackgroundOpacity: (opacity: number) => void;
 }
-
-export type UseImageProcessingResult = UseImageProcessingState & UseImageProcessingActions;

@@ -21,7 +21,8 @@ export async function processSingleImage(
   backgroundRemovalModel: string,
   backgroundType: string = 'none',
   backgroundColor: string = '#FFFFFF',
-  backgroundOpacity: number = 100
+  backgroundOpacity: number = 100,
+  backgroundImage: File | null = null
 ): Promise<File | null> {
   // Process image logic implementation
   try {
@@ -30,6 +31,9 @@ export async function processSingleImage(
     console.log(`Background removal model: ${backgroundRemovalModel}, selfHosted: ${selfHosted}`);
     if (removeBackgroundFlag) {
       console.log(`Background options: type=${backgroundType}, color=${backgroundColor}, opacity=${backgroundOpacity}`);
+      if (backgroundType === 'image' && backgroundImage) {
+        console.log(`Using background image: ${backgroundImage.name}`);
+      }
     }
     
     const startTime = performance.now();
@@ -69,13 +73,22 @@ export async function processSingleImage(
         processedFile = bgRemovalResult.processedFile;
         
         // Step 1.5: Add new background if specified and not 'none'
-        if (backgroundType !== 'none' && (backgroundType === 'solid' || backgroundType === 'custom')) {
-          console.log(`Adding ${backgroundType} background: ${backgroundColor} with opacity ${backgroundOpacity}%`);
-          processedFile = await addBackgroundToImage(
-            processedFile, 
-            backgroundColor,
-            backgroundOpacity / 100
-          );
+        if (backgroundType !== 'none') {
+          if (backgroundType === 'solid' || backgroundType === 'custom') {
+            console.log(`Adding ${backgroundType} background: ${backgroundColor} with opacity ${backgroundOpacity}%`);
+            processedFile = await addBackgroundToImage(
+              processedFile, 
+              backgroundColor,
+              backgroundOpacity / 100
+            );
+          } else if (backgroundType === 'image' && backgroundImage) {
+            console.log(`Adding background image: ${backgroundImage.name}`);
+            processedFile = await addImageBackgroundToImage(
+              processedFile,
+              backgroundImage,
+              backgroundOpacity / 100
+            );
+          }
         }
       } else {
         console.error('Background removal failed:', bgRemovalResult.error);
@@ -172,6 +185,85 @@ async function addBackgroundToImage(
     };
     
     img.src = URL.createObjectURL(imageFile);
+  });
+}
+
+/**
+ * Add an image background to a transparent image
+ */
+async function addImageBackgroundToImage(
+  foregroundImage: File,
+  backgroundImage: File,
+  opacity: number
+): Promise<File> {
+  return new Promise((resolve, reject) => {
+    // Load the foreground image
+    const fgImg = new Image();
+    fgImg.onload = () => {
+      // Load the background image
+      const bgImg = new Image();
+      bgImg.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = fgImg.naturalWidth;
+        canvas.height = fgImg.naturalHeight;
+        const ctx = canvas.getContext('2d');
+        
+        if (!ctx) {
+          reject(new Error('Failed to get canvas context'));
+          return;
+        }
+        
+        // Calculate best fit for background image (cover)
+        const bgRatio = bgImg.naturalWidth / bgImg.naturalHeight;
+        const canvasRatio = canvas.width / canvas.height;
+        
+        let bgDrawWidth, bgDrawHeight, offsetX = 0, offsetY = 0;
+        
+        if (bgRatio > canvasRatio) {
+          // Background is wider than canvas (relatively)
+          bgDrawHeight = canvas.height;
+          bgDrawWidth = bgImg.naturalWidth * (canvas.height / bgImg.naturalHeight);
+          offsetX = (canvas.width - bgDrawWidth) / 2;
+        } else {
+          // Background is taller than canvas (relatively)
+          bgDrawWidth = canvas.width;
+          bgDrawHeight = bgImg.naturalHeight * (canvas.width / bgImg.naturalWidth);
+          offsetY = (canvas.height - bgDrawHeight) / 2;
+        }
+        
+        // Draw background image with opacity
+        ctx.globalAlpha = opacity;
+        ctx.drawImage(bgImg, offsetX, offsetY, bgDrawWidth, bgDrawHeight);
+        ctx.globalAlpha = 1.0;
+        
+        // Draw foreground image on top
+        ctx.drawImage(fgImg, 0, 0);
+        
+        // Convert canvas to file
+        canvas.toBlob((blob) => {
+          if (!blob) {
+            reject(new Error('Failed to create blob from canvas'));
+            return;
+          }
+          
+          const filename = foregroundImage.name.replace(/\.[^/.]+$/, '') + '-composite.png';
+          const file = new File([blob], filename, { type: 'image/png' });
+          resolve(file);
+        }, 'image/png');
+      };
+      
+      bgImg.onerror = () => {
+        reject(new Error('Failed to load background image'));
+      };
+      
+      bgImg.src = URL.createObjectURL(backgroundImage);
+    };
+    
+    fgImg.onerror = () => {
+      reject(new Error('Failed to load foreground image'));
+    };
+    
+    fgImg.src = URL.createObjectURL(foregroundImage);
   });
 }
 

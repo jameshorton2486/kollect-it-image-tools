@@ -13,6 +13,9 @@ interface UseImageProcessingEffectsProps {
   backgroundType: string;
   backgroundColor: string;
   backgroundOpacity: number;
+  backgroundImage?: File | null;
+  kollectItApiKey?: string | null;
+  kollectItUploadUrl?: string;
   setProcessedImages: React.Dispatch<React.SetStateAction<ProcessedImage[]>>;
 }
 
@@ -29,6 +32,9 @@ export function useImageProcessingEffects({
   backgroundType,
   backgroundColor,
   backgroundOpacity,
+  backgroundImage,
+  kollectItApiKey,
+  kollectItUploadUrl,
   setProcessedImages
 }: UseImageProcessingEffectsProps) {
   // Initialize processed images when initial files change
@@ -59,4 +65,15 @@ export function useImageProcessingEffects({
     localStorage.setItem('background_color', backgroundColor);
     localStorage.setItem('background_opacity', backgroundOpacity.toString());
   }, [backgroundRemovalModel, backgroundType, backgroundColor, backgroundOpacity]);
+  
+  // Save Kollect-It settings to localStorage
+  useEffect(() => {
+    if (kollectItApiKey) {
+      localStorage.setItem('kollect_it_api_key', kollectItApiKey);
+    }
+    
+    if (kollectItUploadUrl) {
+      localStorage.setItem('kollect_it_upload_url', kollectItUploadUrl);
+    }
+  }, [kollectItApiKey, kollectItUploadUrl]);
 }

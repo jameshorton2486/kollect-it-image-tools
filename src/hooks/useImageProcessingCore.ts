@@ -1,3 +1,4 @@
+
 import { UseImageProcessingResult } from './useImageProcessingTypes';
 import { useImageProcessingState } from './useImageProcessingState';
 import { useImageProcessingEffects } from './useImageProcessingEffects';
@@ -27,7 +28,10 @@ export function useImageProcessingCore(initialImages: File[]): UseImageProcessin
     backgroundRemovalModel, setBackgroundRemovalModel,
     backgroundType, setBackgroundType,
     backgroundColor, setBackgroundColor,
-    backgroundOpacity, setBackgroundOpacity
+    backgroundOpacity, setBackgroundOpacity,
+    backgroundImage, setBackgroundImage,
+    kollectItApiKey, setKollectItApiKey,
+    kollectItUploadUrl, setKollectItUploadUrl
   } = useImageProcessingState();
 
   // Initialize and clean up effects
@@ -41,6 +45,9 @@ export function useImageProcessingCore(initialImages: File[]): UseImageProcessin
     backgroundType,
     backgroundColor,
     backgroundOpacity,
+    backgroundImage,
+    kollectItApiKey,
+    kollectItUploadUrl,
     setProcessedImages
   });
   
@@ -53,7 +60,13 @@ export function useImageProcessingCore(initialImages: File[]): UseImageProcessin
     localStorage.setItem('background_type', backgroundType);
     localStorage.setItem('background_color', backgroundColor);
     localStorage.setItem('background_opacity', backgroundOpacity.toString());
-  }, [apiKey, backgroundRemovalModel, backgroundType, backgroundColor, backgroundOpacity]);
+    if (kollectItApiKey) {
+      localStorage.setItem('kollect_it_api_key', kollectItApiKey);
+    }
+    if (kollectItUploadUrl) {
+      localStorage.setItem('kollect_it_upload_url', kollectItUploadUrl);
+    }
+  }, [apiKey, backgroundRemovalModel, backgroundType, backgroundColor, backgroundOpacity, kollectItApiKey, kollectItUploadUrl]);
 
   // Action methods
   const {
@@ -81,6 +94,7 @@ export function useImageProcessingCore(initialImages: File[]): UseImageProcessin
     backgroundType,
     backgroundColor,
     backgroundOpacity,
+    backgroundImage,
     isProcessing,
     setIsProcessing,
     setShowBeforeAfter,
@@ -123,6 +137,12 @@ export function useImageProcessingCore(initialImages: File[]): UseImageProcessin
     setBackgroundColor,
     backgroundOpacity,
     setBackgroundOpacity,
+    backgroundImage,
+    setBackgroundImage,
+    kollectItApiKey,
+    setKollectItApiKey,
+    kollectItUploadUrl,
+    setKollectItUploadUrl,
     showBeforeAfter,
     toggleBeforeAfterView,
     batchProgress,
