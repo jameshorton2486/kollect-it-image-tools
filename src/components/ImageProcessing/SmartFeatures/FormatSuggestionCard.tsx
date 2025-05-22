@@ -91,7 +91,7 @@ const FormatSuggestionCard: React.FC<FormatSuggestionCardProps> = ({
               <TableCell className="font-medium">Recommended Format</TableCell>
               <TableCell className="flex items-center">
                 <Badge 
-                  variant={isUsingRecommended ? "success" : "outline"}
+                  variant={isUsingRecommended ? "secondary" : "outline"}
                   className={isUsingRecommended ? "bg-green-100 text-green-800" : ""}
                 >
                   {bestFormat.format.toUpperCase()}

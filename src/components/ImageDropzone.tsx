@@ -1,6 +1,6 @@
 
 import React, { useCallback, useState } from 'react';
-import { Upload } from 'lucide-react';
+import { Upload, Folder, Image as ImageIcon } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { toast } from 'sonner';
 
@@ -9,6 +9,8 @@ interface ImageDropzoneProps {
   maxFileSize?: number; // in MB
   acceptedFileTypes?: string[];
   maxFiles?: number;
+  title?: string;
+  description?: string;
 }
 
 const DEFAULT_MAX_FILE_SIZE = 10; // 10MB
@@ -18,10 +20,13 @@ const ImageDropzone: React.FC<ImageDropzoneProps> = ({
   onImageUpload,
   maxFileSize = DEFAULT_MAX_FILE_SIZE,
   acceptedFileTypes = DEFAULT_ACCEPTED_FILE_TYPES,
-  maxFiles = 10
+  maxFiles = 10,
+  title = "Drag & Drop Images Here",
+  description = "Drop images here or click to browse. Supports JPG, PNG, WebP up to 10MB each (max 10 files)."
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const folderInputRef = React.useRef<HTMLInputElement>(null);
 
   const handleDragEnter = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -81,6 +86,8 @@ const ImageDropzone: React.FC<ImageDropzoneProps> = ({
       
       if (validatedFiles) {
         onImageUpload(validatedFiles);
+        // Add toast notification for successful upload
+        toast.success(`Successfully added ${validatedFiles.length} image${validatedFiles.length !== 1 ? 's' : ''}`);
       }
     }
   }, [onImageUpload, validateFiles]);
@@ -92,6 +99,8 @@ const ImageDropzone: React.FC<ImageDropzoneProps> = ({
       
       if (validatedFiles) {
         onImageUpload(validatedFiles);
+        // Add toast notification for successful upload
+        toast.success(`Successfully added ${validatedFiles.length} image${validatedFiles.length !== 1 ? 's' : ''}`);
       }
     }
     
@@ -101,12 +110,30 @@ const ImageDropzone: React.FC<ImageDropzoneProps> = ({
     }
   }, [onImageUpload, validateFiles]);
   
+  const handleFolderSelect = useCallback(() => {
+    // Programmatically click the folder input
+    if (folderInputRef.current) {
+      folderInputRef.current.click();
+    }
+  }, []);
+  
   const handleSelectButtonClick = useCallback(() => {
     // Programmatically click the file input
     if (fileInputRef.current) {
       fileInputRef.current.click();
     }
   }, []);
+
+  // Create a descriptive format string based on accepted types
+  const getFormatDescription = () => {
+    const formats = [];
+    if (acceptedFileTypes.includes('image/jpeg')) formats.push('JPG');
+    if (acceptedFileTypes.includes('image/png')) formats.push('PNG');
+    if (acceptedFileTypes.includes('image/webp')) formats.push('WebP');
+    if (acceptedFileTypes.includes('image/gif')) formats.push('GIF');
+    
+    return formats.join(', ');
+  };
 
   return (
     <div
@@ -117,10 +144,30 @@ const ImageDropzone: React.FC<ImageDropzoneProps> = ({
       onDrop={handleDrop}
     >
       <Upload size={48} className="text-brand-blue mb-4" />
-      <h3 className="text-lg font-semibold mb-2">Drag & Drop Images Here</h3>
+      <h3 className="text-lg font-semibold mb-2">{title}</h3>
       <p className="text-sm text-gray-500 mb-4 text-center max-w-md">
-        Drop images here or click to browse. Supports JPG, PNG, WebP up to {maxFileSize}MB each (max {maxFiles} files).
+        {description || `Drop images here or click to browse. Supports ${getFormatDescription()} up to ${maxFileSize}MB each (max ${maxFiles} files).`}
       </p>
+      
+      <div className="flex flex-wrap gap-2">
+        <Button 
+          variant="outline" 
+          className="cursor-pointer flex items-center gap-2"
+          onClick={handleFolderSelect}
+        >
+          <Folder size={16} />
+          Select Folder
+        </Button>
+        
+        <Button 
+          variant="default" 
+          className="cursor-pointer flex items-center gap-2"
+          onClick={handleSelectButtonClick}
+        >
+          <ImageIcon size={16} />
+          Select Files
+        </Button>
+      </div>
       
       <input
         ref={fileInputRef}
@@ -131,13 +178,15 @@ const ImageDropzone: React.FC<ImageDropzoneProps> = ({
         onChange={handleFileInputChange}
       />
       
-      <Button 
-        variant="default" 
-        className="cursor-pointer"
-        onClick={handleSelectButtonClick}
-      >
-        Select Files
-      </Button>
+      <input
+        ref={folderInputRef}
+        type="file"
+        accept={acceptedFileTypes.join(',')}
+        multiple
+        className="hidden"
+        {...{ webkitdirectory: "", directory: "" } as any}
+        onChange={handleFileInputChange}
+      />
     </div>
   );
 };

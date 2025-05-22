@@ -6,17 +6,19 @@ import Features from '@/components/Features';
 import ImageDropzone from '@/components/ImageDropzone';
 import ImageProcessor from '@/components/ImageProcessor';
 import { Button } from '@/components/ui/button';
-import { BarChart3, HelpCircle, ListChecks } from 'lucide-react';
+import { BarChart3, HelpCircle, ListChecks, GitBranch } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Steps, Step } from '@/components/ui/steps';
+import DirectorySourceSection from '@/components/ImageProcessing/SourceDirectory/DirectorySourceSection';
+import GitHubConnector from '@/components/ImageProcessing/SourceDirectory/GitHubConnector';
 
 const Index = () => {
   const [uploadedImages, setUploadedImages] = useState<File[]>([]);
   const [showProcessor, setShowProcessor] = useState(false);
 
   const handleImageUpload = (files: File[]) => {
-    setUploadedImages(files);
+    setUploadedImages(prev => [...prev, ...files]);
     setShowProcessor(true);
   };
 
@@ -76,8 +78,23 @@ const Index = () => {
                   </Steps>
                 </div>
                 
+                <div className="grid md:grid-cols-2 gap-6 mb-8">
+                  <DirectorySourceSection 
+                    onImagesSelected={handleImageUpload}
+                    isProcessing={false}
+                  />
+                  
+                  <GitHubConnector 
+                    onImagesLoaded={handleImageUpload} 
+                  />
+                </div>
+                
                 <div className="max-w-3xl mx-auto">
-                  <ImageDropzone onImageUpload={handleImageUpload} />
+                  <ImageDropzone 
+                    onImageUpload={handleImageUpload} 
+                    title="Drag & Drop Product Images"
+                    description="Drop product images here or click to browse. Connect to Kollect-It folders or use your local files."
+                  />
                 </div>
               </CardContent>
             </Card>

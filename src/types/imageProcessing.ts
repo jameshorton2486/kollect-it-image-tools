@@ -19,6 +19,15 @@ export interface ProcessedImage {
     compressedSize: number;
     compressionRatio: number;
     qualityUsed: number;
+    formatSizes?: {
+      [format: string]: number;
+    };
+    qualityScores?: {
+      [format: string]: number;
+    };
+    processingTimes?: {
+      [format: string]: number;
+    };
   };
   dimensions?: {
     width: number;
@@ -38,6 +47,13 @@ export interface ProcessedImage {
     faceCoordinates?: Array<{x: number, y: number, width: number, height: number}>;
     ruleOfThirdsPoints?: Array<{x: number, y: number}>;
     salientRegion?: {x: number, y: number, width: number, height: number};
+  };
+  retryCount?: number; // track retry attempts for processing
+  processingProgress?: number; // progress percentage during processing
+  source?: {
+    repository?: string;
+    path?: string;
+    gitUrl?: string;
   };
 }
 
