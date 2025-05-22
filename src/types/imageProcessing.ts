@@ -8,6 +8,7 @@ export interface ProcessedImage {
   hasBackgroundRemoved: boolean;
   retryCount?: number;
   processingProgress?: number;
+  processingError?: string; // Add this missing property
   dimensions?: {
     width: number;
     height: number;

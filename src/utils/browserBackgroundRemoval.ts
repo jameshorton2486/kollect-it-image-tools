@@ -177,7 +177,9 @@ export const removeBackground = async (
         const avgG = totalG / edgePixels.length;
         const avgB = totalB / edgePixels.length;
         
-        logger.log(`Detected background color: RGB(${avgR.toFixed(0)}, ${avgG.toFixed(0)}, ${avgB.toFixed(0)})`);
+        logger.info(`Detected background color: RGB(${avgR.toFixed(0)}, ${avgG.toFixed(0)}, ${avgB.toFixed(0)})`, { 
+          module: 'BrowserBackgroundRemoval'
+        });
         
         // Color similarity threshold - more aggressive
         const similarityThreshold = 65;
