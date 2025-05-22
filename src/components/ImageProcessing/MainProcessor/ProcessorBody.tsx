@@ -176,10 +176,23 @@ const ProcessorBody: React.FC<ProcessorBodyProps> = ({
 }) => {
   const [htmlPreviewOpen, setHtmlPreviewOpen] = useState(false);
   const [selectedImageForHtml, setSelectedImageForHtml] = useState<ProcessedImage | null>(null);
+  const [selectedImageForPreview, setSelectedImageForPreview] = useState<ProcessedImage | null>(null);
 
   const handleViewHtmlCode = (imageIndex: number) => {
     setSelectedImageForHtml(processedImages[imageIndex]);
     setHtmlPreviewOpen(true);
+  };
+
+  // Select the first image for preview by default, if available
+  useEffect(() => {
+    if (processedImages.length > 0 && !selectedImageForPreview) {
+      setSelectedImageForPreview(processedImages[0]);
+    }
+  }, [processedImages, selectedImageForPreview]);
+
+  // Update selected image when user clicks on an image
+  const handleImageSelect = (image: ProcessedImage) => {
+    setSelectedImageForPreview(image);
   };
 
   return (
@@ -236,7 +249,7 @@ const ProcessorBody: React.FC<ProcessorBodyProps> = ({
             estimatedSizes={estimatedSizes}
           />
 
-          {/* Add the new Resize Options Section */}
+          {/* Add the enhanced ResizeOptionsSection with image preview */}
           <div className="mt-6">
             <ResizeOptionsSection
               width={maxWidth}
@@ -253,6 +266,7 @@ const ProcessorBody: React.FC<ProcessorBodyProps> = ({
               onResizeUnitChange={setResizeUnit}
               onApplyWordPressPreset={applyResizePreset}
               estimatedFileSize={estimatedSizes.jpeg}
+              selectedImage={selectedImageForPreview}
             />
           </div>
         </div>
@@ -309,6 +323,7 @@ const ProcessorBody: React.FC<ProcessorBodyProps> = ({
           onDownloadFormat={downloadImageFormat}
           onViewHtmlCode={handleViewHtmlCode}
           onDownloadAllFormats={downloadAllFormats}
+          onImageSelect={handleImageSelect}
         />
       ) : (
         <EmptyState onReset={onReset} />
