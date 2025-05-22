@@ -20,6 +20,7 @@ import {
   saveHtmlSnippet
 } from '@/utils/googleDriveUtils';
 import { toast } from 'sonner';
+import { generatePictureHtml } from '@/utils/wordPressUtils';
 
 interface UseProcessingActionsProps {
   processedImages: ProcessedImage[];
@@ -92,7 +93,7 @@ export function useProcessingActions({
   
   // Update with compatible function signature for processImageUtil
   const processImage = useCallback(async (index: number) => {
-    // Adapt to match the expected function signature
+    // Create a processing options object
     const processingOptions = {
       compressionLevel,
       maxWidth,
@@ -161,6 +162,10 @@ export function useProcessingActions({
           }
         }
 
+        // Generate and save HTML snippet
+        const htmlSnippet = generatePictureHtml(processedImage);
+        await saveHtmlSnippet(productId, htmlSnippet);
+
         toast.success(`Saved images to Google Drive folders`);
       }
     } catch (error) {
@@ -203,7 +208,7 @@ export function useProcessingActions({
     setIsProcessing(true);
     
     try {
-      // Adapt to match expected function signature
+      // Create a processing options object
       const processingOptions = {
         compressionLevel,
         maxWidth,
@@ -266,10 +271,8 @@ export function useProcessingActions({
           }
 
           // Generate and save HTML snippet
-          if (img.newFilename) {
-            const htmlSnippet = generateHtmlSnippet(img, productId);
-            await saveHtmlSnippet(productId, htmlSnippet);
-          }
+          const htmlSnippet = generatePictureHtml(img);
+          await saveHtmlSnippet(productId, htmlSnippet);
         }
       });
       
@@ -336,47 +339,6 @@ export function useProcessingActions({
     });
   }, [processedImages]);
   
-  // Function to generate HTML snippet for WordPress
-  const generateHtmlSnippet = (image: ProcessedImage, productId: string): string => {
-    // Check if we have multiple formats for this image
-    const hasMultipleFormats = image.processedFormats && Object.keys(image.processedFormats).length > 0;
-    
-    if (hasMultipleFormats) {
-      // Create a responsive <picture> element with format variants
-      let pictureHtml = `<!-- WordPress Image HTML for ${productId} -->\n<picture>`;
-      
-      // Add source elements for each format in order of preference: AVIF, WebP, then JPEG as fallback
-      if (image.processedFormats?.avif) {
-        pictureHtml += `\n  <source srcset="${PROCESSED_IMAGES_PATH}\\${productId}\\${image.processedFormats.avif.name}" type="image/avif">`;
-      }
-      
-      if (image.processedFormats?.webp) {
-        pictureHtml += `\n  <source srcset="${PROCESSED_IMAGES_PATH}\\${productId}\\${image.processedFormats.webp.name}" type="image/webp">`;
-      }
-      
-      // Add the img element as fallback (JPEG or original)
-      const fallbackImage = image.processed || image.original;
-      pictureHtml += `\n  <img src="${PROCESSED_IMAGES_PATH}\\${productId}\\${fallbackImage.name}" 
-       alt="${image.newFilename || image.original.name}"
-       width="${image.processedDimensions?.width || image.dimensions?.width || '800'}" 
-       height="${image.processedDimensions?.height || image.dimensions?.height || '600'}">`;
-      
-      pictureHtml += '\n</picture>';
-      
-      return pictureHtml;
-    } else {
-      // Simple HTML snippet for single format
-      return `<!-- WordPress Image HTML for ${productId} -->
-<figure class="wp-block-image">
-  <img src="${PROCESSED_IMAGES_PATH}\\${productId}\\${image.newFilename || image.original.name}" 
-       alt="${image.newFilename || image.original.name}"
-       width="${image.processedDimensions?.width || image.dimensions?.width || '800'}" 
-       height="${image.processedDimensions?.height || image.dimensions?.height || '600'}" />
-  <figcaption>Product image</figcaption>
-</figure>`;
-    }
-  };
-  
   // New actions for multi-format downloads
   const downloadImageFormatAction = useCallback((index: number, format: string) => {
     downloadFormatUtil(index, format, processedImages);
@@ -386,6 +348,10 @@ export function useProcessingActions({
     if (img.processedFormats?.[format] && img.productId) {
       const productFolder = getProductFolderPath(img.productId);
       saveFileToDrive(img.processedFormats[format], productFolder);
+      
+      // Generate and save HTML snippet when downloading a specific format
+      const htmlSnippet = generatePictureHtml(img);
+      saveHtmlSnippet(img.productId, htmlSnippet);
     }
   }, [processedImages]);
   
@@ -399,6 +365,10 @@ export function useProcessingActions({
       Object.values(img.processedFormats).forEach(formatFile => {
         saveFileToDrive(formatFile, productFolder);
       });
+      
+      // Generate and save HTML snippet when downloading all formats
+      const htmlSnippet = generatePictureHtml(img);
+      saveHtmlSnippet(img.productId, htmlSnippet);
     }
   }, [processedImages]);
   

@@ -1,4 +1,3 @@
-
 import { ProcessedImage } from '@/types/imageProcessing';
 
 /**
@@ -57,7 +56,9 @@ export function generateSizes(breakpoints: { width: number; size: string }[]): s
 export function generatePictureHtml(
   image: ProcessedImage, 
   includeRetina: boolean = true,
-  lazyLoad: boolean = true
+  lazyLoad: boolean = true,
+  altText: string = '',
+  format: 'picture' | 'figure' = 'picture'
 ): string {
   if (!image.processed) {
     return '';
@@ -84,7 +85,30 @@ export function generatePictureHtml(
   
   const sizes = generateSizes(breakpoints);
   
-  // Start building the picture element
+  // Clean up alt text - if none provided, generate from filename
+  const finalAltText = altText || nameWithoutExtension.replace(/-/g, ' ');
+  
+  // If format is figure, generate a <figure> element with caption
+  if (format === 'figure') {
+    let html = '<figure class="wp-block-image size-full">\n';
+    
+    // The img element
+    const imgAttributes = [
+      `src="${nameWithoutExtension}.jpg"`,
+      `alt="${finalAltText}"`,
+      width && height ? `width="${width}" height="${height}"` : '',
+      lazyLoad ? 'loading="lazy"' : '',
+      `class="wp-image-${image.productId || Date.now()}"`
+    ].filter(Boolean).join(' ');
+    
+    html += `  <img ${imgAttributes}>\n`;
+    html += `  <figcaption class="wp-element-caption">${finalAltText}</figcaption>\n`;
+    html += '</figure>';
+    
+    return html;
+  }
+  
+  // Otherwise generate a <picture> element
   let html = '<picture>\n';
   
   // AVIF format (if available)
@@ -113,11 +137,12 @@ export function generatePictureHtml(
   // The img element (fallback)
   const imgAttributes = [
     `src="${nameWithoutExtension}.jpg"`,
-    `alt=""`,
+    `alt="${finalAltText}"`,
     width && height ? `width="${width}" height="${height}"` : '',
     `srcset="${jpegSrcset}"`,
     `sizes="${sizes}"`,
-    lazyLoad ? 'loading="lazy"' : ''
+    lazyLoad ? 'loading="lazy"' : '',
+    image.productId ? `class="wp-image-${image.productId}"` : ''
   ].filter(Boolean).join(' ');
   
   html += `  <img ${imgAttributes}>\n`;
@@ -129,7 +154,7 @@ export function generatePictureHtml(
 /**
  * Generate WordPress-compatible JSON metadata for an image
  */
-export function generateWordPressMetadata(image: ProcessedImage): Record<string, any> {
+export function generateWordPressMetadata(image: ProcessedImage, altText: string = ''): Record<string, any> {
   if (!image.processed || !image.dimensions) return {};
   
   const { width, height } = image.dimensions;
@@ -140,6 +165,10 @@ export function generateWordPressMetadata(image: ProcessedImage): Record<string,
     'jpg'
   );
   
+  // Clean up alt text - if none provided, generate from filename
+  const nameWithoutExtension = filename.split('.')[0];
+  const finalAltText = altText || nameWithoutExtension.replace(/-/g, ' ');
+  
   // Calculate file sizes for different formats
   const fileSizes = {
     original: image.original.size,
@@ -148,12 +177,17 @@ export function generateWordPressMetadata(image: ProcessedImage): Record<string,
     avif: image.processedFormats?.avif?.size || null
   };
   
+  // Generate WordPress attachment ID, either from productId or current timestamp
+  const attachmentId = image.productId ? 
+    parseInt(image.productId.replace(/\D/g, '').slice(-5), 10) : 
+    Math.floor(Date.now() / 1000);
+  
   return {
-    id: Date.now(), // Placeholder for a unique ID
+    id: attachmentId,
     title: filename,
     filename,
     filesize: fileSizes.processed,
-    alt: "",
+    alt: finalAltText,
     src: filename,
     date: new Date().toISOString(),
     meta: {
@@ -180,18 +214,84 @@ export function generateWordPressMetadata(image: ProcessedImage): Record<string,
             Math.min(300, height),
             'jpg'
           )
+        },
+        large: {
+          width: Math.min(1024, width),
+          height: Math.min(1024, height),
+          file: generateWordPressFilename(
+            image.original.name,
+            Math.min(1024, width),
+            Math.min(1024, height),
+            'jpg'
+          )
         }
       },
       image_meta: {
         created_timestamp: Math.floor(Date.now() / 1000),
         copyright: "",
         title: filename,
+        caption: finalAltText,
+        alt: finalAltText,
+        description: `Optimized image for: ${finalAltText}`,
         formats: {
           jpeg: { filesize: fileSizes.processed },
           webp: fileSizes.webp ? { filesize: fileSizes.webp } : null,
           avif: fileSizes.avif ? { filesize: fileSizes.avif } : null
         }
       }
+    },
+    // SEO attributes
+    seo: {
+      focus_keyword: finalAltText.split(' ').filter(w => w.length > 3).join(', '),
+      title: finalAltText,
+      metadesc: `Optimized image of ${finalAltText}`,
+      linkdex: "0",
+      metakeywords: ""
     }
   };
+}
+
+/**
+ * Generate WordPress schema.org structured data for an image
+ */
+export function generateSchemaOrgData(image: ProcessedImage, altText: string = ''): string {
+  if (!image.processed || !image.dimensions) return '';
+  
+  const { width, height } = image.dimensions;
+  const filename = image.newFilename || image.original.name;
+  const nameWithoutExtension = filename.split('.')[0];
+  const finalAltText = altText || nameWithoutExtension.replace(/-/g, ' ');
+  
+  const schemaData = {
+    "@context": "https://schema.org/",
+    "@type": "ImageObject",
+    "contentUrl": filename,
+    "name": finalAltText,
+    "description": `Optimized image for: ${finalAltText}`,
+    "width": width,
+    "height": height,
+    "encodingFormat": image.processedFormats?.avif ? "image/avif" : 
+                      image.processedFormats?.webp ? "image/webp" : "image/jpeg"
+  };
+  
+  return `<script type="application/ld+json">\n${JSON.stringify(schemaData, null, 2)}\n</script>`;
+}
+
+/**
+ * Generate WordPress image shortcode
+ */
+export function generateWordPressShortcode(image: ProcessedImage, altText: string = ''): string {
+  if (!image.processed || !image.dimensions) return '';
+  
+  const { width, height } = image.dimensions;
+  const filename = image.newFilename || image.original.name;
+  const nameWithoutExtension = filename.split('.')[0];
+  const finalAltText = altText || nameWithoutExtension.replace(/-/g, ' ');
+  
+  // Estimate attachment ID
+  const attachmentId = image.productId ? 
+    parseInt(image.productId.replace(/\D/g, '').slice(-5), 10) : 
+    Math.floor(Date.now() / 1000);
+  
+  return `[caption id="attachment_${attachmentId}" align="aligncenter" width="${width}"]<img src="${filename}" alt="${finalAltText}" width="${width}" height="${height}" class="size-full wp-image-${attachmentId}" /> ${finalAltText}[/caption]`;
 }

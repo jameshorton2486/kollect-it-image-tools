@@ -8,4 +8,4 @@ export {
   estimateImageSizes,
   convertToFormat
 } from './imageProcessing/multiFormatProcessing';
-
+export { generateWordPressSnippets } from './imageProcessing/wordPressSnippets';

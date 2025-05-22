@@ -3,7 +3,7 @@ import React from 'react';
 import { ProcessedImage } from '@/types/imageProcessing';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Download, Code, Eye } from 'lucide-react';
+import { Download, FileCode, Eye } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import {
   Table,
@@ -58,6 +58,13 @@ const CompressionResultsSection: React.FC<CompressionResultsSectionProps> = ({
     return best;
   }, null as null | typeof formats[number]);
 
+  // Calculate which format has the highest quality score
+  const bestQualityFormat = formats.reduce((best, format) => {
+    if (!qualityScores || !qualityScores[format]) return best;
+    if (!best || qualityScores[format]! > qualityScores[best]!) return format;
+    return best;
+  }, null as null | typeof formats[number]);
+
   const formatBrowserSupport = {
     jpeg: '100%',
     webp: '96.45%',
@@ -88,7 +95,7 @@ const CompressionResultsSection: React.FC<CompressionResultsSectionProps> = ({
   return (
     <div className="border rounded-md p-4 bg-white/50 space-y-4 mt-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-medium">Compression Results</h3>
+        <h3 className="text-sm font-medium">Multi-Format Compression Results</h3>
         <div className="flex gap-2">
           <TooltipProvider>
             <Tooltip>
@@ -99,12 +106,12 @@ const CompressionResultsSection: React.FC<CompressionResultsSectionProps> = ({
                   onClick={() => onViewHtmlCode(imageIndex)}
                   className="flex gap-1 items-center h-7"
                 >
-                  <Code className="h-3.5 w-3.5" />
-                  <span className="text-xs">HTML</span>
+                  <FileCode className="h-3.5 w-3.5" />
+                  <span className="text-xs">HTML Code</span>
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="left" className="text-xs">
-                <p>View WordPress HTML code</p>
+                <p>Generate WordPress HTML code</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -123,7 +130,7 @@ const CompressionResultsSection: React.FC<CompressionResultsSectionProps> = ({
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="left" className="text-xs">
-                <p>Download all image formats as ZIP</p>
+                <p>Download all image formats</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -149,16 +156,20 @@ const CompressionResultsSection: React.FC<CompressionResultsSectionProps> = ({
               
               const size = formatSizes[format]!;
               const reductionPercent = Math.round((1 - size / originalSize) * 100);
-              const isBest = bestFormat === format;
+              const isBestSize = bestFormat === format;
+              const isBestQuality = bestQualityFormat === format;
               
               return (
-                <TableRow key={format} className={isBest ? 'bg-green-50' : undefined}>
+                <TableRow key={format} className={isBestSize ? 'bg-green-50' : undefined}>
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-1">
                       <span>{formatIcons[format]}</span>
                       <span>{formatName(format)}</span>
-                      {isBest && (
-                        <Badge variant="default" className="text-[10px] ml-1">Best</Badge>
+                      {isBestSize && (
+                        <Badge variant="default" className="text-[10px] ml-1">Best Size</Badge>
+                      )}
+                      {isBestQuality && !isBestSize && (
+                        <Badge variant="secondary" className="text-[10px] ml-1">Best Quality</Badge>
                       )}
                     </div>
                   </TableCell>
