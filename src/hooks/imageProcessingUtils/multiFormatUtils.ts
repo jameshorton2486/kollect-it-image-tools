@@ -44,10 +44,11 @@ export const downloadFormatUtil = (index: number, format: string, processedImage
   }, 1000);
   
   // Track download event
-  trackEvent("image_format_download", {
+  trackEvent("download", {
     format: format,
     fileSize: formatFile.size,
-    filename: filename
+    filename: filename,
+    isFormatDownload: true
   });
   
   return filename;
@@ -130,8 +131,9 @@ export const downloadAllFormatsUtil = async (index: number, processedImages: Pro
   saveAs(content, `${baseFilename}-all-formats.zip`);
   
   // Track download event
-  trackEvent("download_all_formats", {
-    formatCount: formatCount,
+  trackEvent("download", {
+    bulk: true,
+    formats: formatCount,
     imageIndex: index,
     includesAvif: !!image.processedFormats.avif,
     includesWebp: !!image.processedFormats.webp,
