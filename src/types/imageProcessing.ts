@@ -1,13 +1,19 @@
 
+import { ResizeMode, ResizeUnit } from './imageResizing';
+
+// Core Types
 export interface ProcessedImage {
   originalFile: File;
   original: File;
   originalUrl: string;
   preview: string;
-  optimizedFiles: Record<string, File | Blob>;
+  processed?: File | Blob;
+  optimizedFiles: Record<string, Blob>;
+  blob?: Blob;
+  newSize?: number;
   averageCompressionRate: number;
   totalSizeReduction: number;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
+  status: 'pending' | 'processing' | 'success' | 'error';
   processed: boolean;
   isProcessing: boolean;
   isSelected: boolean;
@@ -17,36 +23,95 @@ export interface ProcessedImage {
     width: number;
     height: number;
   };
-  compressionStats?: {
-    formatSizes: Record<string, number>;
-    originalSize: number;
-    percentSaved: number;
-    totalSaved: number;
+  processedDimensions?: {
+    width: number;
+    height: number;
   };
-  outputFormat?: OutputFormat;
   wordpressType?: string;
   newFilename?: string;
-  processedFormats?: Record<string, Blob>;
+  productId?: string;
+  outputFormat?: string;
   processingTime?: number;
   processingError?: string;
+  processingProgress?: number;
+  retryCount?: number;
   hasBackgroundRemoved?: boolean;
-  blob?: Blob;
-  newSize?: number;
+  compressionStats?: CompressionStats;
+  processedFormats?: Record<string, ProcessedFormat>;
 }
 
-export interface ProcessorHeaderProps {
-  clearImageCache: () => void;
-  clearAnalyticsData: () => void;
+export interface ProcessedFormat {
+  blob: Blob;
+  url: string;
+  size: number;
+  format: string;
+  quality: number;
+}
+
+export interface CompressionStats {
+  formatSizes: Record<string, number>;
+  originalSize: number;
+  percentSaved: number;
+  totalSaved: number;
+  qualityScores?: Record<string, number>;
+  processingTimes?: Record<string, number>;
+}
+
+// Compression Settings
+export interface CompressionSettings {
+  jpeg: {
+    quality: number;
+  };
+  webp: {
+    quality: number;
+    lossless: boolean;
+  };
+  png: {
+    quality: number;
+  };
+  avif: {
+    quality: number;
+  };
+}
+
+export interface OutputFormat {
+  jpeg: boolean;
+  webp: boolean;
+  png: boolean;
+  avif: boolean;
+  original: boolean;
+}
+
+// WordPress types
+export interface WordPressPreset {
+  id: string;
+  name: string;
+  width: number;
+  height: number;
+  quality: number;
+  format: string;
+  description: string;
+}
+
+// Image Processing Types
+export interface ImageProcessingOptions {
+  maxWidth: number;
+  maxHeight: number;
+  quality: number;
+  format: string;
+  preserveAspectRatio: boolean;
+  stripMetadata: boolean;
+  progressiveLoading: boolean;
+  removeBackground: boolean;
+  resizeMode: ResizeMode;
+  resizeQuality: number;
+  compressionLevel: number;
 }
 
 export interface ImageProcessorProps {
   images: File[];
   onReset: () => void;
   onProcessingStateChange?: (isProcessing: boolean) => void;
-}
-
-export interface EmptyStateProps {
-  onReset: () => void;
 }
 
 export interface ProcessorBodyProps {
@@ -58,46 +123,4 @@ export interface ProcessorBodyProps {
 
 export interface WordPressPresetsSectionProps {
   onApplyPreset: (preset: WordPressPreset) => void;
-}
-
-export type OutputFormat = 'jpeg' | 'png' | 'webp' | 'avif';
-
-export interface CompressionSettings {
-  jpeg: {
-    quality: number;
-    progressive: boolean;
-  };
-  png: {
-    quality: number;
-    lossless: boolean;
-  };
-  webp: {
-    quality: number;
-    lossless: boolean;
-  };
-  avif: {
-    quality: number;
-  };
-}
-
-export interface WordPressPreset {
-  name: string;
-  description?: string;
-  width: number;
-  height: number;
-  format: OutputFormat;
-  quality: number;
-  id: string;
-}
-
-export interface ImageProcessingSettings {
-  width?: number;
-  height?: number;
-  format: OutputFormat;
-  quality: number;
-  compressionLevel?: 'lossless' | 'high' | 'medium' | 'low';
-  preserveMetadata?: boolean;
-  useMultiFormat?: boolean;
-  formats?: OutputFormat[];
-  wordpressType?: string;
 }

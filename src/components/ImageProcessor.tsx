@@ -18,12 +18,17 @@ const ImageProcessor: React.FC<ImageProcessorProps> = ({
   
   // Initialize Google Drive folder structure on component mount
   useEffect(() => {
-    const folderStructure = ensureFolderStructure();
-    console.log('Google Drive folder structure initialized:', folderStructure);
+    try {
+      const folderStructure = ensureFolderStructure();
+      console.log('Google Drive folder structure initialized:', folderStructure);
+    } catch (error) {
+      console.error('Failed to initialize folder structure:', error);
+    }
   }, []);
   
   // Function to add more images from the directory source
   const handleMoreImagesSelected = (newImages: File[]) => {
+    if (!newImages || newImages.length === 0) return;
     setAllImages(prevImages => [...prevImages, ...newImages]);
   };
 
@@ -35,16 +40,21 @@ const ImageProcessor: React.FC<ImageProcessorProps> = ({
   }, [isProcessing, onProcessingStateChange]);
   
   return (
-    <div className="space-y-6">
-      <DirectorySourceSection 
-        onImagesSelected={handleMoreImagesSelected}
-        isProcessing={isProcessing}
-      />
-      <MainProcessor 
-        images={allImages} 
-        onReset={onReset}
-        onProcessingStateChange={setIsProcessing} 
-      />
+    <div className="space-y-6 w-full max-w-7xl mx-auto px-4 sm:px-6 animate-fade-in">
+      <div className="grid grid-cols-1 gap-6">
+        <Card className="overflow-hidden shadow-md border-border">
+          <DirectorySourceSection 
+            onImagesSelected={handleMoreImagesSelected}
+            isProcessing={isProcessing}
+          />
+        </Card>
+        
+        <MainProcessor 
+          images={allImages} 
+          onReset={onReset}
+          onProcessingStateChange={setIsProcessing} 
+        />
+      </div>
     </div>
   );
 };

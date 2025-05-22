@@ -7,19 +7,13 @@ import ProcessingTabs from './ProcessingTabs';
 import ProcessorBody from './ProcessorBody';
 import BatchProcessingProgress from '@/components/ImageProcessing/BatchProcessingProgress';
 import EmptyState from '@/components/ImageProcessing/EmptyState';
-import { ImageProcessorProps, ProcessedImage } from '@/types/imageProcessing';
+import { ImageProcessorProps, ProcessedImage, ProcessorBodyProps } from '@/types/imageProcessing';
 import { clearImageCache } from '@/utils/imageCacheUtils';
 import { clearAnalyticsData } from '@/utils/analytics';
 import { normalizeProcessedImage } from '@/utils/imageProcessing/batchProcessingHelper';
 import { useToast } from '@/hooks/use-toast';
 
-interface MainProcessorProps {
-  images: File[];
-  onReset: () => void;
-  onProcessingStateChange: React.Dispatch<React.SetStateAction<boolean>>;
-}
-
-const MainProcessor: React.FC<MainProcessorProps> = ({ images, onReset, onProcessingStateChange }) => {
+const MainProcessor: React.FC<ImageProcessorProps> = ({ images, onReset, onProcessingStateChange }) => {
   const [processedImages, setProcessedImages] = useState<ProcessedImage[]>([]);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [batchProgress, setBatchProgress] = useState<number>(0);
@@ -36,7 +30,9 @@ const MainProcessor: React.FC<MainProcessorProps> = ({ images, onReset, onProces
 
   // Report processing state changes to parent
   useEffect(() => {
-    onProcessingStateChange(isProcessing);
+    if (onProcessingStateChange) {
+      onProcessingStateChange(isProcessing);
+    }
   }, [isProcessing, onProcessingStateChange]);
 
   // Handle clearing the cache
@@ -89,8 +85,8 @@ const MainProcessor: React.FC<MainProcessorProps> = ({ images, onReset, onProces
 
   return (
     <div className="space-y-6">
-      <Card className="w-full">
-        <CardHeader className="border-b border-gray-100">
+      <Card className="w-full shadow-md border-border">
+        <CardHeader className="border-b border-gray-100 bg-muted/30">
           <ProcessorHeader 
             clearImageCache={handleClearCache}
             clearAnalyticsData={handleClearAnalytics}

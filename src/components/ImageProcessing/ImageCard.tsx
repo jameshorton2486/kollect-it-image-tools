@@ -40,7 +40,7 @@ const ImageCard: React.FC<ImageCardProps> = ({
     : undefined;
 
   return (
-    <Card className="overflow-hidden h-full flex flex-col">
+    <Card className="overflow-hidden h-full flex flex-col shadow-md hover:shadow-lg transition-shadow duration-300">
       <div className="relative">
         <div className="absolute top-2 left-2 z-10">
           <Checkbox 
@@ -132,7 +132,8 @@ const ImageCard: React.FC<ImageCardProps> = ({
         <div className="text-xs text-muted-foreground mt-1">
           {image.original.type} · {(image.original.size / 1024).toFixed(1)} KB
           {image.processed && (
-            <span> → {(image.processed.size / 1024).toFixed(1)} KB ({Math.round((1 - image.processed.size / image.original.size) * 100)}% smaller)</span>
+            <span> → {(image.processed instanceof Blob ? (image.processed.size / 1024).toFixed(1) : "N/A")} KB 
+            ({Math.round((1 - (image.processed instanceof Blob ? image.processed.size : 0) / image.original.size) * 100)}% smaller)</span>
           )}
         </div>
       </CardContent>

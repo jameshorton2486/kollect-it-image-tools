@@ -78,13 +78,13 @@
     @apply border-border;
   }
   body {
-    @apply bg-brand-light text-foreground font-sans;
+    @apply bg-[#F9FAFB] text-foreground font-sans;
   }
   h1 {
-    @apply text-2xl font-bold text-brand-dark;
+    @apply text-2xl font-bold text-brand-dark tracking-tight;
   }
   h2 {
-    @apply text-xl font-semibold text-brand-dark;
+    @apply text-xl font-semibold text-brand-dark tracking-tight;
   }
   h3 {
     @apply text-lg font-medium text-brand-dark;
@@ -118,6 +118,41 @@
   .btn-error {
     @apply bg-brand-red text-white hover:bg-brand-red/90 px-4 py-2 rounded font-medium transition-colors;
   }
+  
+  /* Enhanced form inputs with consistent styling */
+  .form-input {
+    @apply rounded-md border border-input bg-background px-3 py-2 text-sm 
+    ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none 
+    focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
+  }
+
+  /* Card with consistent styling */
+  .feature-card {
+    @apply rounded-lg border border-border bg-card p-4 shadow-sm transition-all 
+    hover:shadow-md hover:border-muted-foreground/20;
+  }
+
+  /* Section layout with standard spacing */
+  .section-container {
+    @apply space-y-6 py-6 px-4 sm:px-6 lg:px-8;
+  }
+
+  /* Toast notification styling */
+  .toast-success {
+    @apply bg-brand-green text-white;
+  }
+  
+  .toast-error {
+    @apply bg-brand-red text-white;
+  }
+  
+  .toast-warning {
+    @apply bg-brand-orange text-white;
+  }
+  
+  .toast-info {
+    @apply bg-brand-blue text-white;
+  }
 }
 
 @layer utilities {
@@ -135,6 +170,50 @@
   .touch-target {
     @apply min-h-[44px] min-w-[44px];
   }
+
+  /* Spacing utilities based on 8px grid system */
+  .space-8 {
+    @apply p-2 m-2; /* 8px */
+  }
+  
+  .space-16 {
+    @apply p-4 m-4; /* 16px */
+  }
+  
+  .space-24 {
+    @apply p-6 m-6; /* 24px */
+  }
+  
+  .space-32 {
+    @apply p-8 m-8; /* 32px */
+  }
+
+  /* Responsive layout helpers */
+  .responsive-container {
+    @apply w-full mx-auto px-4 sm:px-6 md:max-w-3xl lg:max-w-5xl xl:max-w-7xl;
+  }
+  
+  .mobile-only {
+    @apply block md:hidden;
+  }
+  
+  .desktop-only {
+    @apply hidden md:block;
+  }
+  
+  /* Animation utilities */
+  .hover-scale {
+    @apply transition-transform hover:scale-105;
+  }
+  
+  .hover-lift {
+    @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-lg;
+  }
+  
+  /* Skeleton loading animation */
+  .skeleton-pulse {
+    @apply animate-pulse bg-muted rounded;
+  }
 }
 
 /* Load Inter font */
@@ -144,20 +223,44 @@ html {
   font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
-/* 8px spacing grid system */
-.space-8 {
-  margin: 8px;
-  padding: 8px;
+/* Animation keyframes */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
-.space-16 {
-  margin: 16px;
-  padding: 16px;
+
+@keyframes slide-in {
+  from { transform: translateX(20px); }
+  to { transform: translateX(0); }
 }
-.space-24 {
-  margin: 24px;
-  padding: 24px;
+
+@keyframes bounce-subtle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
 }
-.space-32 {
-  margin: 32px;
-  padding: 32px;
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out forwards;
 }
+
+.animate-slide-in {
+  animation: slide-in 0.3s ease-out forwards;
+}
+
+.animate-bounce-subtle {
+  animation: bounce-subtle 2s infinite;
+}
+
+/* Responsive breakpoints */
+@media (min-width: 768px) {
+  .md\:grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .lg\:grid-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
