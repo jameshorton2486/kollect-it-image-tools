@@ -5,12 +5,7 @@ import MainProcessor from './ImageProcessing/MainProcessor';
 import DirectorySourceSection from './ImageProcessing/SourceDirectory/DirectorySourceSection';
 import { ensureFolderStructure } from '@/utils/googleDriveUtils';
 import '../styles/gridOverlay.css';
-
-interface ImageProcessorProps {
-  images: File[];
-  onReset: () => void;
-  onProcessingStateChange?: React.Dispatch<React.SetStateAction<boolean>>;
-}
+import { ImageProcessorProps } from '@/types/imageProcessing';
 
 const ImageProcessor: React.FC<ImageProcessorProps> = ({ 
   images, 

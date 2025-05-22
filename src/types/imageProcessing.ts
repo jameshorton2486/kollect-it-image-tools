@@ -20,9 +20,12 @@ export interface ProcessedImage {
   isSelected: boolean;
   hasBackgroundRemoved?: boolean;
   processingError?: string;
+  processingProgress?: number;
+  retryCount?: number;
   newFilename?: string;
   wordpressType?: string;
   dimensions?: { width: number; height: number };
+  processedDimensions?: { width: number; height: number };
   outputFormat?: string;
   processingTime?: number;
   compressionStats?: {
@@ -110,7 +113,7 @@ export interface ProcessorHeaderProps {
   clearAnalyticsData?: () => void;
 }
 
-// New types needed by components
+// Types needed by components
 export type OutputFormat = 'auto' | 'jpeg' | 'webp' | 'avif';
 
 export interface CompressionSettings {
@@ -135,6 +138,14 @@ export interface WordPressPreset {
   quality: number;
   formats: string[];
   stripMetadata: boolean;
+  description?: string;
+  sizes?: {
+    width: number;
+    height: number;
+  }[];
+  outputFormat?: string;
+  compressionSettings?: CompressionSettings;
+  progressiveLoading?: boolean;
 }
 
 // An interface to extend the File type with dimensions property

@@ -3,6 +3,11 @@ import { ImageProcessingSettings, ProcessedImage, ProcessingResult } from '@/typ
 import { processSingleImage } from './processingCore';
 import { estimateImageSize } from './processingHelpers';
 
+// Helper function to convert Blob to File
+const blobToFile = (blob: Blob, fileName: string): File => {
+  return new File([blob], fileName, { type: blob.type, lastModified: Date.now() });
+};
+
 // Process a single image in multiple formats
 export const processSingleImageInMultipleFormats = async (
   image: File,
@@ -35,7 +40,10 @@ export const processSingleImageInMultipleFormats = async (
         throw new Error('Could not get canvas context');
       }
 
-      const img = await createImageBitmap(processedImage.blob!);
+      // Convert blob to file to ensure compatibility
+      const blobFile = processedImage.blob ? blobToFile(processedImage.blob, image.name) : image;
+      const img = await createImageBitmap(blobFile);
+      
       canvas.width = img.width;
       canvas.height = img.height;
       ctx.drawImage(img, 0, 0);
