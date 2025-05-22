@@ -31,7 +31,8 @@ export function useImageProcessingCore(initialImages: File[]): UseImageProcessin
     backgroundOpacity, setBackgroundOpacity,
     backgroundImage, setBackgroundImage,
     kollectItApiKey, setKollectItApiKey,
-    kollectItUploadUrl, setKollectItUploadUrl
+    kollectItUploadUrl, setKollectItUploadUrl,
+    exportPath, setExportPath
   } = useImageProcessingState();
 
   // Initialize and clean up effects
@@ -66,7 +67,8 @@ export function useImageProcessingCore(initialImages: File[]): UseImageProcessin
     if (kollectItUploadUrl) {
       localStorage.setItem('kollect_it_upload_url', kollectItUploadUrl);
     }
-  }, [apiKey, backgroundRemovalModel, backgroundType, backgroundColor, backgroundOpacity, kollectItApiKey, kollectItUploadUrl]);
+    localStorage.setItem('export_path', exportPath);
+  }, [apiKey, backgroundRemovalModel, backgroundType, backgroundColor, backgroundOpacity, kollectItApiKey, kollectItUploadUrl, exportPath]);
 
   // Action methods
   const {
@@ -150,6 +152,8 @@ export function useImageProcessingCore(initialImages: File[]): UseImageProcessin
     processedItemsCount,
     cancelBatchProcessing,
     clearImageCache,
-    clearAnalyticsData
+    clearAnalyticsData,
+    exportPath,
+    setExportPath
   };
 }
