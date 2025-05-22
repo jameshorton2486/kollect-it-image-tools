@@ -1,4 +1,3 @@
-
 import { UseImageProcessingResult } from './useImageProcessingTypes';
 import { useImageProcessingState } from './useImageProcessingState';
 import { useImageProcessingEffects } from './useImageProcessingEffects';
@@ -81,7 +80,9 @@ export function useImageProcessingCore(initialImages: File[]): UseImageProcessin
     toggleBeforeAfterView,
     cancelBatchProcessing,
     clearImageCache,
-    clearAnalyticsData
+    clearAnalyticsData,
+    exportPath: actionExportPath,
+    setExportPath: actionSetExportPath
   } = useImageProcessingActions({
     processedImages,
     setProcessedImages,

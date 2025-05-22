@@ -1,15 +1,10 @@
+
 import { useCallback } from 'react';
 import { ProcessedImage } from '@/types/imageProcessing';
-import { 
-  processImageUtil, 
-  processAllImagesUtil, 
-  downloadImageUtil, 
-  downloadAllImagesUtil,
-  cancelBatchProcessing
-} from './useImageProcessingUtils';
-import { clearImageCache } from '@/utils/imageCacheUtils';
-import { toast } from '@/hooks/use-toast';
-import { clearAnalyticsData } from '@/utils/analyticsUtils';
+import { useProcessingActions } from './useImageProcessingActions/useProcessingActions';
+import { useSelectionActions } from './useImageProcessingActions/useSelectionActions';
+import { useViewActions } from './useImageProcessingActions/useViewActions';
+import { useSystemActions } from './useImageProcessingActions/useSystemActions';
 
 interface UseImageProcessingActionsProps {
   processedImages: ProcessedImage[];
@@ -39,167 +34,40 @@ interface UseImageProcessingActionsProps {
 /**
  * Actions hook for image processing
  */
-export function useImageProcessingActions({
-  processedImages,
-  setProcessedImages,
-  compressionLevel,
-  maxWidth,
-  maxHeight,
-  removeBackground,
-  apiKey,
-  selfHosted,
-  serverUrl,
-  backgroundRemovalModel,
-  backgroundType,
-  backgroundColor,
-  backgroundOpacity,
-  backgroundImage,
-  isProcessing,
-  setIsProcessing,
-  setShowBeforeAfter,
-  setBatchProgress,
-  setTotalItemsToProcess,
-  setProcessedItemsCount,
-  exportPath,
-  setExportPath
-}: UseImageProcessingActionsProps) {
+export function useImageProcessingActions(props: UseImageProcessingActionsProps) {
+  // Split functionality into sub-hooks
+  const processingActions = useProcessingActions(props);
+  const selectionActions = useSelectionActions({
+    processedImages: props.processedImages,
+    setProcessedImages: props.setProcessedImages
+  });
+  const viewActions = useViewActions({
+    setShowBeforeAfter: props.setShowBeforeAfter
+  });
+  const systemActions = useSystemActions();
   
-  const processImage = useCallback(async (index: number) => {
-    await processImageUtil(
-      index,
-      processedImages,
-      compressionLevel,
-      maxWidth,
-      maxHeight,
-      removeBackground,
-      apiKey,
-      selfHosted,
-      serverUrl,
-      backgroundRemovalModel,
-      backgroundType,
-      backgroundColor,
-      backgroundOpacity,
-      backgroundImage,
-      setProcessedImages
-    );
-  }, [
-    processedImages, 
-    compressionLevel, 
-    maxWidth, 
-    maxHeight, 
-    removeBackground, 
-    apiKey, 
-    selfHosted, 
-    serverUrl, 
-    backgroundRemovalModel, 
-    backgroundType, 
-    backgroundColor, 
-    backgroundOpacity,
-    backgroundImage,
-    setProcessedImages
-  ]);
-  
-  const toggleSelectImage = useCallback((index: number) => {
-    const updatedImages = [...processedImages];
-    updatedImages[index].isSelected = !updatedImages[index].isSelected;
-    setProcessedImages(updatedImages);
-  }, [processedImages, setProcessedImages]);
-  
-  const selectAllImages = useCallback((selected: boolean) => {
-    const updatedImages = processedImages.map(img => ({
-      ...img,
-      isSelected: selected
-    }));
-    setProcessedImages(updatedImages);
-  }, [processedImages, setProcessedImages]);
-  
-  const toggleBeforeAfterView = useCallback((index: number | null) => {
-    setShowBeforeAfter(prevIndex => prevIndex === index ? null : index);
-  }, [setShowBeforeAfter]);
-  
-  const handleCancelBatchProcessing = useCallback(() => {
-    cancelBatchProcessing();
-    setIsProcessing(false);
-  }, [setIsProcessing]);
-  
-  const handleClearImageCache = useCallback(() => {
-    clearImageCache();
-    toast({
-      title: "Cache Cleared",
-      description: "Image processing cache has been cleared"
-    });
-  }, []);
-  
-  const handleClearAnalyticsData = useCallback(() => {
-    clearAnalyticsData();
-    toast({
-      title: "Analytics Cleared",
-      description: "Analytics data has been reset"
-    });
-  }, []);
-  
+  // Return all actions as a combined object
   return {
-    processImage,
-    processAllImages: useCallback(async () => {
-      if (isProcessing) return;
-      setIsProcessing(true);
-      
-      try {
-        await processAllImagesUtil(
-          processedImages,
-          compressionLevel,
-          maxWidth,
-          maxHeight,
-          removeBackground,
-          apiKey,
-          selfHosted,
-          serverUrl,
-          backgroundRemovalModel,
-          backgroundType,
-          backgroundColor,
-          backgroundOpacity,
-          backgroundImage,
-          setProcessedImages,
-          setIsProcessing,
-          setBatchProgress,
-          setTotalItemsToProcess,
-          setProcessedItemsCount
-        );
-      } finally {
-        setIsProcessing(false);
-      }
-    }, [
-      processedImages, 
-      compressionLevel, 
-      maxWidth, 
-      maxHeight, 
-      removeBackground, 
-      apiKey, 
-      selfHosted, 
-      serverUrl, 
-      backgroundRemovalModel,
-      backgroundType,
-      backgroundColor,
-      backgroundOpacity,
-      backgroundImage,
-      isProcessing, 
-      setProcessedImages, 
-      setIsProcessing,
-      setBatchProgress,
-      setTotalItemsToProcess,
-      setProcessedItemsCount
-    ]),
-    downloadImage: useCallback((index: number) => {
-      downloadImageUtil(index, processedImages);
-    }, [processedImages]),
-    downloadAllImages: useCallback(() => {
-      downloadAllImagesUtil(processedImages);
-    }, [processedImages]),
-    toggleSelectImage,
-    selectAllImages,
-    toggleBeforeAfterView,
-    cancelBatchProcessing: handleCancelBatchProcessing,
-    clearImageCache: handleClearImageCache,
-    clearAnalyticsData: handleClearAnalyticsData
+    // Processing actions
+    processImage: processingActions.processImage,
+    processAllImages: processingActions.processAllImages,
+    downloadImage: processingActions.downloadImage,
+    downloadAllImages: processingActions.downloadAllImages,
+    cancelBatchProcessing: processingActions.cancelBatchProcessing,
+    
+    // Selection actions
+    toggleSelectImage: selectionActions.toggleSelectImage,
+    selectAllImages: selectionActions.selectAllImages,
+    
+    // View actions
+    toggleBeforeAfterView: viewActions.toggleBeforeAfterView,
+    
+    // System actions
+    clearImageCache: systemActions.clearImageCache,
+    clearAnalyticsData: systemActions.clearAnalyticsData,
+    
+    // Export path actions
+    exportPath: props.exportPath,
+    setExportPath: props.setExportPath
   };
 }

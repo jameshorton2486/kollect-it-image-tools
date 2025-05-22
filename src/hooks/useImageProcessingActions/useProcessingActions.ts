@@ -29,6 +29,8 @@ interface UseProcessingActionsProps {
   setBatchProgress: React.Dispatch<React.SetStateAction<number>>;
   setTotalItemsToProcess: React.Dispatch<React.SetStateAction<number>>;
   setProcessedItemsCount: React.Dispatch<React.SetStateAction<number>>;
+  exportPath: string;
+  setExportPath: React.Dispatch<React.SetStateAction<string>>;
 }
 
 /**
@@ -53,7 +55,9 @@ export function useProcessingActions({
   setIsProcessing,
   setBatchProgress,
   setTotalItemsToProcess,
-  setProcessedItemsCount
+  setProcessedItemsCount,
+  exportPath,
+  setExportPath
 }: UseProcessingActionsProps) {
   
   const processImage = useCallback(async (index: number) => {
