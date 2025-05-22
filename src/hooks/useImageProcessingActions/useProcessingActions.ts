@@ -10,6 +10,7 @@ import {
   downloadFormatUtil,
   downloadAllFormatsUtil
 } from '@/hooks/useImageProcessingUtils';
+import { ResizeMode, ResizeUnit } from '@/types/imageResizing';
 
 interface UseProcessingActionsProps {
   processedImages: ProcessedImage[];
@@ -38,6 +39,10 @@ interface UseProcessingActionsProps {
   compressionSettings: CompressionSettings;
   stripMetadata: boolean;
   progressiveLoading: boolean;
+  // Resize options
+  resizeMode?: ResizeMode;
+  resizeUnit?: ResizeUnit;
+  resizeQuality?: number;
 }
 
 /**
@@ -69,7 +74,11 @@ export function useProcessingActions({
   outputFormat,
   compressionSettings,
   stripMetadata,
-  progressiveLoading
+  progressiveLoading,
+  // Resize options
+  resizeMode,
+  resizeUnit,
+  resizeQuality
 }: UseProcessingActionsProps) {
   
   const processImage = useCallback(async (index: number) => {

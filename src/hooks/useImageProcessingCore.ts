@@ -5,6 +5,7 @@ import { useImageProcessingEffects } from './useImageProcessingEffects';
 import { useImageProcessingActions } from './useImageProcessingActions';
 import { useEffect } from 'react';
 import { WordPressPreset } from '@/types/imageProcessing';
+import { WORDPRESS_SIZE_PRESETS } from '@/types/imageResizing';
 
 /**
  * Core hook for image processing that combines state, effects, and actions
@@ -39,7 +40,11 @@ export function useImageProcessingCore(initialImages: File[]): UseImageProcessin
     compressionSettings, setCompressionSettings,
     stripMetadata, setStripMetadata,
     progressiveLoading, setProgressiveLoading,
-    estimatedSizes
+    estimatedSizes, setEstimatedSizes,
+    // Resize options
+    resizeMode, setResizeMode,
+    resizeUnit, setResizeUnit,
+    resizeQuality, setResizeQuality
   } = useImageProcessingState();
 
   // Initialize and clean up effects
@@ -121,7 +126,11 @@ export function useImageProcessingCore(initialImages: File[]): UseImageProcessin
     outputFormat,
     compressionSettings,
     stripMetadata,
-    progressiveLoading
+    progressiveLoading,
+    // Resize options
+    resizeMode,
+    resizeUnit,
+    resizeQuality
   });
   
   // Handle applying WordPress presets
@@ -132,6 +141,17 @@ export function useImageProcessingCore(initialImages: File[]): UseImageProcessin
     setStripMetadata(preset.stripMetadata);
     setProgressiveLoading(preset.progressiveLoading);
     setOutputFormat(preset.outputFormat);
+  };
+
+  // Apply resize preset from WordPress sizes
+  const applyResizePreset = (presetKey: string) => {
+    const preset = WORDPRESS_SIZE_PRESETS[presetKey];
+    if (preset) {
+      setMaxWidth(preset.width);
+      setMaxHeight(preset.height || maxHeight);
+      setPreserveAspectRatio(!preset.crop);
+      setResizeMode(preset.crop ? 'crop' : 'fit');
+    }
   };
   
   // Handle showing HTML code preview
@@ -203,6 +223,14 @@ export function useImageProcessingCore(initialImages: File[]): UseImageProcessin
     applyWordPressPreset,
     downloadImageFormat,
     downloadAllFormats,
-    viewHtmlCode
+    viewHtmlCode,
+    // Resize options
+    resizeMode,
+    setResizeMode,
+    resizeUnit, 
+    setResizeUnit,
+    resizeQuality,
+    setResizeQuality,
+    applyResizePreset
   };
 }

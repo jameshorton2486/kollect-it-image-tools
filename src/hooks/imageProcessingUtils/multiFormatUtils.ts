@@ -1,209 +1,142 @@
 
-import { toast } from '@/hooks/use-toast';
-import { ProcessedImage } from "@/types/imageProcessing";
-import { trackEvent } from '@/utils/analyticsUtils';
-import { logger } from '@/utils/logging';
+import { ProcessedImage } from '@/types/imageProcessing';
+import { trackEvent } from '@/utils/analytics';
 import JSZip from 'jszip';
+import { saveAs } from 'file-saver';
 
-export function downloadFormatUtil(
-  index: number,
-  format: string,
-  processedImages: ProcessedImage[]
-): void {
+/**
+ * Utility function to download a specific format of a processed image
+ */
+export const downloadFormatUtil = (index: number, format: string, processedImages: ProcessedImage[]) => {
   const image = processedImages[index];
-  if (!image || !image.processedFormats) return;
-  
-  let fileToDownload: File | null = null;
-  
-  switch (format) {
-    case 'jpeg':
-      fileToDownload = image.processedFormats.jpeg || null;
-      break;
-    case 'webp':
-      fileToDownload = image.processedFormats.webp || null;
-      break;
-    case 'avif':
-      fileToDownload = image.processedFormats.avif || null;
-      break;
-    default:
-      fileToDownload = null;
+  if (!image || !image.processedFormats) {
+    console.error('Cannot download format: Image or processed formats not available');
+    return;
   }
+
+  // Get the requested format
+  const formatFile = image.processedFormats[format as keyof typeof image.processedFormats];
   
-  if (!fileToDownload) {
-    toast({
-      variant: "destructive",
-      title: "Download Failed",
-      description: `No ${format.toUpperCase()} version available for ${image.original.name}`
-    });
+  if (!formatFile) {
+    console.error(`Format ${format} not available for this image`);
     return;
   }
   
-  // Create WordPress-friendly filename
-  const baseName = (image.newFilename || image.original.name).split('.')[0];
-  const safeBaseName = baseName.toLowerCase().replace(/[^a-z0-9]/g, '-');
-  const fileName = `${safeBaseName}.${format === 'jpeg' ? 'jpg' : format}`;
+  // Generate download filename
+  let filename = image.newFilename || image.original.name;
   
-  // Download the file
+  // Ensure filename has the correct extension
+  const nameWithoutExtension = filename.replace(/\.[^/.]+$/, "");
+  filename = `${nameWithoutExtension}.${format}`;
+
+  // Create download link and trigger download
+  const url = URL.createObjectURL(formatFile);
   const link = document.createElement('a');
-  link.href = URL.createObjectURL(fileToDownload);
-  link.download = fileName;
+  link.href = url;
+  link.download = filename;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
-  URL.revokeObjectURL(link.href);
+  
+  // Revoke object URL to free memory
+  setTimeout(() => {
+    URL.revokeObjectURL(url);
+  }, 1000);
   
   // Track download event
-  trackEvent('download_format', {
-    format,
-    imageName: image.original.name,
-    fileSize: fileToDownload.size
+  trackEvent("image_format_download", {
+    format: format,
+    fileSize: formatFile.size,
+    filename: filename
   });
   
-  toast({
-    title: "Download Complete",
-    description: `Downloaded ${fileName}`
-  });
-}
+  return filename;
+};
 
-export async function downloadAllFormatsUtil(
-  index: number,
-  processedImages: ProcessedImage[]
-): Promise<void> {
+/**
+ * Utility function to generate HTML code for the picture element
+ */
+export const generatePictureHtml = (image: ProcessedImage): string => {
+  if (!image.processedFormats) {
+    return '';
+  }
+  
+  const baseFilename = image.newFilename || image.original.name.replace(/\.[^/.]+$/, "");
+  
+  let html = '<picture>\n';
+  
+  // Add AVIF source if available
+  if (image.processedFormats.avif) {
+    html += `  <source srcset="${baseFilename}.avif" type="image/avif">\n`;
+  }
+  
+  // Add WebP source if available
+  if (image.processedFormats.webp) {
+    html += `  <source srcset="${baseFilename}.webp" type="image/webp">\n`;
+  }
+  
+  // Add fallback img tag (always use jpeg if available, otherwise use original)
+  const fallbackFormat = image.processedFormats.jpeg ? 'jpeg' : 'jpg';
+  const dimensions = image.dimensions ? 
+    `width="${image.dimensions.width}" height="${image.dimensions.height}"` : '';
+  
+  html += `  <img src="${baseFilename}.${fallbackFormat}" alt="" ${dimensions} loading="lazy">\n`;
+  html += '</picture>';
+  
+  return html;
+};
+
+/**
+ * Utility function to download all available formats for an image as a ZIP
+ */
+export const downloadAllFormatsUtil = async (index: number, processedImages: ProcessedImage[]) => {
   const image = processedImages[index];
   if (!image || !image.processedFormats) {
-    toast({
-      variant: "destructive",
-      title: "Download Failed",
-      description: "No processed formats available"
-    });
+    console.error('Cannot download formats: Image or processed formats not available');
     return;
   }
   
-  try {
-    // Load JSZip dynamically
-    const JSZip = (await import('jszip')).default;
-    const zip = new JSZip();
-    
-    // Create WordPress-friendly base name
-    const baseName = (image.newFilename || image.original.name).split('.')[0];
-    const safeBaseName = baseName.toLowerCase().replace(/[^a-z0-9]/g, '-');
-    
-    // Add each available format to the ZIP
-    if (image.processedFormats.jpeg) {
-      zip.file(`${safeBaseName}.jpg`, image.processedFormats.jpeg);
-    }
-    
-    if (image.processedFormats.webp) {
-      zip.file(`${safeBaseName}.webp`, image.processedFormats.webp);
-    }
-    
-    if (image.processedFormats.avif) {
-      zip.file(`${safeBaseName}.avif`, image.processedFormats.avif);
-    }
-    
-    // Generate HTML file with picture element
-    const generatePictureHTML = () => {
-      const hasAvif = !!image.processedFormats?.avif;
-      const hasWebp = !!image.processedFormats?.webp;
-      const hasJpeg = !!image.processedFormats?.jpeg;
-      
-      let html = `<!DOCTYPE html>\n<html>\n<head>\n`;
-      html += `  <title>${safeBaseName} - WordPress Image</title>\n`;
-      html += `  <meta charset="UTF-8">\n`;
-      html += `  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n`;
-      html += `  <style>\n`;
-      html += `    body { font-family: sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }\n`;
-      html += `    .image-container { margin: 20px 0; }\n`;
-      html += `    pre { background: #f5f5f5; padding: 15px; border-radius: 5px; overflow-x: auto; }\n`;
-      html += `    h3 { margin-top: 30px; }\n`;
-      html += `  </style>\n`;
-      html += `</head>\n<body>\n`;
-      
-      html += `  <h1>${safeBaseName}</h1>\n`;
-      html += `  <p>WordPress-optimized image with multiple formats</p>\n\n`;
-      
-      html += `  <div class="image-container">\n`;
-      html += `    <picture>\n`;
-      if (hasAvif) {
-        html += `      <source srcset="${safeBaseName}.avif" type="image/avif">\n`;
-      }
-      if (hasWebp) {
-        html += `      <source srcset="${safeBaseName}.webp" type="image/webp">\n`;
-      }
-      if (hasJpeg) {
-        html += `      <img src="${safeBaseName}.jpg" alt="Description" loading="lazy"`;
-        if (image.dimensions) {
-          html += ` width="${image.dimensions.width}" height="${image.dimensions.height}"`;
-        }
-        html += `>\n`;
-      }
-      html += `    </picture>\n`;
-      html += `  </div>\n\n`;
-      
-      html += `  <h3>HTML Code:</h3>\n`;
-      html += `  <pre><code>&lt;picture&gt;\n`;
-      if (hasAvif) {
-        html += `  &lt;source srcset="${safeBaseName}.avif" type="image/avif"&gt;\n`;
-      }
-      if (hasWebp) {
-        html += `  &lt;source srcset="${safeBaseName}.webp" type="image/webp"&gt;\n`;
-      }
-      if (hasJpeg) {
-        html += `  &lt;img src="${safeBaseName}.jpg" alt="Description" loading="lazy"`;
-        if (image.dimensions) {
-          html += ` width="${image.dimensions.width}" height="${image.dimensions.height}"`;
-        }
-        html += `&gt;\n`;
-      }
-      html += `&lt;/picture&gt;</code></pre>\n\n`;
-      
-      html += `  <h3>WordPress Integration:</h3>\n`;
-      html += `  <p>Upload all image files to your WordPress media library, then use the HTML code above in your content.</p>\n`;
-      
-      html += `</body>\n</html>`;
-      
-      return html;
-    };
-    
-    // Add the HTML file to the ZIP
-    zip.file(`${safeBaseName}-wordpress.html`, generatePictureHTML());
-    
-    // Generate and download the ZIP file
-    const content = await zip.generateAsync({ type: 'blob' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(content);
-    link.download = `${safeBaseName}-wp-formats.zip`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(link.href);
-    
-    // Track event
-    trackEvent('download_all_formats', {
-      imageName: image.original.name,
-      formats: Object.keys(image.processedFormats).filter(format => !!image.processedFormats[format])
-    });
-    
-    toast({
-      title: "Download Complete",
-      description: `Downloaded all formats for ${baseName} as ZIP`
-    });
-  } catch (error) {
-    logger.error(`Failed to download all formats: ${error instanceof Error ? error.message : String(error)}`, {
-      module: 'MultiFormatDownload'
-    });
-    
-    toast({
-      variant: "destructive",
-      title: "Download Failed",
-      description: "Failed to create ZIP file"
-    });
+  // Create a new JSZip instance
+  const zip = new JSZip();
+  
+  // Base filename without extension
+  const baseFilename = image.newFilename || image.original.name.replace(/\.[^/.]+$/, "");
+  
+  // Add each available format to the zip
+  let formatCount = 0;
+  if (image.processedFormats.avif) {
+    zip.file(`${baseFilename}.avif`, image.processedFormats.avif);
+    formatCount++;
   }
-}
-
-export function downloadAllImagesAsZipUtil(
-  processedImages: ProcessedImage[]
-): void {
-  // This would be implemented to download all images in all formats as a ZIP
-  // with proper WordPress folder structure
-}
+  
+  if (image.processedFormats.webp) {
+    zip.file(`${baseFilename}.webp`, image.processedFormats.webp);
+    formatCount++;
+  }
+  
+  if (image.processedFormats.jpeg) {
+    zip.file(`${baseFilename}.jpg`, image.processedFormats.jpeg);
+    formatCount++;
+  }
+  
+  // Add the HTML snippet
+  const htmlSnippet = generatePictureHtml(image);
+  zip.file(`${baseFilename}-html-snippet.html`, htmlSnippet);
+  
+  // Generate the zip file
+  const content = await zip.generateAsync({ type: 'blob' });
+  
+  // Save the zip file
+  saveAs(content, `${baseFilename}-all-formats.zip`);
+  
+  // Track download event
+  trackEvent("download_all_formats", {
+    formatCount: formatCount,
+    imageIndex: index,
+    includesAvif: !!image.processedFormats.avif,
+    includesWebp: !!image.processedFormats.webp,
+    includesJpeg: !!image.processedFormats.jpeg
+  });
+  
+  return `${baseFilename}-all-formats.zip`;
+};

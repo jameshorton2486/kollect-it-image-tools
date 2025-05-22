@@ -1,10 +1,11 @@
 
 import { useCallback } from 'react';
-import { ProcessedImage } from '@/types/imageProcessing';
+import { ProcessedImage, OutputFormat, CompressionSettings } from '@/types/imageProcessing';
 import { useProcessingActions } from './useImageProcessingActions/useProcessingActions';
 import { useSelectionActions } from './useImageProcessingActions/useSelectionActions';
 import { useViewActions } from './useImageProcessingActions/useViewActions';
 import { useSystemActions } from './useImageProcessingActions/useSystemActions';
+import { ResizeMode, ResizeUnit } from '@/types/imageResizing';
 
 interface UseImageProcessingActionsProps {
   processedImages: ProcessedImage[];
@@ -29,6 +30,15 @@ interface UseImageProcessingActionsProps {
   setProcessedItemsCount: React.Dispatch<React.SetStateAction<number>>;
   exportPath: string;
   setExportPath: React.Dispatch<React.SetStateAction<string>>;
+  // Multi-format options
+  outputFormat: OutputFormat;
+  compressionSettings: CompressionSettings;
+  stripMetadata: boolean;
+  progressiveLoading: boolean;
+  // Resize options
+  resizeMode?: ResizeMode;
+  resizeUnit?: ResizeUnit;
+  resizeQuality?: number;
 }
 
 /**
@@ -54,6 +64,9 @@ export function useImageProcessingActions(props: UseImageProcessingActionsProps)
     downloadImage: processingActions.downloadImage,
     downloadAllImages: processingActions.downloadAllImages,
     cancelBatchProcessing: processingActions.cancelBatchProcessing,
+    // New multi-format actions
+    downloadImageFormat: processingActions.downloadImageFormat,
+    downloadAllFormats: processingActions.downloadAllFormats,
     
     // Selection actions
     toggleSelectImage: selectionActions.toggleSelectImage,

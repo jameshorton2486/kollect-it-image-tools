@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import ProcessorHeader from './ProcessorHeader';
@@ -67,7 +68,29 @@ const MainProcessor: React.FC<ImageProcessorProps> = ({ images, onReset }) => {
     cancelBatchProcessing,
     // Cache and analytics management
     clearImageCache,
-    clearAnalyticsData
+    clearAnalyticsData,
+    // Multi-format options
+    outputFormat,
+    setOutputFormat,
+    compressionSettings,
+    setCompressionSettings,
+    stripMetadata,
+    setStripMetadata,
+    progressiveLoading,
+    setProgressiveLoading,
+    estimatedSizes,
+    applyWordPressPreset,
+    downloadImageFormat,
+    downloadAllFormats,
+    viewHtmlCode,
+    // Resize options
+    resizeMode,
+    setResizeMode,
+    resizeUnit,
+    setResizeUnit,
+    resizeQuality,
+    setResizeQuality,
+    applyResizePreset
   } = useImageProcessing(images);
   
   // WordPress specific actions
@@ -75,7 +98,7 @@ const MainProcessor: React.FC<ImageProcessorProps> = ({ images, onReset }) => {
     applyWordPressType,
     applyBulkWordPressType,
     renameImage,
-    setOutputFormat,
+    setOutputFormat: setImageOutputFormat,
     removeImage
   } = useWordPressImageActions({
     processedImages,
@@ -166,10 +189,32 @@ const MainProcessor: React.FC<ImageProcessorProps> = ({ images, onReset }) => {
             applyWordPressType={applyWordPressType}
             applyBulkWordPressType={applyBulkWordPressType}
             renameImage={renameImage}
-            setOutputFormat={setOutputFormat}
+            setImageOutputFormat={setImageOutputFormat}
             exportPath={exportPath}
             setExportPath={setExportPath}
             removeImage={removeImage}
+            // Multi-format options
+            outputFormat={outputFormat}
+            setOutputFormat={setOutputFormat}
+            compressionSettings={compressionSettings}
+            setCompressionSettings={setCompressionSettings}
+            stripMetadata={stripMetadata}
+            setStripMetadata={setStripMetadata}
+            progressiveLoading={progressiveLoading}
+            setProgressiveLoading={setProgressiveLoading}
+            estimatedSizes={estimatedSizes}
+            applyWordPressPreset={applyWordPressPreset}
+            downloadImageFormat={downloadImageFormat}
+            downloadAllFormats={downloadAllFormats}
+            viewHtmlCode={viewHtmlCode}
+            // Resize options
+            resizeMode={resizeMode}
+            setResizeMode={setResizeMode}
+            resizeUnit={resizeUnit}
+            setResizeUnit={setResizeUnit}
+            resizeQuality={resizeQuality}
+            setResizeQuality={setResizeQuality}
+            applyResizePreset={applyResizePreset}
           />
         </CardContent>
       </Card>

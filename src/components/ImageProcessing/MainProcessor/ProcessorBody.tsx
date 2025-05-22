@@ -10,6 +10,8 @@ import WordPressPresetsSection from '../WordPressPresetsSection';
 import EcommercePresetsSection from '../EcommercePresetsSection';
 import FormatOptionsSection from '../FormatOptionsSection';
 import HtmlCodePreviewDialog from '../HtmlCodePreviewDialog';
+import ResizeOptionsSection from '../ResizeOptionsSection';
+import { ResizeMode, ResizeUnit } from '@/types/imageResizing';
 
 interface ProcessorBodyProps {
   processedImages: ProcessedImage[];
@@ -62,7 +64,7 @@ interface ProcessorBodyProps {
   applyWordPressType: (imageIndex: number, typeId: string) => void;
   applyBulkWordPressType: (typeId: string) => void;
   renameImage: (imageIndex: number, newName: string) => void;
-  setOutputFormat: (imageIndex: number, format: string) => void;
+  setImageOutputFormat: (imageIndex: number, format: string) => void;
   exportPath: string;
   setExportPath: (path: string) => void;
   removeImage: (index: number) => void;
@@ -85,6 +87,14 @@ interface ProcessorBodyProps {
   downloadImageFormat: (imageIndex: number, format: string) => void;
   downloadAllFormats: (imageIndex: number) => void;
   viewHtmlCode: (imageIndex: number) => void;
+  // Resize options
+  resizeMode: ResizeMode;
+  setResizeMode: (mode: ResizeMode) => void;
+  resizeUnit: ResizeUnit;
+  setResizeUnit: (unit: ResizeUnit) => void;
+  resizeQuality: number;
+  setResizeQuality: (quality: number) => void;
+  applyResizePreset: (presetKey: string) => void;
 }
 
 const ProcessorBody: React.FC<ProcessorBodyProps> = ({
@@ -137,12 +147,13 @@ const ProcessorBody: React.FC<ProcessorBodyProps> = ({
   applyWordPressType,
   applyBulkWordPressType,
   renameImage,
-  setOutputFormat,
+  setImageOutputFormat,
   exportPath,
   setExportPath,
   removeImage,
   // New multi-format compression props
   outputFormat,
+  setOutputFormat,
   compressionSettings,
   setCompressionSettings,
   stripMetadata,
@@ -153,7 +164,15 @@ const ProcessorBody: React.FC<ProcessorBodyProps> = ({
   applyWordPressPreset,
   downloadImageFormat,
   downloadAllFormats,
-  viewHtmlCode
+  viewHtmlCode,
+  // Resize options
+  resizeMode,
+  setResizeMode,
+  resizeUnit,
+  setResizeUnit,
+  resizeQuality,
+  setResizeQuality,
+  applyResizePreset
 }) => {
   const [htmlPreviewOpen, setHtmlPreviewOpen] = useState(false);
   const [selectedImageForHtml, setSelectedImageForHtml] = useState<ProcessedImage | null>(null);
@@ -216,6 +235,26 @@ const ProcessorBody: React.FC<ProcessorBodyProps> = ({
             onProgressiveLoadingChange={setProgressiveLoading}
             estimatedSizes={estimatedSizes}
           />
+
+          {/* Add the new Resize Options Section */}
+          <div className="mt-6">
+            <ResizeOptionsSection
+              width={maxWidth}
+              height={maxHeight}
+              preserveAspectRatio={preserveAspectRatio}
+              quality={resizeQuality}
+              resizeMode={resizeMode}
+              resizeUnit={resizeUnit}
+              onWidthChange={setMaxWidth}
+              onHeightChange={setMaxHeight}
+              onPreserveAspectRatioChange={setPreserveAspectRatio}
+              onQualityChange={setResizeQuality}
+              onResizeModeChange={setResizeMode}
+              onResizeUnitChange={setResizeUnit}
+              onApplyWordPressPreset={applyResizePreset}
+              estimatedFileSize={estimatedSizes.jpeg}
+            />
+          </div>
         </div>
         
         <div className="col-span-1 space-y-4">
@@ -224,7 +263,7 @@ const ProcessorBody: React.FC<ProcessorBodyProps> = ({
             onApplyWordPressType={applyWordPressType}
             onApplyBulkWordPressType={applyBulkWordPressType}
             onRenameImage={renameImage}
-            onSetOutputFormat={setOutputFormat}
+            onSetOutputFormat={setImageOutputFormat}
             onSetExportPath={setExportPath}
             exportPath={exportPath}
           />
@@ -264,7 +303,7 @@ const ProcessorBody: React.FC<ProcessorBodyProps> = ({
           onToggleSelectImage={toggleSelectImage}
           onToggleBeforeAfterView={toggleBeforeAfterView}
           onRenameImage={renameImage}
-          onSetOutputFormat={setOutputFormat} 
+          onSetOutputFormat={setImageOutputFormat} 
           onSetWordPressType={applyWordPressType}
           onRemoveImage={removeImage}
           onDownloadFormat={downloadImageFormat}
