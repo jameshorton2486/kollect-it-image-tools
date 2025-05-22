@@ -33,7 +33,9 @@ export async function processImageUtil(
   try {
     // Start performance measurement
     const originalSize = image.original.size;
-    const imageResolution = `${image.original.width || '?'}x${image.original.height || '?'}`;
+    const imageResolution = image.dimensions ? 
+      `${image.dimensions.width}x${image.dimensions.height}` : 
+      'unknown dimensions';
     
     const perfMeasurement = startMeasuring(
       `image-processing${removeBackground ? '-with-bg-removal' : ''}`,
