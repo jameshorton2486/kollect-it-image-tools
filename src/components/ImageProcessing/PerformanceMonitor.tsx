@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Activity, AlertTriangle, Cpu, MemoryStick } from "lucide-react";
-import { getPerformanceStats, getMemoryUsage, detectPerformanceIssues } from "@/utils/performanceUtils";
+import { getPerformanceStats, getMemoryUsage, detectPerformanceIssues } from "@/utils/performance";
 
 interface PerformanceMonitorProps {
   isProcessing: boolean;

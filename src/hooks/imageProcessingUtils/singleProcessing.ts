@@ -1,4 +1,3 @@
-
 import { toast } from '@/components/ui/use-toast';
 import { ProcessedImage } from "@/types/imageProcessing";
 import { processSingleImage } from '@/utils/imageProcessingUtils';
@@ -9,7 +8,7 @@ import {
   getOptimalProcessingSettings, 
   categorizeResolution,
   getProcessingOptimizations 
-} from '@/utils/performanceUtils';
+} from '@/utils/performance';
 
 export async function processImageUtil(
   index: number,
