@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
@@ -90,6 +90,10 @@ const ResizePreviewSection: React.FC<ResizePreviewSectionProps> = ({
     );
   }
 
+  // Get preview URLs
+  const originalPreviewUrl = selectedImage.preview;
+  const processedPreviewUrl = selectedImage.processed ? URL.createObjectURL(selectedImage.processed) : selectedImage.preview;
+
   return (
     <Card className="mb-6">
       <CardHeader>
@@ -175,7 +179,7 @@ const ResizePreviewSection: React.FC<ResizePreviewSectionProps> = ({
             <div 
               className="absolute top-0 left-0 w-full h-full bg-cover bg-center"
               style={{ 
-                backgroundImage: `url(${selectedImage.previewUrl || selectedImage.original.url})`,
+                backgroundImage: `url(${originalPreviewUrl})`,
                 backgroundSize: `${zoom}%`,
                 backgroundPosition: 'center'
               }}
@@ -189,7 +193,7 @@ const ResizePreviewSection: React.FC<ResizePreviewSectionProps> = ({
             <div 
               className="absolute top-0 left-0 h-full bg-cover bg-center"
               style={{ 
-                backgroundImage: `url(${selectedImage.processedUrl || selectedImage.previewUrl})`,
+                backgroundImage: `url(${processedPreviewUrl})`,
                 width: `${comparePosition}%`,
                 backgroundSize: `${zoom}%`,
                 backgroundPosition: 'center',

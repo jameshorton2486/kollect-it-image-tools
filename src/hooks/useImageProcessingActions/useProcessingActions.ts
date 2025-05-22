@@ -81,29 +81,38 @@ export function useProcessingActions({
   resizeQuality
 }: UseProcessingActionsProps) {
   
+  // Update with compatible function signature for processImageUtil
   const processImage = useCallback(async (index: number) => {
-    await processImageUtil(
-      index,
-      processedImages,
+    // Adapt to match the expected function signature
+    const processingOptions = {
       compressionLevel,
       maxWidth,
       maxHeight,
       removeBackground,
-      apiKey,
-      selfHosted,
-      serverUrl,
-      backgroundRemovalModel,
       backgroundType,
       backgroundColor,
       backgroundOpacity,
       backgroundImage,
-      setProcessedImages,
-      // Multi-format options
       outputFormat,
       compressionSettings,
       stripMetadata,
       progressiveLoading
-    );
+    };
+
+    try {
+      await processImageUtil(
+        index,
+        processedImages,
+        processingOptions,
+        apiKey,
+        selfHosted,
+        serverUrl,
+        backgroundRemovalModel,
+        setProcessedImages
+      );
+    } catch (error) {
+      console.error("Error processing image:", error);
+    }
   }, [
     processedImages, 
     compressionLevel, 
@@ -136,31 +145,37 @@ export function useProcessingActions({
     setIsProcessing(true);
     
     try {
-      await processAllImagesUtil(
-        processedImages,
+      // Adapt to match expected function signature
+      const processingOptions = {
         compressionLevel,
         maxWidth,
         maxHeight,
         removeBackground,
-        apiKey,
-        selfHosted,
-        serverUrl,
-        backgroundRemovalModel,
         backgroundType,
         backgroundColor,
         backgroundOpacity,
         backgroundImage,
-        setProcessedImages,
-        setIsProcessing,
-        setBatchProgress,
-        setTotalItemsToProcess,
-        setProcessedItemsCount,
-        // Multi-format options
         outputFormat,
         compressionSettings,
         stripMetadata,
         progressiveLoading
+      };
+
+      await processAllImagesUtil(
+        processedImages,
+        processingOptions,
+        apiKey,
+        selfHosted,
+        serverUrl,
+        backgroundRemovalModel,
+        setProcessedImages,
+        setIsProcessing,
+        setBatchProgress,
+        setTotalItemsToProcess,
+        setProcessedItemsCount
       );
+    } catch (error) {
+      console.error("Error processing all images:", error);
     } finally {
       setIsProcessing(false);
     }

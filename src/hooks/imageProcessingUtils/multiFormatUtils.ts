@@ -1,8 +1,8 @@
 
-import { ProcessedImage } from '@/types/imageProcessing';
 import { trackEvent } from '@/utils/analytics';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
+import { ProcessedImage } from '@/types/imageProcessing';
 
 /**
  * Utility function to download a specific format of a processed image

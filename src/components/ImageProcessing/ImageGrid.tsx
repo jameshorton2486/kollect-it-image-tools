@@ -18,6 +18,7 @@ interface ImageGridProps {
   onDownloadFormat?: (index: number, format: string) => void;
   onViewHtmlCode?: (index: number) => void;
   onDownloadAllFormats?: (index: number) => void;
+  onImageSelect?: (image: ProcessedImage) => void;
 }
 
 const ImageGrid: React.FC<ImageGridProps> = ({
@@ -33,13 +34,18 @@ const ImageGrid: React.FC<ImageGridProps> = ({
   onRemoveImage,
   onDownloadFormat,
   onViewHtmlCode,
-  onDownloadAllFormats
+  onDownloadAllFormats,
+  onImageSelect
 }) => {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {images.map((image, index) => (
-          <div key={index} className="space-y-2">
+          <div 
+            key={index} 
+            className="space-y-2"
+            onClick={() => onImageSelect && onImageSelect(image)}
+          >
             <ImageCard 
               image={image} 
               index={index} 

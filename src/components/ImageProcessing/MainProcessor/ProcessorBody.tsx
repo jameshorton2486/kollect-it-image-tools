@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ProcessingTabs from './ProcessingTabs';
 import { ProcessedImage, WordPressPreset, OutputFormat, CompressionSettings } from '@/types/imageProcessing';
 import ImageGrid from '../ImageGrid';
@@ -12,6 +11,7 @@ import FormatOptionsSection from '../FormatOptionsSection';
 import HtmlCodePreviewDialog from '../HtmlCodePreviewDialog';
 import ResizeOptionsSection from '../ResizeOptionsSection';
 import { ResizeMode, ResizeUnit } from '@/types/imageResizing';
+import ResizePreviewSection from '../ResizePreviewSection';
 
 interface ProcessorBodyProps {
   processedImages: ProcessedImage[];
@@ -177,28 +177,66 @@ const ProcessorBody: React.FC<ProcessorBodyProps> = ({
   const [htmlPreviewOpen, setHtmlPreviewOpen] = useState(false);
   const [selectedImageForHtml, setSelectedImageForHtml] = useState<ProcessedImage | null>(null);
   const [selectedImageForPreview, setSelectedImageForPreview] = useState<ProcessedImage | null>(null);
+  const [originalImageWidth, setOriginalImageWidth] = useState<number>(0);
+  const [originalImageHeight, setOriginalImageHeight] = useState<number>(0);
 
   const handleViewHtmlCode = (imageIndex: number) => {
     setSelectedImageForHtml(processedImages[imageIndex]);
     setHtmlPreviewOpen(true);
   };
 
+  // Handler for image selection
+  const handleImageSelect = (image: ProcessedImage) => {
+    setSelectedImageForPreview(image);
+    
+    // Get original dimensions from image if available
+    if (image.dimensions) {
+      setOriginalImageWidth(image.dimensions.width);
+      setOriginalImageHeight(image.dimensions.height);
+    } else {
+      // If dimensions aren't available, load them from the original image
+      const img = new Image();
+      img.onload = () => {
+        setOriginalImageWidth(img.width);
+        setOriginalImageHeight(img.height);
+      };
+      img.src = image.preview;
+    }
+  };
+
+  // Reset dimensions to original
+  const handleResetDimensions = () => {
+    if (originalImageWidth && originalImageHeight) {
+      setMaxWidth(originalImageWidth);
+      setMaxHeight(originalImageHeight);
+    }
+  };
+
   // Select the first image for preview by default, if available
   useEffect(() => {
     if (processedImages.length > 0 && !selectedImageForPreview) {
-      setSelectedImageForPreview(processedImages[0]);
+      handleImageSelect(processedImages[0]);
     }
   }, [processedImages, selectedImageForPreview]);
-
-  // Update selected image when user clicks on an image
-  const handleImageSelect = (image: ProcessedImage) => {
-    setSelectedImageForPreview(image);
-  };
 
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div className="col-span-2">
+          {/* Image Preview Section with Before/After slider */}
+          {selectedImageForPreview && (
+            <ResizePreviewSection 
+              selectedImage={selectedImageForPreview}
+              originalWidth={originalImageWidth}
+              originalHeight={originalImageHeight}
+              resizedWidth={maxWidth}
+              resizedHeight={maxHeight}
+              onWidthChange={setMaxWidth}
+              onHeightChange={setMaxHeight}
+              onResetDimensions={handleResetDimensions}
+            />
+          )}
+
           <ProcessingTabs
             compressionLevel={compressionLevel}
             maxWidth={maxWidth}
