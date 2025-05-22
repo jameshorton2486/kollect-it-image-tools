@@ -1,167 +1,103 @@
 
 export interface ProcessedImage {
-  // Original properties
   originalFile: File;
+  original: File;
   originalUrl: string;
-  optimizedFiles: { [format: string]: { blob: Blob; url: string; size: number } };
+  preview: string;
+  optimizedFiles: Record<string, File | Blob>;
   averageCompressionRate: number;
   totalSizeReduction: number;
-  status: 'pending' | 'processing' | 'completed' | 'error';
-  error?: string;
-  productId?: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
   processed: boolean;
-  originalWidth: number;
-  originalHeight: number;
-  
-  // Additional properties needed by components
-  original: File;
-  preview: string;
   isProcessing: boolean;
   isSelected: boolean;
-  hasBackgroundRemoved?: boolean;
-  processingError?: string;
-  processingProgress?: number;
-  retryCount?: number;
-  newFilename?: string;
-  wordpressType?: string;
-  dimensions?: { width: number; height: number };
-  processedDimensions?: { width: number; height: number };
-  outputFormat?: string;
-  processingTime?: number;
-  compressionStats?: {
-    originalSize: number;
-    formatSizes: { [format: string]: number | null };
-    qualityScores?: { [format: string]: number | null };
-    processingTimes?: { [format: string]: number | null };
-  };
-  processedFormats?: { [format: string]: Blob };
-  
-  // Legacy properties from previous implementation
-  newSize?: number;
-  blob?: Blob;
-  base64?: string;
-  originalName?: string;
-  originalSize?: number;
-  mimeType?: string;
-  finalWidth?: number;
-  finalHeight?: number;
-  format?: string;
-  quality?: number;
-  convertedImages?: Array<{
-    format: string;
-    blob: Blob;
-    size: number;
+  originalWidth: number;
+  originalHeight: number;
+  dimensions: {
     width: number;
     height: number;
-  }>;
+  };
+  compressionStats?: {
+    formatSizes: Record<string, number>;
+    originalSize: number;
+    percentSaved: number;
+    totalSaved: number;
+  };
+  outputFormat?: OutputFormat;
+  wordpressType?: string;
+  newFilename?: string;
+  processedFormats?: Record<string, Blob>;
+  processingTime?: number;
+  processingError?: string;
+  hasBackgroundRemoved?: boolean;
+  blob?: Blob;
+  newSize?: number;
 }
 
-export interface ImageUploadState {
-  files: File[];
-  previews: string[];
-  errors: string[];
-  uploading: boolean;
-  uploadProgress: number;
-}
-
-export interface ImageProcessingSettings {
-  quality: number;
-  maxWidth: number;
-  maxHeight: number;
-  removeBackground: boolean;
-  stripMetadata: boolean;
-  preserveTransparency: boolean;
-  format: string;
-  resizeMode: string;
-  backgroundType: string;
-  backgroundColor: string;
-  backgroundOpacity: number;
-  backgroundImage?: File;
-  cropSettings?: CropSettings;
-  preserveAspectRatio: boolean;
-}
-
-export interface CropSettings {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  unit: 'px' | '%';
-  aspect: number;
+export interface ProcessorHeaderProps {
+  clearImageCache: () => void;
+  clearAnalyticsData: () => void;
 }
 
 export interface ImageProcessorProps {
   images: File[];
   onReset: () => void;
-  onProcessingStateChange?: React.Dispatch<React.SetStateAction<boolean>>;
+  onProcessingStateChange?: (isProcessing: boolean) => void;
 }
 
-export interface ProcessingStatus {
-  [filename: string]: 'pending' | 'processing' | 'completed' | 'error';
+export interface EmptyStateProps {
+  onReset: () => void;
 }
 
-export interface AnalyticsData {
-  totalImagesProcessed: number;
-  totalOriginalSize: number;
-  totalOptimizedSize: number;
-  averageCompressionRate: number;
-  formatDistribution: { [format: string]: number };
+export interface ProcessorBodyProps {
+  images: ProcessedImage[];
+  onUpdateImages: (updatedImages: ProcessedImage[]) => void;
+  onBatchProgress: (progress: number, count: number) => void;
+  onProcessingStateChange: (processing: boolean) => void;
 }
 
-export interface ProcessorHeaderProps {
-  clearImageCache?: () => void;
-  clearAnalyticsData?: () => void;
+export interface WordPressPresetsSectionProps {
+  onApplyPreset: (preset: WordPressPreset) => void;
 }
 
-// Types needed by components
-export type OutputFormat = 'auto' | 'jpeg' | 'webp' | 'avif';
+export type OutputFormat = 'jpeg' | 'png' | 'webp' | 'avif';
 
 export interface CompressionSettings {
-  jpeg?: {
+  jpeg: {
     quality: number;
     progressive: boolean;
   };
-  webp?: {
+  png: {
     quality: number;
     lossless: boolean;
   };
-  avif?: {
+  webp: {
     quality: number;
     lossless: boolean;
+  };
+  avif: {
+    quality: number;
   };
 }
 
 export interface WordPressPreset {
   name: string;
-  width: number;
-  height: number;
-  quality: number;
-  formats: string[];
-  stripMetadata: boolean;
   description?: string;
-  sizes?: {
-    width: number;
-    height: number;
-  }[];
-  outputFormat?: string;
-  compressionSettings?: CompressionSettings;
-  progressiveLoading?: boolean;
-}
-
-// An interface to extend the File type with dimensions property
-export interface ImageFile extends File {
-  dimensions?: {
-    width: number;
-    height: number;
-  };
-}
-
-// Utility type for multi-format processing
-export interface ProcessingResult {
-  blob: Blob;
-  size: number;
   width: number;
   height: number;
-  format: string;
+  format: OutputFormat;
   quality: number;
+  id: string;
+}
+
+export interface ImageProcessingSettings {
+  width?: number;
+  height?: number;
+  format: OutputFormat;
+  quality: number;
+  compressionLevel?: 'lossless' | 'high' | 'medium' | 'low';
+  preserveMetadata?: boolean;
+  useMultiFormat?: boolean;
+  formats?: OutputFormat[];
+  wordpressType?: string;
 }

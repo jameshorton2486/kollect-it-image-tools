@@ -1,5 +1,6 @@
 
 import { ProcessedImage } from '@/types/imageProcessing';
+import { createProcessedImage } from './processingHelpers';
 
 /**
  * Helper function to ensure processed images conform to the expected shape for batch processing
@@ -10,8 +11,13 @@ export const normalizeProcessedImage = (image: File | ProcessedImage): Processed
     return image as ProcessedImage;
   }
   
-  // If it's a File or partial ProcessedImage, normalize it
-  const file = image instanceof File ? image : (image as any).original || image;
+  // If it's a File, create a new ProcessedImage from it
+  if (image instanceof File) {
+    return createProcessedImage(image);
+  }
+  
+  // If we're here, it's some partial form of ProcessedImage that needs normalization
+  const file = (image as any).original || image;
   
   return {
     originalFile: file,

@@ -6,6 +6,7 @@ import DirectorySourceSection from './ImageProcessing/SourceDirectory/DirectoryS
 import { ensureFolderStructure } from '@/utils/googleDriveUtils';
 import '../styles/gridOverlay.css';
 import { ImageProcessorProps } from '@/types/imageProcessing';
+import { normalizeProcessedImage } from '@/utils/imageProcessing/batchProcessingHelper';
 
 const ImageProcessor: React.FC<ImageProcessorProps> = ({ 
   images, 

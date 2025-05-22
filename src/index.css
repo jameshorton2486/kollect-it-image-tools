@@ -5,39 +5,41 @@
  
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 224 71.4% 4.1%;
+    --background: 0 0% 98%;
+    --foreground: 222 47% 11%;
 
     --card: 0 0% 100%;
-    --card-foreground: 224 71.4% 4.1%;
+    --card-foreground: 222 47% 11%;
  
     --popover: 0 0% 100%;
-    --popover-foreground: 224 71.4% 4.1%;
+    --popover-foreground: 222 47% 11%;
  
-    --primary: 220.9 39.3% 11%;
+    --primary: 246 83.3% 58.8%;  /* Brand Blue: #4F46E5 */
     --primary-foreground: 210 20% 98%;
  
     --secondary: 220 14.3% 95.9%;
     --secondary-foreground: 220.9 39.3% 11%;
  
     --muted: 220 14.3% 95.9%;
-    --muted-foreground: 220 8.9% 46.1%;
+    --muted-foreground: 220 8.9% 46.1%; /* Neutral Gray: #6B7280 */
  
     --accent: 220 14.3% 95.9%;
     --accent-foreground: 220.9 39.3% 11%;
  
-    --destructive: 0 84.2% 60.2%;
+    --destructive: 0 84.2% 60.2%; /* Error Red: #EF4444 */
     --destructive-foreground: 210 20% 98%;
+
+    --success: 158 64% 40.2%; /* Success Green: #10B981 */
+    --success-foreground: 210 20% 98%;
+
+    --warning: 35 92% 50%; /* Warning Orange: #F59E0B */
+    --warning-foreground: 210 20% 98%;
 
     --border: 220 13% 91%;
     --input: 220 13% 91%;
-    --ring: 224 71.4% 4.1%;
+    --ring: 246 83.3% 58.8%;
  
     --radius: 0.5rem;
-
-    --brand-blue: 217 91% 60%;
-    --brand-light: 214 100% 97%;
-    --brand-dark: 221 83% 53%;
   }
  
   .dark {
@@ -50,8 +52,8 @@
     --popover: 224 71.4% 4.1%;
     --popover-foreground: 210 20% 98%;
  
-    --primary: 210 20% 98%;
-    --primary-foreground: 220.9 39.3% 11%;
+    --primary: 246 83.3% 58.8%;
+    --primary-foreground: 210 20% 98%;
  
     --secondary: 215 27.9% 16.9%;
     --secondary-foreground: 210 20% 98%;
@@ -67,7 +69,7 @@
  
     --border: 215 27.9% 16.9%;
     --input: 215 27.9% 16.9%;
-    --ring: 216 12.2% 83.9%;
+    --ring: 246 83.3% 58.8%;
   }
 }
  
@@ -76,7 +78,45 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-brand-light text-foreground font-sans;
+  }
+  h1 {
+    @apply text-2xl font-bold text-brand-dark;
+  }
+  h2 {
+    @apply text-xl font-semibold text-brand-dark;
+  }
+  h3 {
+    @apply text-lg font-medium text-brand-dark;
+  }
+  p {
+    @apply text-sm leading-relaxed text-brand-dark;
+  }
+}
+
+@layer components {
+  .card-shadow {
+    @apply shadow-md shadow-black/5;
+  }
+  
+  .input-focus {
+    @apply focus:ring-2 focus:ring-brand-blue focus:ring-opacity-50 focus:border-brand-blue focus:outline-none;
+  }
+
+  .btn-primary {
+    @apply bg-brand-blue text-white hover:bg-brand-blue/90 px-4 py-2 rounded font-medium transition-colors;
+  }
+  
+  .btn-success {
+    @apply bg-brand-green text-white hover:bg-brand-green/90 px-4 py-2 rounded font-medium transition-colors;
+  }
+  
+  .btn-warning {
+    @apply bg-brand-orange text-white hover:bg-brand-orange/90 px-4 py-2 rounded font-medium transition-colors;
+  }
+  
+  .btn-error {
+    @apply bg-brand-red text-white hover:bg-brand-red/90 px-4 py-2 rounded font-medium transition-colors;
   }
 }
 
@@ -86,4 +126,38 @@
                       linear-gradient(to bottom, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
     background-size: 20px 20px;
   }
+  
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  /* Mobile-friendly touch targets */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
+}
+
+/* Load Inter font */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+html {
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* 8px spacing grid system */
+.space-8 {
+  margin: 8px;
+  padding: 8px;
+}
+.space-16 {
+  margin: 16px;
+  padding: 16px;
+}
+.space-24 {
+  margin: 24px;
+  padding: 24px;
+}
+.space-32 {
+  margin: 32px;
+  padding: 32px;
 }

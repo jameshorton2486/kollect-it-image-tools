@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Trash2, Upload, RefreshCw, Settings } from 'lucide-react';
 import ProcessorHeader from './ProcessorHeader';
 import ProcessingTabs from './ProcessingTabs';
 import ProcessorBody from './ProcessorBody';
@@ -100,7 +99,7 @@ const MainProcessor: React.FC<MainProcessorProps> = ({ images, onReset, onProces
         
         <CardContent className="p-6">
           {processedImages.length === 0 ? (
-            <EmptyState onUpload={onReset} />
+            <EmptyState onReset={onReset} />
           ) : (
             <ProcessorBody 
               images={processedImages}

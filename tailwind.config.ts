@@ -54,9 +54,13 @@ export default {
 					foreground: 'hsl(var(--card-foreground))'
 				},
 				brand: {
-					blue: '#3B82F6',
-					light: '#EBF5FF',
-					dark: '#1E40AF'
+					blue: '#4F46E5',
+					green: '#10B981',
+					orange: '#F59E0B',
+					red: '#EF4444',
+					gray: '#6B7280',
+					light: '#F9FAFB',
+					dark: '#374151'
 				},
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
@@ -94,12 +98,62 @@ export default {
 				'pulse-opacity': {
 					'0%, 100%': { opacity: '1' },
 					'50%': { opacity: '0.5' }
+				},
+				'fade-in': {
+					'0%': { opacity: '0', transform: 'translateY(10px)' },
+					'100%': { opacity: '1', transform: 'translateY(0)' }
+				},
+				'fade-out': {
+					'0%': { opacity: '1', transform: 'translateY(0)' },
+					'100%': { opacity: '0', transform: 'translateY(10px)' }
+				},
+				'scale-in': {
+					'0%': { transform: 'scale(0.95)', opacity: '0' },
+					'100%': { transform: 'scale(1)', opacity: '1' }
+				},
+				'scale-out': {
+					from: { transform: 'scale(1)', opacity: '1' },
+					to: { transform: 'scale(0.95)', opacity: '0' }
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out',
-				'pulse-opacity': 'pulse-opacity 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
+				'pulse-opacity': 'pulse-opacity 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+				'fade-in': 'fade-in 0.3s ease-out',
+				'fade-out': 'fade-out 0.3s ease-out',
+				'scale-in': 'scale-in 0.2s ease-out',
+				'scale-out': 'scale-out 0.2s ease-out',
+				'enter': 'fade-in 0.3s ease-out, scale-in 0.2s ease-out',
+				'exit': 'fade-out 0.3s ease-out, scale-out 0.2s ease-out'
+			},
+			typography: {
+				DEFAULT: {
+					css: {
+						maxWidth: '65ch',
+						color: 'var(--tw-prose-body)',
+						lineHeight: '1.5',
+						fontSize: '14px',
+						'h1': {
+							fontSize: '24px',
+							fontWeight: '700',
+							marginTop: '1.5em',
+							marginBottom: '0.75em',
+						},
+						'h2': {
+							fontSize: '20px',
+							fontWeight: '600',
+							marginTop: '1.25em',
+							marginBottom: '0.5em',
+						},
+						'h3': {
+							fontSize: '16px',
+							fontWeight: '600',
+							marginTop: '1em',
+							marginBottom: '0.5em',
+						},
+					}
+				}
 			}
 		}
 	},
