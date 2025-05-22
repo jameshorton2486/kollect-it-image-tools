@@ -76,7 +76,6 @@ const BatchProcessingProgress: React.FC<BatchProcessingProgressProps> = ({
         </motion.div>
       )}
     </AnimatePresence>
-  </div>
   );
 };
 
