@@ -1,46 +1,43 @@
-
 export interface ProcessedImage {
   original: File;
   processed: File | null;
   preview: string;
   isProcessing: boolean;
   isSelected: boolean;
-  hasBackgroundRemoved: boolean;
+  hasBackgroundRemoved?: boolean;
+  wordpressType?: string;
+  webpFile?: File;
+  avifFile?: File;
+  processedFormats?: {
+    [key: string]: File;
+  };
+  newFilename?: string;
+  outputFormat?: string;
   processingError?: string;
-  processingProgress?: number;
-  retryCount?: number;
+  compressionStats?: {
+    originalSize: number;
+    compressedSize: number;
+    compressionRatio: number;
+    qualityUsed: number;
+  };
   dimensions?: {
     width: number;
     height: number;
   };
-  // WordPress functionality fields
-  wordpressType?: string;
-  newFilename?: string;
-  outputFormat?: string;
-  exportPath?: string;
-  // Multi-format output
-  processedFormats?: {
-    jpeg?: File;
-    webp?: File;
-    avif?: File;
+  processedDimensions?: {
+    width: number;
+    height: number;
   };
-  compressionStats?: {
-    originalSize: number;
-    formatSizes: {
-      jpeg?: number;
-      webp?: number;
-      avif?: number;
-    };
-    qualityScores?: {
-      jpeg?: number;
-      webp?: number;
-      avif?: number;
-    };
-    processingTimes?: {
-      jpeg?: number;
-      webp?: number;
-      avif?: number;
-    };
+  processingTime?: number; // time taken in milliseconds
+  dpi?: number; // for print resolution support
+  colorSpace?: string; // for color space handling
+  hasTransparency?: boolean; // useful for format suggestions
+  estimatedQualityScore?: number; // estimated quality score (0-100)
+  smartCropInfo?: {
+    hasFaces: boolean;
+    faceCoordinates?: Array<{x: number, y: number, width: number, height: number}>;
+    ruleOfThirdsPoints?: Array<{x: number, y: number}>;
+    salientRegion?: {x: number, y: number, width: number, height: number};
   };
 }
 

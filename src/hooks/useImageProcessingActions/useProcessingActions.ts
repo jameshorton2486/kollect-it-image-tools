@@ -76,9 +76,9 @@ export function useProcessingActions({
   stripMetadata,
   progressiveLoading,
   // Resize options
-  resizeMode,
-  resizeUnit,
-  resizeQuality
+  resizeMode = 'fit',
+  resizeUnit = 'px',
+  resizeQuality = 80
 }: UseProcessingActionsProps) {
   
   // Update with compatible function signature for processImageUtil
@@ -96,7 +96,11 @@ export function useProcessingActions({
       outputFormat,
       compressionSettings,
       stripMetadata,
-      progressiveLoading
+      progressiveLoading,
+      resizeMode,
+      resizeUnit,
+      resizeQuality,
+      preserveAspectRatio: true // Default value if not provided
     };
 
     try {
@@ -132,7 +136,11 @@ export function useProcessingActions({
     outputFormat,
     compressionSettings,
     stripMetadata,
-    progressiveLoading
+    progressiveLoading,
+    // Resize options
+    resizeMode,
+    resizeUnit,
+    resizeQuality
   ]);
   
   const handleCancelBatchProcessing = useCallback(() => {
@@ -158,7 +166,11 @@ export function useProcessingActions({
         outputFormat,
         compressionSettings,
         stripMetadata,
-        progressiveLoading
+        progressiveLoading,
+        resizeMode,
+        resizeUnit,
+        resizeQuality,
+        preserveAspectRatio: true // Default value if not provided
       };
 
       await processAllImagesUtil(
@@ -203,7 +215,11 @@ export function useProcessingActions({
     outputFormat,
     compressionSettings,
     stripMetadata,
-    progressiveLoading
+    progressiveLoading,
+    // Resize options
+    resizeMode,
+    resizeUnit,
+    resizeQuality
   ]);
   
   const downloadImageAction = useCallback((index: number) => {
