@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import ProcessorHeader from './ProcessorHeader';
 import ProcessorBody from './ProcessorBody';
 import { ProcessedImage } from '@/types/imageProcessing';
+import { useWordPressImageActions } from '@/hooks/useWordPressImageActions';
 
 interface ImageProcessorProps {
   images: File[];
@@ -53,6 +54,9 @@ const MainProcessor: React.FC<ImageProcessorProps> = ({ images, onReset }) => {
     setKollectItApiKey,
     kollectItUploadUrl,
     setKollectItUploadUrl,
+    // Export path for saving files
+    exportPath,
+    setExportPath,
     // Other features
     showBeforeAfter,
     toggleBeforeAfterView,
@@ -65,6 +69,24 @@ const MainProcessor: React.FC<ImageProcessorProps> = ({ images, onReset }) => {
     clearImageCache,
     clearAnalyticsData
   } = useImageProcessing(images);
+  
+  // WordPress specific actions
+  const {
+    applyWordPressType,
+    applyBulkWordPressType,
+    renameImage,
+    setOutputFormat,
+    removeImage
+  } = useWordPressImageActions({
+    processedImages,
+    setProcessedImages,
+    exportPath,
+    setExportPath,
+    maxWidth,
+    maxHeight,
+    setMaxWidth,
+    setMaxHeight
+  });
   
   // Handler for batch upload
   const handleAdditionalFilesUploaded = (newFiles: File[]) => {
@@ -140,6 +162,14 @@ const MainProcessor: React.FC<ImageProcessorProps> = ({ images, onReset }) => {
             processedItemsCount={processedItemsCount}
             cancelBatchProcessing={cancelBatchProcessing}
             handleAdditionalFilesUploaded={handleAdditionalFilesUploaded}
+            // WordPress and file management features
+            applyWordPressType={applyWordPressType}
+            applyBulkWordPressType={applyBulkWordPressType}
+            renameImage={renameImage}
+            setOutputFormat={setOutputFormat}
+            exportPath={exportPath}
+            setExportPath={setExportPath}
+            removeImage={removeImage}
           />
         </CardContent>
       </Card>

@@ -6,7 +6,7 @@ import Features from '@/components/Features';
 import ImageDropzone from '@/components/ImageDropzone';
 import ImageProcessor from '@/components/ImageProcessor';
 import { Button } from '@/components/ui/button';
-import { BarChart3, HelpCircle } from 'lucide-react';
+import { BarChart3, HelpCircle, ListChecks } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Steps, Step } from '@/components/ui/steps';
@@ -63,16 +63,16 @@ const Index = () => {
               <CardHeader>
                 <CardTitle className="text-2xl font-bold text-center">Get Started</CardTitle>
                 <CardDescription className="text-center text-base">
-                  Upload your images to begin optimizing them for better performance
+                  Upload your images to begin optimizing them for WordPress
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="mb-8">
                   <Steps className="max-w-2xl mx-auto">
                     <Step title="Upload Images" description="Select or drag & drop your images" />
-                    <Step title="Adjust Settings" description="Choose compression and resize options" />
-                    <Step title="Process" description="Optimize individual or batch process" />
-                    <Step title="Download" description="Save your optimized images" />
+                    <Step title="Choose WordPress Type" description="Select the intended use for your images" />
+                    <Step title="Process" description="Optimize with WordPress-specific settings" />
+                    <Step title="Download" description="Save your WordPress-ready images" />
                   </Steps>
                 </div>
                 
@@ -97,14 +97,27 @@ const Index = () => {
             
             {!showProcessor && (
               <div className="bg-brand-light p-6 rounded-lg border border-brand-blue">
-                <h3 className="text-xl font-semibold mb-2">Getting Started is Easy</h3>
-                <ol className="text-left list-decimal list-inside space-y-2 mb-4">
-                  <li>Drag and drop your images into the upload area</li>
-                  <li>Adjust compression and resize settings</li>
-                  <li>Process your images individually or in batch</li>
-                  <li>Download your optimized images</li>
-                  <li>Upload to your WordPress site</li>
-                </ol>
+                <div className="flex items-center justify-center mb-4">
+                  <ListChecks className="mr-2 h-5 w-5 text-brand-blue" />
+                  <h3 className="text-xl font-semibold">WordPress Image Specifications Included</h3>
+                </div>
+                <p className="text-left mb-4">
+                  Our tool includes pre-configured WordPress image specifications for:
+                </p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-left mb-4">
+                  <div className="flex items-center"><span className="w-1 h-1 rounded-full bg-brand-blue mr-2"></span> Logos</div>
+                  <div className="flex items-center"><span className="w-1 h-1 rounded-full bg-brand-blue mr-2"></span> Favicons</div>
+                  <div className="flex items-center"><span className="w-1 h-1 rounded-full bg-brand-blue mr-2"></span> Product Images</div>
+                  <div className="flex items-center"><span className="w-1 h-1 rounded-full bg-brand-blue mr-2"></span> Hero Banners</div>
+                  <div className="flex items-center"><span className="w-1 h-1 rounded-full bg-brand-blue mr-2"></span> Blog Featured Images</div>
+                  <div className="flex items-center"><span className="w-1 h-1 rounded-full bg-brand-blue mr-2"></span> Background Images</div>
+                  <div className="flex items-center"><span className="w-1 h-1 rounded-full bg-brand-blue mr-2"></span> Icons & UI Graphics</div>
+                  <div className="flex items-center"><span className="w-1 h-1 rounded-full bg-brand-blue mr-2"></span> Gallery Images</div>
+                  <div className="flex items-center"><span className="w-1 h-1 rounded-full bg-brand-blue mr-2"></span> Social Sharing Images</div>
+                </div>
+                <Button className="mt-2" onClick={() => document.querySelector('.drop-area')?.scrollIntoView({ behavior: 'smooth' })}>
+                  Start Optimizing
+                </Button>
               </div>
             )}
           </div>

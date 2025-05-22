@@ -45,6 +45,11 @@ export function useImageProcessingState() {
     localStorage.getItem('kollect_it_upload_url') || 'https://api.kollect-it.com/upload'
   );
 
+  // New state for WordPress image types and file management
+  const [exportPath, setExportPath] = useState<string>(
+    localStorage.getItem('export_path') || 'wp-content/uploads/images'
+  );
+
   return {
     processedImages, setProcessedImages,
     compressionLevel, setCompressionLevel,
@@ -66,6 +71,7 @@ export function useImageProcessingState() {
     backgroundOpacity, setBackgroundOpacity,
     backgroundImage, setBackgroundImage,
     kollectItApiKey, setKollectItApiKey,
-    kollectItUploadUrl, setKollectItUploadUrl
+    kollectItUploadUrl, setKollectItUploadUrl,
+    exportPath, setExportPath
   };
 }

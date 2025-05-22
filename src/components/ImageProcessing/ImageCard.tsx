@@ -1,164 +1,138 @@
 
 import React from 'react';
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Card, CardContent } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { Download, Image as ImageIcon, Eye, Loader } from 'lucide-react';
-import { Badge } from "@/components/ui/badge";
-import { createObjectUrl } from '@/utils/imageUtils';
+import { Card, CardContent } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ProcessedImage } from '@/types/imageProcessing';
+import ImageCardToolbar from './ImageCardToolbar';
+import { WORDPRESS_IMAGE_TYPES } from '@/types/wordpressImageTypes';
+import { Badge } from '@/components/ui/badge';
 
 interface ImageCardProps {
-  image: {
-    original: File;
-    processed: File | null;
-    preview: string;
-    isProcessing: boolean;
-    isSelected: boolean;
-    hasBackgroundRemoved: boolean;
-    processingProgress?: number;
-  };
+  image: ProcessedImage;
   index: number;
   showBeforeAfter: boolean;
-  onProcess: (index: number) => void;
-  onDownload: (index: number) => void;
-  onToggleSelect: (index: number) => void;
-  onToggleBeforeAfter: (index: number) => void;
+  onProcessImage: (index: number) => Promise<void>;
+  onDownloadImage: (index: number) => void;
+  onToggleSelectImage: (index: number) => void;
+  onToggleBeforeAfterView: (index: number | null) => void;
+  onRenameImage?: (index: number, newName: string) => void;
+  onSetOutputFormat?: (index: number, format: string) => void; 
+  onSetWordPressType?: (index: number, typeId: string) => void;
+  onRemoveImage?: (index: number) => void;
 }
 
-const ImageCard: React.FC<ImageCardProps> = ({ 
-  image, 
-  index, 
+const ImageCard: React.FC<ImageCardProps> = ({
+  image,
+  index,
   showBeforeAfter,
-  onProcess, 
-  onDownload, 
-  onToggleSelect,
-  onToggleBeforeAfter
+  onProcessImage,
+  onDownloadImage,
+  onToggleSelectImage,
+  onToggleBeforeAfterView,
+  onRenameImage = () => {},
+  onSetOutputFormat = () => {},
+  onSetWordPressType = () => {},
+  onRemoveImage = () => {}
 }) => {
-  // Create preview URLs for both original and processed images
-  const originalPreview = createObjectUrl(image.original);
-  const processedPreview = image.processed ? createObjectUrl(image.processed) : image.preview;
-  
+  // Get WordPress type info if available
+  const wpType = image.wordpressType 
+    ? WORDPRESS_IMAGE_TYPES.find(t => t.id === image.wordpressType) 
+    : undefined;
+
   return (
-    <Card 
-      className={`overflow-hidden ${image.isSelected ? 'ring-2 ring-brand-blue' : ''}`}
-    >
-      <div className="relative aspect-square">
-        {showBeforeAfter ? (
-          <div className="grid grid-cols-2 h-full">
-            <div className="relative border-r border-gray-200">
-              <img 
-                src={originalPreview} 
-                alt={`Original ${image.original.name}`} 
-                className="absolute inset-0 w-full h-full object-cover"
-              />
-              <div className="absolute bottom-1 left-1 bg-black bg-opacity-50 text-white text-xs px-1 rounded">
-                Before
-              </div>
-            </div>
-            <div className="relative">
-              <img 
-                src={processedPreview} 
-                alt={`Processed ${image.original.name}`} 
-                className="absolute inset-0 w-full h-full object-cover"
-              />
-              <div className="absolute bottom-1 right-1 bg-black bg-opacity-50 text-white text-xs px-1 rounded">
-                After
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="image-preview absolute inset-0">
-            <img 
-              src={image.processed ? processedPreview : originalPreview} 
-              alt={`Preview of ${image.original.name}`} 
-              className="w-full h-full object-cover"
-            />
-          </div>
-        )}
-        
-        {image.isProcessing && (
-          <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center">
-            {image.processingProgress !== undefined ? (
-              <>
-                <Loader className="h-6 w-6 text-white mb-2 animate-spin" />
-                <div className="w-3/4 mb-1">
-                  <Progress value={image.processingProgress} className="h-1" />
-                </div>
-                <div className="text-white text-xs">{image.processingProgress}%</div>
-              </>
-            ) : (
-              <div className="animate-pulse-opacity text-white">Processing...</div>
-            )}
-          </div>
-        )}
-        
-        {/* Background removed indicator */}
-        {image.hasBackgroundRemoved && !image.isProcessing && (
-          <Badge 
-            className="absolute top-2 right-2" 
-            variant="secondary"
-          >
-            Background Removed
-          </Badge>
-        )}
-      </div>
-      
-      <CardContent className="p-3">
-        <div className="flex justify-between items-center mb-2">
-          <div className="text-xs text-gray-500 truncate" title={image.original.name}>
-            {image.original.name}
-          </div>
-          <Checkbox
-            checked={image.isSelected}
-            onCheckedChange={() => onToggleSelect(index)}
+    <Card className="overflow-hidden h-full flex flex-col">
+      <div className="relative">
+        <div className="absolute top-2 left-2 z-10">
+          <Checkbox 
+            checked={image.isSelected} 
+            onCheckedChange={() => onToggleSelectImage(index)}
           />
         </div>
         
-        <div className="text-xs text-gray-500 mb-3">
-          {image.processed ? (
-            <div className="flex justify-between">
-              <span>Original: {(image.original.size / 1024).toFixed(1)} KB</span>
-              <span>New: {(image.processed.size / 1024).toFixed(1)} KB</span>
+        {image.processed && (
+          <div className="absolute top-2 right-2 z-10">
+            <Badge variant="secondary" className="bg-green-100 text-green-800 text-xs">
+              Processed
+            </Badge>
+          </div>
+        )}
+        
+        <div className="relative w-full pt-[100%]">
+          {showBeforeAfter ? (
+            <div className="absolute inset-0 flex">
+              <div className="w-1/2 h-full relative overflow-hidden">
+                <img 
+                  src={image.preview} 
+                  alt="Original" 
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+                <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs p-1 text-center">
+                  Original
+                </div>
+              </div>
+              <div className="w-1/2 h-full relative overflow-hidden">
+                <img 
+                  src={image.processed ? URL.createObjectURL(image.processed) : image.preview} 
+                  alt="Processed" 
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+                <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs p-1 text-center">
+                  Processed
+                </div>
+              </div>
             </div>
           ) : (
-            <span>Size: {(image.original.size / 1024).toFixed(1)} KB</span>
+            <img 
+              src={image.processed ? URL.createObjectURL(image.processed) : image.preview} 
+              alt={image.original.name} 
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          )}
+          
+          {image.isProcessing && (
+            <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"></div>
+            </div>
           )}
         </div>
+      </div>
+      
+      <div className="mt-auto">
+        {/* WordPress type info if available */}
+        {wpType && (
+          <div className="px-2 py-1 bg-muted/30">
+            <div className="flex justify-between items-center text-xs">
+              <span className="font-medium">{wpType.name}</span>
+              <span>{wpType.recommendedSize}</span>
+            </div>
+          </div>
+        )}
         
-        <div className="grid grid-cols-3 gap-1">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onProcess(index)}
-            disabled={image.isProcessing}
-            className="w-full"
-          >
-            <ImageIcon className="h-4 w-4 mr-1" />
-            Process
-          </Button>
-          
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onDownload(index)}
-            disabled={!image.processed || image.isProcessing}
-            className="w-full"
-          >
-            <Download className="h-4 w-4 mr-1" />
-            Save
-          </Button>
-          
+        {/* Card toolbar with rename and other operations */}
+        <ImageCardToolbar 
+          image={image}
+          index={index}
+          onProcessImage={onProcessImage}
+          onDownloadImage={onDownloadImage}
+          onToggleBeforeAfterView={onToggleBeforeAfterView}
+          onRenameImage={onRenameImage}
+          onSetOutputFormat={onSetOutputFormat}
+          onSetWordPressType={onSetWordPressType}
+          onRemoveImage={onRemoveImage}
+        />
+      </div>
+      
+      <CardContent className="p-3 pt-1">
+        {/* Status Message */}
+        {image.processingError && (
+          <div className="text-xs text-destructive mt-1">{image.processingError}</div>
+        )}
+        
+        {/* File info */}
+        <div className="text-xs text-muted-foreground mt-1">
+          {image.original.type} · {(image.original.size / 1024).toFixed(1)} KB
           {image.processed && (
-            <Button
-              variant={showBeforeAfter ? "default" : "outline"}
-              size="sm"
-              onClick={() => onToggleBeforeAfter(index)}
-              className="w-full"
-            >
-              <Eye className="h-4 w-4 mr-1" />
-              Compare
-            </Button>
+            <span> → {(image.processed.size / 1024).toFixed(1)} KB ({Math.round((1 - image.processed.size / image.original.size) * 100)}% smaller)</span>
           )}
         </div>
       </CardContent>

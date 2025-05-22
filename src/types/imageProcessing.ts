@@ -6,35 +6,37 @@ export interface ProcessedImage {
   isProcessing: boolean;
   isSelected: boolean;
   hasBackgroundRemoved: boolean;
-  retryCount?: number;
-  processingProgress?: number;
-  processingError?: string; // Add this missing property
-  dimensions?: {
-    width: number;
-    height: number;
-  };
-  processingStats?: {
-    duration?: number;
-    originalSize: number;
-    processedSize?: number;
-    compressionRatio?: number;
-    optimizations?: string[];
-  };
+  processingError?: string;
+  // New fields for WordPress functionality
+  wordpressType?: string;
+  newFilename?: string;
+  outputFormat?: string;
+  exportPath?: string;
 }
 
-export interface ProcessingOptions {
+export interface ImageProcessingOptions {
   compressionLevel: number;
   maxWidth: number;
   maxHeight: number;
+  preserveAspectRatio: boolean;
   removeBackground: boolean;
   backgroundType?: string;
   backgroundColor?: string;
   backgroundOpacity?: number;
   backgroundImage?: File | null;
-  performanceOptimizations?: {
-    useDownsampling: boolean;
-    samplingFactor: number;
-    useProgressiveProcessing: boolean;
-    useWebWorkers: boolean;
+  outputFormat?: string;
+}
+
+export interface ImageStats {
+  originalSize: number;
+  processedSize: number;
+  compressionRatio: number;
+  originalDimensions: {
+    width: number;
+    height: number;
+  };
+  processedDimensions: {
+    width: number;
+    height: number;
   };
 }

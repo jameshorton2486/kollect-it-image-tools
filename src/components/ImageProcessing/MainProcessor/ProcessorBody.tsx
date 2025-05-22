@@ -5,6 +5,7 @@ import { ProcessedImage } from '@/types/imageProcessing';
 import ImageGrid from '../ImageGrid';
 import EmptyState from '../EmptyState';
 import BatchProcessingProgress from '../BatchProcessingProgress';
+import WordPressImageOptions from '../WordPressImageOptions';
 
 interface ProcessorBodyProps {
   processedImages: ProcessedImage[];
@@ -53,6 +54,14 @@ interface ProcessorBodyProps {
   processedItemsCount: number;
   cancelBatchProcessing: () => void;
   handleAdditionalFilesUploaded: (newFiles: File[]) => void;
+  // New WordPress and file management props
+  applyWordPressType: (imageIndex: number, typeId: string) => void;
+  applyBulkWordPressType: (typeId: string) => void;
+  renameImage: (imageIndex: number, newName: string) => void;
+  setOutputFormat: (imageIndex: number, format: string) => void;
+  exportPath: string;
+  setExportPath: (path: string) => void;
+  removeImage: (index: number) => void;
 }
 
 const ProcessorBody: React.FC<ProcessorBodyProps> = ({
@@ -102,48 +111,72 @@ const ProcessorBody: React.FC<ProcessorBodyProps> = ({
   processedItemsCount,
   cancelBatchProcessing,
   handleAdditionalFilesUploaded,
+  // New WordPress and file management props
+  applyWordPressType,
+  applyBulkWordPressType,
+  renameImage,
+  setOutputFormat,
+  exportPath,
+  setExportPath,
+  removeImage
 }) => {
   return (
     <>
-      <ProcessingTabs
-        compressionLevel={compressionLevel}
-        maxWidth={maxWidth}
-        maxHeight={maxHeight}
-        preserveAspectRatio={preserveAspectRatio}
-        isProcessing={isProcessing}
-        removeBackground={removeBackground}
-        apiKey={apiKey}
-        selfHosted={selfHosted}
-        serverUrl={serverUrl}
-        backgroundRemovalModel={backgroundRemovalModel}
-        backgroundType={backgroundType}
-        backgroundColor={backgroundColor}
-        backgroundOpacity={backgroundOpacity}
-        backgroundImage={backgroundImage}
-        onCompressionLevelChange={setCompressionLevel}
-        onMaxWidthChange={setMaxWidth}
-        onMaxHeightChange={setMaxHeight}
-        onPreserveAspectRatioChange={setPreserveAspectRatio}
-        onRemoveBackgroundChange={setRemoveBackground}
-        onApiKeyChange={setApiKey}
-        onSelfHostedChange={setSelfHosted}
-        onServerUrlChange={setServerUrl}
-        onBackgroundRemovalModelChange={setBackgroundRemovalModel}
-        onBackgroundTypeChange={setBackgroundType}
-        onBackgroundColorChange={setBackgroundColor}
-        onBackgroundOpacityChange={setBackgroundOpacity}
-        onBackgroundImageChange={setBackgroundImage || (() => {})}
-        onProcessAll={processAllImages}
-        onDownloadAll={downloadAllImages}
-        onSelectAll={selectAllImages}
-        onReset={onReset}
-        onAdditionalFilesUploaded={handleAdditionalFilesUploaded}
-        processedImages={processedImages}
-        kollectItApiKey={kollectItApiKey || null}
-        kollectItUploadUrl={kollectItUploadUrl || ''}
-        onKollectItApiKeyChange={setKollectItApiKey || (() => {})}
-        onKollectItUploadUrlChange={setKollectItUploadUrl || (() => {})}
-      />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="col-span-2">
+          <ProcessingTabs
+            compressionLevel={compressionLevel}
+            maxWidth={maxWidth}
+            maxHeight={maxHeight}
+            preserveAspectRatio={preserveAspectRatio}
+            isProcessing={isProcessing}
+            removeBackground={removeBackground}
+            apiKey={apiKey}
+            selfHosted={selfHosted}
+            serverUrl={serverUrl}
+            backgroundRemovalModel={backgroundRemovalModel}
+            backgroundType={backgroundType}
+            backgroundColor={backgroundColor}
+            backgroundOpacity={backgroundOpacity}
+            backgroundImage={backgroundImage}
+            onCompressionLevelChange={setCompressionLevel}
+            onMaxWidthChange={setMaxWidth}
+            onMaxHeightChange={setMaxHeight}
+            onPreserveAspectRatioChange={setPreserveAspectRatio}
+            onRemoveBackgroundChange={setRemoveBackground}
+            onApiKeyChange={setApiKey}
+            onSelfHostedChange={setSelfHosted}
+            onServerUrlChange={setServerUrl}
+            onBackgroundRemovalModelChange={setBackgroundRemovalModel}
+            onBackgroundTypeChange={setBackgroundType}
+            onBackgroundColorChange={setBackgroundColor}
+            onBackgroundOpacityChange={setBackgroundOpacity}
+            onBackgroundImageChange={setBackgroundImage || (() => {})}
+            onProcessAll={processAllImages}
+            onDownloadAll={downloadAllImages}
+            onSelectAll={selectAllImages}
+            onReset={onReset}
+            onAdditionalFilesUploaded={handleAdditionalFilesUploaded}
+            processedImages={processedImages}
+            kollectItApiKey={kollectItApiKey || null}
+            kollectItUploadUrl={kollectItUploadUrl || ''}
+            onKollectItApiKeyChange={setKollectItApiKey || (() => {})}
+            onKollectItUploadUrlChange={setKollectItUploadUrl || (() => {})}
+          />
+        </div>
+        
+        <div className="col-span-1">
+          <WordPressImageOptions
+            processedImages={processedImages}
+            onApplyWordPressType={applyWordPressType}
+            onApplyBulkWordPressType={applyBulkWordPressType}
+            onRenameImage={renameImage}
+            onSetOutputFormat={setOutputFormat}
+            onSetExportPath={setExportPath}
+            exportPath={exportPath}
+          />
+        </div>
+      </div>
       
       {processedImages.length > 0 ? (
         <ImageGrid
@@ -153,6 +186,10 @@ const ProcessorBody: React.FC<ProcessorBodyProps> = ({
           onDownloadImage={downloadImage}
           onToggleSelectImage={toggleSelectImage}
           onToggleBeforeAfterView={toggleBeforeAfterView}
+          onRenameImage={renameImage}
+          onSetOutputFormat={setOutputFormat} 
+          onSetWordPressType={applyWordPressType}
+          onRemoveImage={removeImage}
         />
       ) : (
         <EmptyState onReset={onReset} />
