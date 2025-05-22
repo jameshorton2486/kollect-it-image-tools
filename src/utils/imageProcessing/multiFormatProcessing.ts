@@ -1,4 +1,5 @@
-import { ImageProcessingSettings, ProcessedImage } from '@/types/imageProcessing';
+
+import { ImageProcessingSettings, ProcessedImage, ProcessingResult } from '@/types/imageProcessing';
 import { processSingleImage } from './processingCore';
 import { estimateImageSize } from './processingHelpers';
 
@@ -18,13 +19,13 @@ export const processSingleImageInMultipleFormats = async (
   // Convert the image to the other formats
   const convertedImages = await Promise.all(
     formats.map(async (format) => {
-      if (format === processedImage.originalFormat) {
+      if (format === processedImage.format) {
         return {
           format: format,
-          blob: processedImage.blob,
-          size: processedImage.size,
-          width: processedImage.width,
-          height: processedImage.height,
+          blob: processedImage.blob!,
+          size: processedImage.newSize!,
+          width: processedImage.finalWidth!,
+          height: processedImage.finalHeight!,
         };
       }
 
@@ -34,7 +35,7 @@ export const processSingleImageInMultipleFormats = async (
         throw new Error('Could not get canvas context');
       }
 
-      const img = await createImageBitmap(processedImage.blob);
+      const img = await createImageBitmap(processedImage.blob!);
       canvas.width = img.width;
       canvas.height = img.height;
       ctx.drawImage(img, 0, 0);
@@ -55,7 +56,7 @@ export const processSingleImageInMultipleFormats = async (
   return {
     ...processedImage,
     convertedImages: convertedImages,
-  };
+  } as ProcessedImage;
 };
 
 // Estimate file sizes for different formats

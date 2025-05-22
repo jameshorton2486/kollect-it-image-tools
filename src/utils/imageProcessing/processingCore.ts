@@ -1,3 +1,4 @@
+
 import { ImageProcessingSettings, ProcessedImage } from '@/types/imageProcessing';
 import { handleBackgroundRemoval as removeBg } from './backgroundRemoval';
 import { handleCompression as compress } from './compression';
@@ -67,26 +68,79 @@ export const processSingleImage = async (
       reader.readAsDataURL(compressedImage);
     });
 
-    // Create a processed image object
+    // Create a processed image object with all required properties
     const processedImage: ProcessedImage = {
+      // Original properties
+      originalFile: image,
+      originalUrl: URL.createObjectURL(image),
+      optimizedFiles: {
+        [settings.format]: {
+          blob: compressedImage,
+          url: URL.createObjectURL(compressedImage),
+          size: compressedImage.size
+        }
+      },
+      averageCompressionRate: 1 - (compressedImage.size / image.size),
+      totalSizeReduction: image.size - compressedImage.size,
+      status: 'completed',
+      processed: true,
+      originalWidth: imageBitmap.width,
+      originalHeight: imageBitmap.height,
+      
+      // Additional properties needed by components
+      original: image,
+      preview: URL.createObjectURL(image),
+      isProcessing: false,
+      isSelected: true,
+      compressionStats: {
+        originalSize: image.size,
+        formatSizes: {
+          [settings.format]: compressedImage.size
+        }
+      },
+      dimensions: {
+        width: canvas.width,
+        height: canvas.height
+      },
+      
+      // Legacy properties
       originalName: image.name,
       originalSize: image.size,
       mimeType: image.type,
       base64,
       blob: compressedImage,
-      processed: true,
-      productId: null,
       finalWidth: canvas.width,
       finalHeight: canvas.height,
       format: settings.format,
       quality: settings.quality,
-      newSize: compressedImage.size,
+      newSize: compressedImage.size
     };
 
     return processedImage;
   } catch (error: any) {
     console.error('Error processing image:', error);
     toast.error(`Image processing failed: ${error.message}`);
+    
+    // Return a failed processed image
+    const failedProcessedImage: ProcessedImage = {
+      originalFile: image,
+      originalUrl: URL.createObjectURL(image),
+      optimizedFiles: {},
+      averageCompressionRate: 0,
+      totalSizeReduction: 0,
+      status: 'error',
+      error: error.message,
+      processed: false,
+      originalWidth: 0,
+      originalHeight: 0,
+      
+      original: image,
+      preview: URL.createObjectURL(image),
+      isProcessing: false,
+      isSelected: true,
+      processingError: error.message
+    };
+    
     throw error;
   }
 };
