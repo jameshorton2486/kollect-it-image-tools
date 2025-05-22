@@ -2,6 +2,7 @@
 import { toast } from '@/components/ui/use-toast';
 import { ProcessedImage } from "@/types/imageProcessing";
 import { processSingleImage } from '@/utils/imageProcessingUtils';
+import { createObjectUrl } from '@/utils/imageUtils';
 
 export async function processImageUtil(
   index: number,
@@ -56,6 +57,9 @@ export async function processImageUtil(
     
     if (processedResult) {
       updatedImages[index].processed = processedResult;
+      // Create a new preview URL for the processed image
+      updatedImages[index].preview = createObjectUrl(processedResult);
+      updatedImages[index].isProcessing = false;
       updatedImages[index].processingProgress = 100; // Mark as complete
       updatedImages[index].hasBackgroundRemoved = removeBackground;
       setProcessedImages(updatedImages);

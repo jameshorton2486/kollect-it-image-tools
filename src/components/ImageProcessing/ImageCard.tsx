@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Download, Image as ImageIcon, Eye, Loader } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
+import { createObjectUrl } from '@/utils/imageUtils';
 
 interface ImageCardProps {
   image: {
@@ -34,6 +35,10 @@ const ImageCard: React.FC<ImageCardProps> = ({
   onToggleSelect,
   onToggleBeforeAfter
 }) => {
+  // Create preview URLs for both original and processed images
+  const originalPreview = createObjectUrl(image.original);
+  const processedPreview = image.processed ? createObjectUrl(image.processed) : image.preview;
+  
   return (
     <Card 
       className={`overflow-hidden ${image.isSelected ? 'ring-2 ring-brand-blue' : ''}`}
@@ -43,7 +48,7 @@ const ImageCard: React.FC<ImageCardProps> = ({
           <div className="grid grid-cols-2 h-full">
             <div className="relative border-r border-gray-200">
               <img 
-                src={createObjectUrl(image.original)} 
+                src={originalPreview} 
                 alt={`Original ${image.original.name}`} 
                 className="absolute inset-0 w-full h-full object-cover"
               />
@@ -53,7 +58,7 @@ const ImageCard: React.FC<ImageCardProps> = ({
             </div>
             <div className="relative">
               <img 
-                src={image.preview} 
+                src={processedPreview} 
                 alt={`Processed ${image.original.name}`} 
                 className="absolute inset-0 w-full h-full object-cover"
               />
@@ -64,7 +69,11 @@ const ImageCard: React.FC<ImageCardProps> = ({
           </div>
         ) : (
           <div className="image-preview absolute inset-0">
-            <img src={image.preview} alt={`Preview of ${image.original.name}`} />
+            <img 
+              src={image.processed ? processedPreview : originalPreview} 
+              alt={`Preview of ${image.original.name}`} 
+              className="w-full h-full object-cover"
+            />
           </div>
         )}
         
@@ -155,11 +164,6 @@ const ImageCard: React.FC<ImageCardProps> = ({
       </CardContent>
     </Card>
   );
-};
-
-// Helper function to avoid revoking URLs that we need temporarily
-const createObjectUrl = (file: File): string => {
-  return URL.createObjectURL(file);
 };
 
 export default ImageCard;
