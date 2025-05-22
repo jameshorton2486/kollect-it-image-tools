@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Crop, Image } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
@@ -24,6 +24,8 @@ interface EcommercePresetsSectionProps {
 }
 
 const EcommercePresetsSection: React.FC<EcommercePresetsSectionProps> = ({ onApplyPreset }) => {
+  const [activePreset, setActivePreset] = useState<string | null>(null);
+  
   const commonPresets: EcommercePreset[] = [
     { name: "Square Small", width: 500, height: 500, platform: "WooCommerce, Etsy", description: "Small product thumbnails" },
     { name: "Square Medium", width: 1000, height: 1000, platform: "WooCommerce, Amazon", description: "Standard product images" },
@@ -31,6 +33,11 @@ const EcommercePresetsSection: React.FC<EcommercePresetsSectionProps> = ({ onApp
     { name: "Rectangle", width: 1200, height: 800, platform: "Landscape format", description: "Feature images, banners" },
     { name: "Tall", width: 800, height: 1200, platform: "Portrait format", description: "Mobile-optimized products" }
   ];
+
+  const handlePresetClick = (preset: EcommercePreset) => {
+    setActivePreset(preset.name);
+    onApplyPreset(preset.width, preset.height);
+  };
 
   return (
     <div className="space-y-3 border rounded-md p-4 bg-white/50 mb-4">
@@ -51,8 +58,10 @@ const EcommercePresetsSection: React.FC<EcommercePresetsSectionProps> = ({ onApp
                 <Button
                   variant="outline"
                   size="sm"
-                  className="w-full h-auto py-2 flex flex-col items-center justify-center gap-1"
-                  onClick={() => onApplyPreset(preset.width, preset.height)}
+                  className={`w-full h-auto py-2 flex flex-col items-center justify-center gap-1 ${
+                    activePreset === preset.name ? 'bg-brand-light text-brand-blue border border-brand-blue' : ''
+                  }`}
+                  onClick={() => handlePresetClick(preset)}
                 >
                   <span className="text-xs font-medium">{preset.name}</span>
                   <div className="flex items-center justify-center gap-1">
