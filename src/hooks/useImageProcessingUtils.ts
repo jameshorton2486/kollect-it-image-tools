@@ -4,3 +4,6 @@
 export { processImageUtil } from './imageProcessingUtils/singleProcessing';
 export { processAllImagesUtil, cancelBatchProcessing } from './imageProcessingUtils/batchProcessing';
 export { downloadImageUtil, downloadAllImagesUtil } from './imageProcessingUtils/downloadUtils';
+
+// New multi-format exports
+export { downloadFormatUtil, downloadAllFormatsUtil } from './imageProcessingUtils/multiFormatUtils';

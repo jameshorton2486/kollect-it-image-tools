@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import CompressionSettings from '../CompressionSettings';
 import BatchUploadSection from '../BatchUploadSection';
 import KollectItIntegrationSection from '../KollectItIntegrationSection';
-import { ProcessedImage } from '@/types/imageProcessing';
+import { ProcessedImage, OutputFormat, CompressionSettings as CompressionSettingsType } from '@/types/imageProcessing';
 
 interface ProcessingTabsProps {
   compressionLevel: number;
@@ -44,6 +44,21 @@ interface ProcessingTabsProps {
   kollectItUploadUrl: string;
   onKollectItApiKeyChange: (value: string) => void;
   onKollectItUploadUrlChange: (value: string) => void;
+  // New multi-format props
+  outputFormat: OutputFormat;
+  onOutputFormatChange: (format: OutputFormat) => void;
+  compressionSettings: CompressionSettingsType;
+  onCompressionSettingsChange: (settings: CompressionSettingsType) => void;
+  stripMetadata: boolean;
+  onStripMetadataChange: (strip: boolean) => void;
+  progressiveLoading: boolean;
+  onProgressiveLoadingChange: (progressive: boolean) => void;
+  estimatedSizes: {
+    original: number;
+    jpeg: number | null;
+    webp: number | null;
+    avif: number | null;
+  };
 }
 
 const ProcessingTabs: React.FC<ProcessingTabsProps> = ({
@@ -84,6 +99,16 @@ const ProcessingTabs: React.FC<ProcessingTabsProps> = ({
   kollectItUploadUrl,
   onKollectItApiKeyChange,
   onKollectItUploadUrlChange,
+  // New multi-format props
+  outputFormat,
+  onOutputFormatChange,
+  compressionSettings,
+  onCompressionSettingsChange,
+  stripMetadata,
+  onStripMetadataChange,
+  progressiveLoading,
+  onProgressiveLoadingChange,
+  estimatedSizes,
 }) => {
   return (
     <Tabs defaultValue="settings" className="space-y-4">
@@ -126,6 +151,16 @@ const ProcessingTabs: React.FC<ProcessingTabsProps> = ({
           onDownloadAll={onDownloadAll}
           onSelectAll={onSelectAll}
           onReset={onReset}
+          // New multi-format props
+          outputFormat={outputFormat}
+          onOutputFormatChange={onOutputFormatChange}
+          compressionSettings={compressionSettings}
+          onCompressionSettingsChange={onCompressionSettingsChange}
+          stripMetadata={stripMetadata}
+          onStripMetadataChange={onStripMetadataChange}
+          progressiveLoading={progressiveLoading}
+          onProgressiveLoadingChange={onProgressiveLoadingChange}
+          estimatedSizes={estimatedSizes}
         />
       </TabsContent>
       

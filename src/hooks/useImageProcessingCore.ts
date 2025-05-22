@@ -1,8 +1,10 @@
+
 import { UseImageProcessingResult } from './useImageProcessingTypes';
 import { useImageProcessingState } from './useImageProcessingState';
 import { useImageProcessingEffects } from './useImageProcessingEffects';
 import { useImageProcessingActions } from './useImageProcessingActions';
 import { useEffect } from 'react';
+import { WordPressPreset } from '@/types/imageProcessing';
 
 /**
  * Core hook for image processing that combines state, effects, and actions
@@ -31,7 +33,13 @@ export function useImageProcessingCore(initialImages: File[]): UseImageProcessin
     backgroundImage, setBackgroundImage,
     kollectItApiKey, setKollectItApiKey,
     kollectItUploadUrl, setKollectItUploadUrl,
-    exportPath, setExportPath
+    exportPath, setExportPath,
+    // Multi-format options
+    outputFormat, setOutputFormat,
+    compressionSettings, setCompressionSettings,
+    stripMetadata, setStripMetadata,
+    progressiveLoading, setProgressiveLoading,
+    estimatedSizes
   } = useImageProcessingState();
 
   // Initialize and clean up effects
@@ -82,7 +90,10 @@ export function useImageProcessingCore(initialImages: File[]): UseImageProcessin
     clearImageCache,
     clearAnalyticsData,
     exportPath: actionExportPath,
-    setExportPath: actionSetExportPath
+    setExportPath: actionSetExportPath,
+    // Multi-format download actions
+    downloadImageFormat,
+    downloadAllFormats
   } = useImageProcessingActions({
     processedImages,
     setProcessedImages,
@@ -105,8 +116,29 @@ export function useImageProcessingCore(initialImages: File[]): UseImageProcessin
     setTotalItemsToProcess,
     setProcessedItemsCount,
     exportPath,
-    setExportPath
+    setExportPath,
+    // Multi-format options
+    outputFormat,
+    compressionSettings,
+    stripMetadata,
+    progressiveLoading
   });
+  
+  // Handle applying WordPress presets
+  const applyWordPressPreset = (preset: WordPressPreset) => {
+    setMaxWidth(preset.sizes.full.width);
+    setMaxHeight(preset.sizes.full.height);
+    setCompressionSettings(preset.compressionSettings);
+    setStripMetadata(preset.stripMetadata);
+    setProgressiveLoading(preset.progressiveLoading);
+    setOutputFormat(preset.outputFormat);
+  };
+  
+  // Handle showing HTML code preview
+  const viewHtmlCode = (imageIndex: number) => {
+    // This just returns the index to be handled by the UI component
+    return imageIndex;
+  };
   
   return {
     processedImages,
@@ -157,6 +189,20 @@ export function useImageProcessingCore(initialImages: File[]): UseImageProcessin
     clearImageCache,
     clearAnalyticsData,
     exportPath,
-    setExportPath
+    setExportPath,
+    // Multi-format options
+    outputFormat,
+    setOutputFormat,
+    compressionSettings,
+    setCompressionSettings,
+    stripMetadata,
+    setStripMetadata,
+    progressiveLoading,
+    setProgressiveLoading,
+    estimatedSizes,
+    applyWordPressPreset,
+    downloadImageFormat,
+    downloadAllFormats,
+    viewHtmlCode
   };
 }

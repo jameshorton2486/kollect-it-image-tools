@@ -2,6 +2,7 @@
 import React from 'react';
 import ImageCard from './ImageCard';
 import { ProcessedImage } from '@/types/imageProcessing';
+import CompressionResultsSection from './CompressionResultsSection';
 
 interface ImageGridProps {
   images: ProcessedImage[];
@@ -14,6 +15,9 @@ interface ImageGridProps {
   onSetOutputFormat?: (index: number, format: string) => void;
   onSetWordPressType?: (index: number, typeId: string) => void;
   onRemoveImage?: (index: number) => void;
+  onDownloadFormat?: (index: number, format: string) => void;
+  onViewHtmlCode?: (index: number) => void;
+  onDownloadAllFormats?: (index: number) => void;
 }
 
 const ImageGrid: React.FC<ImageGridProps> = ({
@@ -26,26 +30,43 @@ const ImageGrid: React.FC<ImageGridProps> = ({
   onRenameImage,
   onSetOutputFormat,
   onSetWordPressType,
-  onRemoveImage
+  onRemoveImage,
+  onDownloadFormat,
+  onViewHtmlCode,
+  onDownloadAllFormats
 }) => {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-      {images.map((image, index) => (
-        <ImageCard 
-          key={index} 
-          image={image} 
-          index={index} 
-          showBeforeAfter={showBeforeAfterIndex === index}
-          onProcessImage={onProcessImage}
-          onDownloadImage={onDownloadImage}
-          onToggleSelectImage={onToggleSelectImage}
-          onToggleBeforeAfterView={onToggleBeforeAfterView}
-          onRenameImage={onRenameImage}
-          onSetOutputFormat={onSetOutputFormat}
-          onSetWordPressType={onSetWordPressType}
-          onRemoveImage={onRemoveImage}
-        />
-      ))}
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        {images.map((image, index) => (
+          <div key={index} className="space-y-2">
+            <ImageCard 
+              image={image} 
+              index={index} 
+              showBeforeAfter={showBeforeAfterIndex === index}
+              onProcessImage={onProcessImage}
+              onDownloadImage={onDownloadImage}
+              onToggleSelectImage={onToggleSelectImage}
+              onToggleBeforeAfterView={onToggleBeforeAfterView}
+              onRenameImage={onRenameImage}
+              onSetOutputFormat={onSetOutputFormat}
+              onSetWordPressType={onSetWordPressType}
+              onRemoveImage={onRemoveImage}
+            />
+            
+            {/* Show compression results if available */}
+            {image.compressionStats && onDownloadFormat && onViewHtmlCode && onDownloadAllFormats && (
+              <CompressionResultsSection 
+                image={image} 
+                imageIndex={index}
+                onDownloadFormat={onDownloadFormat}
+                onViewHtmlCode={onViewHtmlCode}
+                onDownloadAllFormats={onDownloadAllFormats}
+              />
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 };

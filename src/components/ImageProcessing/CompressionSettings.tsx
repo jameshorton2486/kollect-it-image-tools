@@ -9,6 +9,7 @@ import BackgroundRemovalSection from './BackgroundRemovalSection';
 import BackgroundOptionsSection from './BackgroundOptionsSection';
 import ActionButtons from './ActionButtons';
 import { Separator } from '@/components/ui/separator';
+import { OutputFormat, CompressionSettings as CompressionSettingsType } from '@/types/imageProcessing';
 
 interface CompressionSettingsProps {
   compressionLevel: number;
@@ -42,6 +43,21 @@ interface CompressionSettingsProps {
   onDownloadAll: () => void;
   onSelectAll: (selected: boolean) => void;
   onReset: () => void;
+  // New multi-format props
+  outputFormat?: OutputFormat;
+  onOutputFormatChange?: (format: OutputFormat) => void;
+  compressionSettings?: CompressionSettingsType;
+  onCompressionSettingsChange?: (settings: CompressionSettingsType) => void;
+  stripMetadata?: boolean;
+  onStripMetadataChange?: (strip: boolean) => void;
+  progressiveLoading?: boolean;
+  onProgressiveLoadingChange?: (progressive: boolean) => void;
+  estimatedSizes?: {
+    original: number;
+    jpeg: number | null;
+    webp: number | null;
+    avif: number | null;
+  };
 }
 
 const CompressionSettings: React.FC<CompressionSettingsProps> = (props) => {

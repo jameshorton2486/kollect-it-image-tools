@@ -1,11 +1,14 @@
+
 import { useCallback } from 'react';
-import { ProcessedImage } from '@/types/imageProcessing';
+import { ProcessedImage, OutputFormat, CompressionSettings } from '@/types/imageProcessing';
 import { 
   processImageUtil, 
   processAllImagesUtil, 
   downloadImageUtil, 
   downloadAllImagesUtil,
-  cancelBatchProcessing
+  cancelBatchProcessing,
+  downloadFormatUtil,
+  downloadAllFormatsUtil
 } from '@/hooks/useImageProcessingUtils';
 
 interface UseProcessingActionsProps {
@@ -30,6 +33,11 @@ interface UseProcessingActionsProps {
   setProcessedItemsCount: React.Dispatch<React.SetStateAction<number>>;
   exportPath: string;
   setExportPath: React.Dispatch<React.SetStateAction<string>>;
+  // Multi-format options
+  outputFormat: OutputFormat;
+  compressionSettings: CompressionSettings;
+  stripMetadata: boolean;
+  progressiveLoading: boolean;
 }
 
 /**
@@ -56,7 +64,12 @@ export function useProcessingActions({
   setTotalItemsToProcess,
   setProcessedItemsCount,
   exportPath,
-  setExportPath
+  setExportPath,
+  // Multi-format options
+  outputFormat,
+  compressionSettings,
+  stripMetadata,
+  progressiveLoading
 }: UseProcessingActionsProps) {
   
   const processImage = useCallback(async (index: number) => {
@@ -75,7 +88,12 @@ export function useProcessingActions({
       backgroundColor,
       backgroundOpacity,
       backgroundImage,
-      setProcessedImages
+      setProcessedImages,
+      // Multi-format options
+      outputFormat,
+      compressionSettings,
+      stripMetadata,
+      progressiveLoading
     );
   }, [
     processedImages, 
@@ -91,7 +109,12 @@ export function useProcessingActions({
     backgroundColor, 
     backgroundOpacity,
     backgroundImage,
-    setProcessedImages
+    setProcessedImages,
+    // Multi-format options
+    outputFormat,
+    compressionSettings,
+    stripMetadata,
+    progressiveLoading
   ]);
   
   const handleCancelBatchProcessing = useCallback(() => {
@@ -122,7 +145,12 @@ export function useProcessingActions({
         setIsProcessing,
         setBatchProgress,
         setTotalItemsToProcess,
-        setProcessedItemsCount
+        setProcessedItemsCount,
+        // Multi-format options
+        outputFormat,
+        compressionSettings,
+        stripMetadata,
+        progressiveLoading
       );
     } finally {
       setIsProcessing(false);
@@ -146,7 +174,12 @@ export function useProcessingActions({
     setIsProcessing,
     setBatchProgress,
     setTotalItemsToProcess,
-    setProcessedItemsCount
+    setProcessedItemsCount,
+    // Multi-format options
+    outputFormat,
+    compressionSettings,
+    stripMetadata,
+    progressiveLoading
   ]);
   
   const downloadImageAction = useCallback((index: number) => {
@@ -157,11 +190,23 @@ export function useProcessingActions({
     downloadAllImagesUtil(processedImages);
   }, [processedImages]);
   
+  // New actions for multi-format downloads
+  const downloadImageFormatAction = useCallback((index: number, format: string) => {
+    downloadFormatUtil(index, format, processedImages);
+  }, [processedImages]);
+  
+  const downloadAllFormatsAction = useCallback((index: number) => {
+    downloadAllFormatsUtil(index, processedImages);
+  }, [processedImages]);
+  
   return {
     processImage,
     processAllImages: processAllImagesAction,
     downloadImage: downloadImageAction,
     downloadAllImages: downloadAllImagesAction,
     cancelBatchProcessing: handleCancelBatchProcessing,
+    // New multi-format actions
+    downloadImageFormat: downloadImageFormatAction,
+    downloadAllFormats: downloadAllFormatsAction,
   };
 }

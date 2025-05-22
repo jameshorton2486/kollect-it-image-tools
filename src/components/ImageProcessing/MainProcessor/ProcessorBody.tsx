@@ -1,11 +1,15 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import ProcessingTabs from './ProcessingTabs';
-import { ProcessedImage } from '@/types/imageProcessing';
+import { ProcessedImage, WordPressPreset, OutputFormat, CompressionSettings } from '@/types/imageProcessing';
 import ImageGrid from '../ImageGrid';
 import EmptyState from '../EmptyState';
 import BatchProcessingProgress from '../BatchProcessingProgress';
 import WordPressImageOptions from '../WordPressImageOptions';
+import WordPressPresetsSection from '../WordPressPresetsSection';
+import EcommercePresetsSection from '../EcommercePresetsSection';
+import FormatOptionsSection from '../FormatOptionsSection';
+import HtmlCodePreviewDialog from '../HtmlCodePreviewDialog';
 
 interface ProcessorBodyProps {
   processedImages: ProcessedImage[];
@@ -54,7 +58,7 @@ interface ProcessorBodyProps {
   processedItemsCount: number;
   cancelBatchProcessing: () => void;
   handleAdditionalFilesUploaded: (newFiles: File[]) => void;
-  // New WordPress and file management props
+  // WordPress and file management props
   applyWordPressType: (imageIndex: number, typeId: string) => void;
   applyBulkWordPressType: (typeId: string) => void;
   renameImage: (imageIndex: number, newName: string) => void;
@@ -62,6 +66,25 @@ interface ProcessorBodyProps {
   exportPath: string;
   setExportPath: (path: string) => void;
   removeImage: (index: number) => void;
+  // New multi-format compression props
+  outputFormat: OutputFormat;
+  setOutputFormat: (format: OutputFormat) => void;
+  compressionSettings: CompressionSettings;
+  setCompressionSettings: (settings: CompressionSettings) => void;
+  stripMetadata: boolean;
+  setStripMetadata: (strip: boolean) => void;
+  progressiveLoading: boolean;
+  setProgressiveLoading: (progressive: boolean) => void;
+  estimatedSizes: {
+    original: number;
+    jpeg: number | null;
+    webp: number | null;
+    avif: number | null;
+  };
+  applyWordPressPreset: (preset: WordPressPreset) => void;
+  downloadImageFormat: (imageIndex: number, format: string) => void;
+  downloadAllFormats: (imageIndex: number) => void;
+  viewHtmlCode: (imageIndex: number) => void;
 }
 
 const ProcessorBody: React.FC<ProcessorBodyProps> = ({
@@ -111,15 +134,35 @@ const ProcessorBody: React.FC<ProcessorBodyProps> = ({
   processedItemsCount,
   cancelBatchProcessing,
   handleAdditionalFilesUploaded,
-  // New WordPress and file management props
   applyWordPressType,
   applyBulkWordPressType,
   renameImage,
   setOutputFormat,
   exportPath,
   setExportPath,
-  removeImage
+  removeImage,
+  // New multi-format compression props
+  outputFormat,
+  compressionSettings,
+  setCompressionSettings,
+  stripMetadata,
+  setStripMetadata,
+  progressiveLoading,
+  setProgressiveLoading,
+  estimatedSizes,
+  applyWordPressPreset,
+  downloadImageFormat,
+  downloadAllFormats,
+  viewHtmlCode
 }) => {
+  const [htmlPreviewOpen, setHtmlPreviewOpen] = useState(false);
+  const [selectedImageForHtml, setSelectedImageForHtml] = useState<ProcessedImage | null>(null);
+
+  const handleViewHtmlCode = (imageIndex: number) => {
+    setSelectedImageForHtml(processedImages[imageIndex]);
+    setHtmlPreviewOpen(true);
+  };
+
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -162,10 +205,20 @@ const ProcessorBody: React.FC<ProcessorBodyProps> = ({
             kollectItUploadUrl={kollectItUploadUrl || ''}
             onKollectItApiKeyChange={setKollectItApiKey || (() => {})}
             onKollectItUploadUrlChange={setKollectItUploadUrl || (() => {})}
+            // New props
+            outputFormat={outputFormat}
+            onOutputFormatChange={setOutputFormat}
+            compressionSettings={compressionSettings}
+            onCompressionSettingsChange={setCompressionSettings}
+            stripMetadata={stripMetadata}
+            onStripMetadataChange={setStripMetadata}
+            progressiveLoading={progressiveLoading}
+            onProgressiveLoadingChange={setProgressiveLoading}
+            estimatedSizes={estimatedSizes}
           />
         </div>
         
-        <div className="col-span-1">
+        <div className="col-span-1 space-y-4">
           <WordPressImageOptions
             processedImages={processedImages}
             onApplyWordPressType={applyWordPressType}
@@ -175,8 +228,32 @@ const ProcessorBody: React.FC<ProcessorBodyProps> = ({
             onSetExportPath={setExportPath}
             exportPath={exportPath}
           />
+          
+          <WordPressPresetsSection
+            onApplyPreset={applyWordPressPreset}
+          />
+          
+          <EcommercePresetsSection
+            onApplyPreset={(width, height) => {
+              setMaxWidth(width);
+              setMaxHeight(height);
+            }}
+          />
         </div>
       </div>
+      
+      <FormatOptionsSection
+        outputFormat={outputFormat}
+        onOutputFormatChange={setOutputFormat}
+        compressionSettings={compressionSettings}
+        onCompressionSettingsChange={setCompressionSettings}
+        stripMetadata={stripMetadata}
+        onStripMetadataChange={setStripMetadata}
+        progressiveLoading={progressiveLoading}
+        onProgressiveLoadingChange={setProgressiveLoading}
+        isProcessing={isProcessing}
+        estimatedSizes={estimatedSizes}
+      />
       
       {processedImages.length > 0 ? (
         <ImageGrid
@@ -190,6 +267,9 @@ const ProcessorBody: React.FC<ProcessorBodyProps> = ({
           onSetOutputFormat={setOutputFormat} 
           onSetWordPressType={applyWordPressType}
           onRemoveImage={removeImage}
+          onDownloadFormat={downloadImageFormat}
+          onViewHtmlCode={handleViewHtmlCode}
+          onDownloadAllFormats={downloadAllFormats}
         />
       ) : (
         <EmptyState onReset={onReset} />
@@ -202,6 +282,13 @@ const ProcessorBody: React.FC<ProcessorBodyProps> = ({
         processedItemsCount={processedItemsCount}
         totalItemsToProcess={totalItemsToProcess}
         onCancel={cancelBatchProcessing}
+      />
+      
+      {/* HTML Code Preview Dialog */}
+      <HtmlCodePreviewDialog
+        open={htmlPreviewOpen}
+        onOpenChange={setHtmlPreviewOpen}
+        image={selectedImageForHtml}
       />
     </>
   );
