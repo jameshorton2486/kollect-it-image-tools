@@ -1,3 +1,4 @@
+
 import { toast } from '@/components/ui/use-toast';
 import { BackgroundRemovalResult } from './backgroundRemovalApi';
 import { logger, handleError } from './logging';
@@ -30,9 +31,15 @@ export async function removeBackgroundInBrowser(
     logger.info('Image loaded, starting background removal process', { module: 'BrowserBackgroundRemoval' });
     const processedBlob = await removeBackground(image, options);
     
+    // Optimize the blob to reduce file size - new step to ensure smaller file sizes
+    const optimizedBlob = await optimizeTransparentImage(processedBlob);
+    logger.info(`Image optimized: original=${processedBlob.size}, optimized=${optimizedBlob.size}`, { 
+      module: 'BrowserBackgroundRemoval' 
+    });
+    
     // Create a new file with the processed image
     const filename = imageFile.name.replace(/\.[^/.]+$/, '') + '-nobg.png';
-    const processedFile = new File([processedBlob], filename, { type: 'image/png' });
+    const processedFile = new File([optimizedBlob], filename, { type: 'image/png' });
 
     logger.info(`Background removal complete for ${filename}`, { 
       module: 'BrowserBackgroundRemoval',
@@ -70,6 +77,131 @@ export const loadImage = (file: File): Promise<HTMLImageElement> => {
       reject(new Error(`Image loading failed: ${e}`));
     };
     img.src = URL.createObjectURL(file);
+  });
+};
+
+// Optimize transparent PNG to reduce file size
+const optimizeTransparentImage = async (blob: Blob): Promise<Blob> => {
+  return new Promise((resolve, reject) => {
+    try {
+      const img = new Image();
+      img.onload = () => {
+        // Create a canvas with the same dimensions as the image
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext('2d', { alpha: true });
+        
+        if (!ctx) {
+          logger.error('Failed to get canvas context for optimization', { module: 'BrowserBackgroundRemoval' });
+          resolve(blob); // Return original blob if we can't optimize
+          return;
+        }
+        
+        // Clear canvas to transparent
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Draw the image
+        ctx.drawImage(img, 0, 0);
+        
+        // Get image data to find the actual content bounds
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+        
+        // Find the actual content bounds (pixels with alpha > 0)
+        let minX = canvas.width;
+        let minY = canvas.height;
+        let maxX = 0;
+        let maxY = 0;
+        let hasContent = false;
+        
+        for (let y = 0; y < canvas.height; y++) {
+          for (let x = 0; x < canvas.width; x++) {
+            const alpha = data[(y * canvas.width + x) * 4 + 3];
+            if (alpha > 10) { // Using a small threshold to avoid noise
+              minX = Math.min(minX, x);
+              minY = Math.min(minY, y);
+              maxX = Math.max(maxX, x);
+              maxY = Math.max(maxY, y);
+              hasContent = true;
+            }
+          }
+        }
+        
+        // Add a small padding
+        const padding = 5;
+        minX = Math.max(0, minX - padding);
+        minY = Math.max(0, minY - padding);
+        maxX = Math.min(canvas.width - 1, maxX + padding);
+        maxY = Math.min(canvas.height - 1, maxY + padding);
+        
+        // If we found content, crop to just that area
+        if (hasContent) {
+          const width = maxX - minX + 1;
+          const height = maxY - minY + 1;
+          
+          // Only crop if we're saving significant space
+          if (width < canvas.width * 0.9 || height < canvas.height * 0.9) {
+            logger.info(`Cropping transparent image from ${canvas.width}x${canvas.height} to ${width}x${height}`, {
+              module: 'BrowserBackgroundRemoval'
+            });
+            
+            // Create a new canvas with just the content
+            const croppedCanvas = document.createElement('canvas');
+            croppedCanvas.width = width;
+            croppedCanvas.height = height;
+            const croppedCtx = croppedCanvas.getContext('2d', { alpha: true });
+            
+            if (croppedCtx) {
+              // Copy just the content area to the new canvas
+              croppedCtx.drawImage(
+                canvas, 
+                minX, minY, width, height,
+                0, 0, width, height
+              );
+              
+              // Convert to blob with quality 0.9 for better compression
+              croppedCanvas.toBlob(
+                (croppedBlob) => {
+                  if (croppedBlob && croppedBlob.size < blob.size) {
+                    resolve(croppedBlob);
+                  } else {
+                    // If cropped image is larger, return original optimized image
+                    canvas.toBlob(
+                      (originalBlob) => resolve(originalBlob || blob),
+                      'image/png',
+                      0.9
+                    );
+                  }
+                },
+                'image/png',
+                0.9
+              );
+              return;
+            }
+          }
+        }
+        
+        // If we didn't crop or cropping failed, just optimize the original image
+        canvas.toBlob(
+          (optimizedBlob) => resolve(optimizedBlob || blob),
+          'image/png',
+          0.9
+        );
+      };
+      
+      img.onerror = () => {
+        logger.warn('Failed to load image for optimization', { module: 'BrowserBackgroundRemoval' });
+        resolve(blob); // Return original if optimization fails
+      };
+      
+      img.src = URL.createObjectURL(blob);
+    } catch (error) {
+      logger.error(`Error optimizing image: ${error instanceof Error ? error.message : String(error)}`, {
+        module: 'BrowserBackgroundRemoval'
+      });
+      resolve(blob); // Return original if optimization fails
+    }
   });
 };
 
@@ -361,6 +493,9 @@ export const removeBackground = async (
     ctx.putImageData(imageData, 0, 0);
     logger.info(`Background removal completed using ${method} method`, { module: 'BrowserBackgroundRemoval' });
     
+    // Apply a small amount of noise reduction and edge cleaning
+    applyImageCleanup(canvas, ctx);
+    
     // Convert canvas to blob
     return new Promise((resolve, reject) => {
       try {
@@ -389,5 +524,70 @@ export const removeBackground = async (
       data: { error }
     });
     throw error;
+  }
+};
+
+// Apply cleanup to the image to smooth edges and reduce noise
+const applyImageCleanup = (canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D): void => {
+  try {
+    // Get image data for cleanup
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imageData.data;
+    
+    // Simple edge smoothing - for pixels with partial transparency,
+    // check nearby pixels and adjust alpha values to reduce jaggedness
+    const tempData = new Uint8ClampedArray(data);
+    
+    for (let y = 1; y < canvas.height - 1; y++) {
+      for (let x = 1; x < canvas.width - 1; x++) {
+        const idx = (y * canvas.width + x) * 4;
+        const alpha = data[idx + 3];
+        
+        // Only process semi-transparent edge pixels
+        if (alpha > 0 && alpha < 255) {
+          // Calculate the average alpha of surrounding pixels
+          let totalAlpha = 0;
+          let count = 0;
+          
+          for (let dy = -1; dy <= 1; dy++) {
+            for (let dx = -1; dx <= 1; dx++) {
+              const nx = x + dx;
+              const ny = y + dy;
+              if (nx >= 0 && nx < canvas.width && ny >= 0 && ny < canvas.height) {
+                const nidx = (ny * canvas.width + nx) * 4;
+                totalAlpha += data[nidx + 3];
+                count++;
+              }
+            }
+          }
+          
+          const avgAlpha = totalAlpha / count;
+          
+          // If surrounding pixels are mostly transparent, reduce this pixel's alpha
+          if (avgAlpha < 128) {
+            tempData[idx + 3] = Math.max(0, alpha - 40);
+          }
+          // If surrounding pixels are mostly opaque, increase this pixel's alpha
+          else if (avgAlpha > 200) {
+            tempData[idx + 3] = Math.min(255, alpha + 40);
+          }
+        }
+      }
+    }
+    
+    // Apply the smoothed data
+    for (let i = 0; i < data.length; i++) {
+      data[i] = tempData[i];
+    }
+    
+    // Put the processed data back
+    ctx.putImageData(imageData, 0, 0);
+    
+    logger.debug('Applied image cleanup for smoother edges', { module: 'BrowserBackgroundRemoval' });
+  } catch (error) {
+    logger.warn(`Error during image cleanup: ${error instanceof Error ? error.message : String(error)}`, {
+      module: 'BrowserBackgroundRemoval'
+    });
+    // Continue even if cleanup fails - it's just an enhancement
   }
 };
