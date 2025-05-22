@@ -40,6 +40,18 @@ export async function processImageUtil(
       });
     }, 300);
     
+    // If Rembg is selected but selfHosted is false, warn and switch to browser mode
+    if (backgroundRemovalModel === 'rembg' && !selfHosted) {
+      toast({
+        title: "Rembg Server Not Available",
+        description: "Switching to browser-based background removal as fallback.",
+        variant: "warning"
+      });
+      
+      // Use browser model as fallback
+      backgroundRemovalModel = 'browser';
+    }
+    
     // Process with automatic retry - pass the original File from the ProcessedImage
     const processedResult = await processSingleImage(
       image.original, // Pass the File, not the whole ProcessedImage

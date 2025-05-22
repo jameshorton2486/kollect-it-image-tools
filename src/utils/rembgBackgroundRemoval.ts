@@ -1,5 +1,6 @@
 
 import { toast } from '@/components/ui/use-toast';
+import { removeBackgroundInBrowser } from './browserBackgroundRemoval';
 
 export interface RembgBackgroundRemovalResult {
   processedFile: File | null;
@@ -19,33 +20,39 @@ export async function removeBackgroundWithRembg(
     return { processedFile: null, error: "Server URL missing" };
   }
 
-  // Create form data for the API request
-  const formData = new FormData();
-  formData.append('image', imageFile);
-
   try {
+    // Create form data for the API request
+    const formData = new FormData();
+    formData.append('image', imageFile);
+
+    // Set a timeout for the fetch request - 5 seconds
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+
     const response = await fetch(serverUrl, {
       method: 'POST',
       body: formData,
+      signal: controller.signal
+    }).catch(error => {
+      // Connection error, try browser fallback
+      console.log('Rembg server connection failed, using browser fallback');
+      clearTimeout(timeoutId);
+      return null;
     });
+    
+    clearTimeout(timeoutId);
 
-    if (!response.ok) {
-      let errorMessage = "Failed to remove background";
-      try {
-        const errorData = await response.json();
-        errorMessage = errorData.error || errorMessage;
-      } catch (e) {
-        // If parsing fails, use the default error message
-      }
-      
-      console.error('Background removal failed:', errorMessage);
+    // If fetch failed or returned an error, use browser fallback
+    if (!response || !response.ok) {
+      console.log('Using browser fallback for background removal');
       toast({
-        variant: "destructive",
-        title: "Background Removal Failed",
-        description: errorMessage
+        title: "Rembg Server Not Available",
+        description: "Using browser processing as fallback",
+        variant: "warning"
       });
       
-      return { processedFile: null, error: errorMessage };
+      // Use browser model as fallback
+      return await removeBackgroundInBrowser(imageFile);
     }
 
     // Get the processed image
@@ -57,11 +64,15 @@ export async function removeBackgroundWithRembg(
     return { processedFile };
   } catch (error) {
     console.error('Background removal error:', error);
+    
+    // Fall back to browser processing
+    console.log('Error with Rembg server, using browser fallback');
     toast({
-      variant: "destructive",
-      title: "Background Removal Error",
-      description: error instanceof Error ? error.message : "Connection error"
+      title: "Background Removal Fallback",
+      description: "Server not available. Using browser processing instead.",
+      variant: "warning"
     });
-    return { processedFile: null, error: error instanceof Error ? error.message : "Connection error" };
+    
+    return await removeBackgroundInBrowser(imageFile);
   }
 }
