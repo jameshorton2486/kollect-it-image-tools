@@ -49,4 +49,6 @@ export interface UseImageProcessingResult {
   cancelBatchProcessing: () => void;
   clearImageCache: () => void;
   clearAnalyticsData: () => void;
+  exportPath: string;
+  setExportPath: React.Dispatch<React.SetStateAction<string>>;
 }

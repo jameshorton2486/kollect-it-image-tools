@@ -7,7 +7,13 @@ export interface ProcessedImage {
   isSelected: boolean;
   hasBackgroundRemoved: boolean;
   processingError?: string;
-  // New fields for WordPress functionality
+  processingProgress?: number;
+  retryCount?: number;
+  dimensions?: {
+    width: number;
+    height: number;
+  };
+  // WordPress functionality fields
   wordpressType?: string;
   newFilename?: string;
   outputFormat?: string;

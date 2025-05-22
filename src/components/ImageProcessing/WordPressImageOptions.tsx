@@ -20,7 +20,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { InfoCircle, FileImage, Settings } from "lucide-react";
+import { Info, FileImage, Settings } from "lucide-react";
 import { 
   Tooltip,
   TooltipContent,
@@ -90,7 +90,7 @@ const WordPressImageOptions: React.FC<WordPressImageOptionsProps> = ({
                   size="icon"
                   onClick={() => setShowDetails(!showDetails)}
                 >
-                  <InfoCircle className="h-4 w-4" />
+                  <Info className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
