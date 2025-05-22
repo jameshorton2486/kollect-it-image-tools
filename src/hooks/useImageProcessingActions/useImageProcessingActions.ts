@@ -27,6 +27,8 @@ interface UseImageProcessingActionsProps {
   setBatchProgress: React.Dispatch<React.SetStateAction<number>>;
   setTotalItemsToProcess: React.Dispatch<React.SetStateAction<number>>;
   setProcessedItemsCount: React.Dispatch<React.SetStateAction<number>>;
+  exportPath: string;
+  setExportPath: React.Dispatch<React.SetStateAction<string>>;
 }
 
 /**
@@ -35,8 +37,13 @@ interface UseImageProcessingActionsProps {
 export function useImageProcessingActions(props: UseImageProcessingActionsProps) {
   // Split functionality into sub-hooks
   const processingActions = useProcessingActions(props);
-  const selectionActions = useSelectionActions(props);
-  const viewActions = useViewActions(props);
+  const selectionActions = useSelectionActions({
+    processedImages: props.processedImages,
+    setProcessedImages: props.setProcessedImages
+  });
+  const viewActions = useViewActions({
+    setShowBeforeAfter: props.setShowBeforeAfter
+  });
   const systemActions = useSystemActions();
   
   // Return all actions as a combined object
@@ -57,6 +64,10 @@ export function useImageProcessingActions(props: UseImageProcessingActionsProps)
     
     // System actions
     clearImageCache: systemActions.clearImageCache,
-    clearAnalyticsData: systemActions.clearAnalyticsData
+    clearAnalyticsData: systemActions.clearAnalyticsData,
+    
+    // Export path actions
+    exportPath: props.exportPath,
+    setExportPath: props.setExportPath
   };
 }

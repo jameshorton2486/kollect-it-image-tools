@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Download } from 'lucide-react';
 
@@ -16,19 +16,45 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   onDownloadAll,
   onSelectAll
 }) => {
+  const [activeButton, setActiveButton] = useState<string | null>(null);
+  
+  const handleProcessAllClick = () => {
+    if (!isProcessing) {
+      setActiveButton('process');
+      onProcessAll();
+    }
+  };
+  
+  const handleDownloadAllClick = () => {
+    setActiveButton('download');
+    onDownloadAll();
+  };
+  
+  const handleSelectAllClick = () => {
+    setActiveButton('selectAll');
+    onSelectAll(true);
+  };
+  
+  const handleDeselectAllClick = () => {
+    setActiveButton('deselectAll');
+    onSelectAll(false);
+  };
+  
   return (
     <div className="flex justify-between pt-4">
       <div className="space-x-2">
         <Button
           variant="default"
-          onClick={onProcessAll}
+          onClick={handleProcessAllClick}
           disabled={isProcessing}
+          className={activeButton === 'process' ? 'bg-brand-light text-brand-blue border border-brand-blue' : ''}
         >
           {isProcessing ? 'Processing...' : 'Process All Selected'}
         </Button>
         <Button
           variant="outline"
-          onClick={onDownloadAll}
+          onClick={handleDownloadAllClick}
+          className={activeButton === 'download' ? 'bg-brand-light text-brand-blue border border-brand-blue' : ''}
         >
           <Download className="mr-2 h-4 w-4" />
           Download All
@@ -39,14 +65,16 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
         <Button
           variant="outline"
           size="sm"
-          onClick={() => onSelectAll(true)}
+          onClick={handleSelectAllClick}
+          className={activeButton === 'selectAll' ? 'bg-brand-light text-brand-blue border border-brand-blue' : ''}
         >
           Select All
         </Button>
         <Button
           variant="outline"
           size="sm"
-          onClick={() => onSelectAll(false)}
+          onClick={handleDeselectAllClick}
+          className={activeButton === 'deselectAll' ? 'bg-brand-light text-brand-blue border border-brand-blue' : ''}
         >
           Deselect All
         </Button>

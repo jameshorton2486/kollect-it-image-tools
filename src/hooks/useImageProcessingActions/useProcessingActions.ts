@@ -1,4 +1,3 @@
-
 import { useCallback } from 'react';
 import { ProcessedImage } from '@/types/imageProcessing';
 import { 
@@ -94,7 +93,7 @@ export function useProcessingActions({
     backgroundImage,
     setProcessedImages
   ]);
-
+  
   const handleCancelBatchProcessing = useCallback(() => {
     cancelBatchProcessing();
     setIsProcessing(false);
