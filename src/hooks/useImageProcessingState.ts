@@ -24,6 +24,11 @@ export function useImageProcessingState() {
   const [backgroundRemovalModel, setBackgroundRemovalModel] = useState<string>(
     localStorage.getItem('background_removal_model') || DEFAULT_BACKGROUND_REMOVAL_MODEL
   );
+  
+  // New state for background options
+  const [backgroundType, setBackgroundType] = useState<string>('none');
+  const [backgroundColor, setBackgroundColor] = useState<string>('#FFFFFF');
+  const [backgroundOpacity, setBackgroundOpacity] = useState<number>(100);
 
   return {
     processedImages, setProcessedImages,
@@ -40,6 +45,9 @@ export function useImageProcessingState() {
     batchProgress, setBatchProgress,
     totalItemsToProcess, setTotalItemsToProcess,
     processedItemsCount, setProcessedItemsCount,
-    backgroundRemovalModel, setBackgroundRemovalModel
+    backgroundRemovalModel, setBackgroundRemovalModel,
+    backgroundType, setBackgroundType,
+    backgroundColor, setBackgroundColor,
+    backgroundOpacity, setBackgroundOpacity
   };
 }

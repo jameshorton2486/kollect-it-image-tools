@@ -6,7 +6,9 @@ import { RefreshCw } from 'lucide-react';
 import CompressionQualitySection from './CompressionQualitySection';
 import DimensionsSection from './DimensionsSection';
 import BackgroundRemovalSection from './BackgroundRemovalSection';
+import BackgroundOptionsSection from './BackgroundOptionsSection';
 import ActionButtons from './ActionButtons';
+import { Separator } from '@/components/ui/separator';
 
 interface CompressionSettingsProps {
   compressionLevel: number;
@@ -19,6 +21,9 @@ interface CompressionSettingsProps {
   selfHosted: boolean;
   serverUrl: string;
   backgroundRemovalModel: string;
+  backgroundType: string;
+  backgroundColor: string;
+  backgroundOpacity: number;
   onCompressionLevelChange: (value: number) => void;
   onMaxWidthChange: (value: number) => void;
   onMaxHeightChange: (value: number) => void;
@@ -28,6 +33,9 @@ interface CompressionSettingsProps {
   onSelfHostedChange: (value: boolean) => void;
   onServerUrlChange: (value: string) => void;
   onBackgroundRemovalModelChange: (value: string) => void;
+  onBackgroundTypeChange: (value: string) => void;
+  onBackgroundColorChange: (value: string) => void;
+  onBackgroundOpacityChange: (value: number) => void;
   onProcessAll: () => void;
   onDownloadAll: () => void;
   onSelectAll: (selected: boolean) => void;
@@ -68,6 +76,8 @@ const CompressionSettings: React.FC<CompressionSettingsProps> = (props) => {
             onPreserveAspectRatioChange={props.onPreserveAspectRatioChange}
           />
           
+          <Separator />
+          
           {/* Background Removal Section */}
           <BackgroundRemovalSection 
             removeBackground={props.removeBackground}
@@ -81,7 +91,21 @@ const CompressionSettings: React.FC<CompressionSettingsProps> = (props) => {
             onServerUrlChange={props.onServerUrlChange}
             onBackgroundRemovalModelChange={props.onBackgroundRemovalModelChange}
           />
+          
+          {/* Show background options only if background removal is enabled */}
+          {props.removeBackground && (
+            <BackgroundOptionsSection 
+              backgroundType={props.backgroundType}
+              backgroundColor={props.backgroundColor}
+              backgroundOpacity={props.backgroundOpacity}
+              onBackgroundTypeChange={props.onBackgroundTypeChange}
+              onBackgroundColorChange={props.onBackgroundColorChange}
+              onBackgroundOpacityChange={props.onBackgroundOpacityChange}
+            />
+          )}
 
+          <Separator />
+          
           {/* Action Buttons */}
           <ActionButtons
             isProcessing={props.isProcessing}

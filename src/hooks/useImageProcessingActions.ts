@@ -1,3 +1,4 @@
+
 import { useCallback } from 'react';
 import { ProcessedImage } from '@/types/imageProcessing';
 import { 
@@ -22,6 +23,9 @@ interface UseImageProcessingActionsProps {
   selfHosted: boolean;
   serverUrl: string;
   backgroundRemovalModel: string;
+  backgroundType: string;
+  backgroundColor: string;
+  backgroundOpacity: number;
   isProcessing: boolean;
   setIsProcessing: React.Dispatch<React.SetStateAction<boolean>>;
   setShowBeforeAfter: React.Dispatch<React.SetStateAction<number | null>>;
@@ -44,6 +48,9 @@ export function useImageProcessingActions({
   selfHosted,
   serverUrl,
   backgroundRemovalModel,
+  backgroundType,
+  backgroundColor,
+  backgroundOpacity,
   isProcessing,
   setIsProcessing,
   setShowBeforeAfter,
@@ -64,9 +71,13 @@ export function useImageProcessingActions({
       selfHosted,
       serverUrl,
       backgroundRemovalModel,
+      backgroundType,
+      backgroundColor,
+      backgroundOpacity,
       setProcessedImages
     );
-  }, [processedImages, compressionLevel, maxWidth, maxHeight, removeBackground, apiKey, selfHosted, serverUrl, backgroundRemovalModel, setProcessedImages]);
+  }, [processedImages, compressionLevel, maxWidth, maxHeight, removeBackground, apiKey, selfHosted, 
+      serverUrl, backgroundRemovalModel, backgroundType, backgroundColor, backgroundOpacity, setProcessedImages]);
   
   const processAllImages = useCallback(async () => {
     if (isProcessing) return;
@@ -83,6 +94,9 @@ export function useImageProcessingActions({
         selfHosted,
         serverUrl,
         backgroundRemovalModel,
+        backgroundType,
+        backgroundColor,
+        backgroundOpacity,
         setProcessedImages,
         setIsProcessing,
         setBatchProgress,
@@ -102,6 +116,9 @@ export function useImageProcessingActions({
     selfHosted, 
     serverUrl, 
     backgroundRemovalModel,
+    backgroundType,
+    backgroundColor,
+    backgroundOpacity,
     isProcessing, 
     setProcessedImages, 
     setIsProcessing,
@@ -158,11 +175,38 @@ export function useImageProcessingActions({
     downloadAllImages: useCallback(() => {
       downloadAllImagesUtil(processedImages);
     }, [processedImages]),
-    toggleSelectImage,
-    selectAllImages,
-    toggleBeforeAfterView,
-    cancelBatchProcessing: handleCancelBatchProcessing,
-    clearImageCache: handleClearImageCache,
-    clearAnalyticsData: handleClearAnalyticsData
+    toggleSelectImage: useCallback((index: number) => {
+      const updatedImages = [...processedImages];
+      updatedImages[index].isSelected = !updatedImages[index].isSelected;
+      setProcessedImages(updatedImages);
+    }, [processedImages, setProcessedImages]),
+    selectAllImages: useCallback((selected: boolean) => {
+      const updatedImages = processedImages.map(img => ({
+        ...img,
+        isSelected: selected
+      }));
+      setProcessedImages(updatedImages);
+    }, [processedImages, setProcessedImages]),
+    toggleBeforeAfterView: useCallback((index: number | null) => {
+      setShowBeforeAfter(prevIndex => prevIndex === index ? null : index);
+    }, [setShowBeforeAfter]),
+    cancelBatchProcessing: useCallback(() => {
+      cancelBatchProcessing();
+      setIsProcessing(false);
+    }, [setIsProcessing]),
+    clearImageCache: useCallback(() => {
+      clearImageCache();
+      toast({
+        title: "Cache Cleared",
+        description: "Image processing cache has been cleared"
+      });
+    }, []),
+    clearAnalyticsData: useCallback(() => {
+      clearAnalyticsData();
+      toast({
+        title: "Analytics Cleared",
+        description: "Analytics data has been reset"
+      });
+    }, [])
   };
 }

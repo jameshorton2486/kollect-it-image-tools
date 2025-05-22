@@ -1,4 +1,3 @@
-
 import React from 'react';
 import CompressionSettings from './ImageProcessing/CompressionSettings';
 import ImageGrid from './ImageProcessing/ImageGrid';
@@ -44,6 +43,14 @@ const ImageProcessor: React.FC<ImageProcessorProps> = ({ images, onReset }) => {
     setServerUrl,
     backgroundRemovalModel,
     setBackgroundRemovalModel,
+    // New background options
+    backgroundType,
+    setBackgroundType,
+    backgroundColor,
+    setBackgroundColor,
+    backgroundOpacity,
+    setBackgroundOpacity,
+    // Other features
     showBeforeAfter,
     toggleBeforeAfterView,
     // Batch processing progress
@@ -114,6 +121,9 @@ const ImageProcessor: React.FC<ImageProcessorProps> = ({ images, onReset }) => {
         selfHosted={selfHosted}
         serverUrl={serverUrl}
         backgroundRemovalModel={backgroundRemovalModel}
+        backgroundType={backgroundType}
+        backgroundColor={backgroundColor}
+        backgroundOpacity={backgroundOpacity}
         onCompressionLevelChange={setCompressionLevel}
         onMaxWidthChange={setMaxWidth}
         onMaxHeightChange={setMaxHeight}
@@ -123,6 +133,9 @@ const ImageProcessor: React.FC<ImageProcessorProps> = ({ images, onReset }) => {
         onSelfHostedChange={setSelfHosted}
         onServerUrlChange={setServerUrl}
         onBackgroundRemovalModelChange={setBackgroundRemovalModel}
+        onBackgroundTypeChange={setBackgroundType}
+        onBackgroundColorChange={setBackgroundColor}
+        onBackgroundOpacityChange={setBackgroundOpacity}
         onProcessAll={processAllImages}
         onDownloadAll={downloadAllImages}
         onSelectAll={selectAllImages}

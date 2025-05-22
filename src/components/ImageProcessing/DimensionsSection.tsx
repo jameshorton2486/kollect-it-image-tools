@@ -12,7 +12,8 @@ import {
   DialogTrigger,
   DialogFooter
 } from "@/components/ui/dialog";
-import { Scissors } from "lucide-react";
+import { Scissors, Crop } from "lucide-react";
+import EcommercePresetsSection from './EcommercePresetsSection';
 
 interface DimensionsSectionProps {
   maxWidth: number;
@@ -48,6 +49,14 @@ const DimensionsSection: React.FC<DimensionsSectionProps> = ({
     }
     
     setDialogOpen(false);
+  };
+  
+  // Handler for applying e-commerce presets
+  const handleApplyPreset = (width: number, height: number) => {
+    onMaxWidthChange(width);
+    onMaxHeightChange(height);
+    setCustomWidth(width.toString());
+    setCustomHeight(height.toString());
   };
   
   return (
@@ -100,6 +109,9 @@ const DimensionsSection: React.FC<DimensionsSectionProps> = ({
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* E-commerce Presets Section */}
+      <EcommercePresetsSection onApplyPreset={handleApplyPreset} />
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>

@@ -15,6 +15,9 @@ export async function processImageUtil(
   selfHosted: boolean,
   serverUrl: string,
   backgroundRemovalModel: string,
+  backgroundType: string = 'none',
+  backgroundColor: string = '#FFFFFF',
+  backgroundOpacity: number = 100,
   setProcessedImages: React.Dispatch<React.SetStateAction<ProcessedImage[]>>
 ): Promise<void> {
   const image = processedImages[index];
@@ -45,7 +48,7 @@ export async function processImageUtil(
       toast({
         title: "Rembg Server Not Available",
         description: "Switching to browser-based background removal as fallback.",
-        variant: "warning"
+        variant: "destructive"
       });
       
       // Use browser model as fallback
@@ -62,7 +65,10 @@ export async function processImageUtil(
       apiKey,
       selfHosted,
       serverUrl,
-      backgroundRemovalModel
+      backgroundRemovalModel,
+      backgroundType,
+      backgroundColor,
+      backgroundOpacity
     );
     
     clearInterval(progressUpdater);

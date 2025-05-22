@@ -27,7 +27,10 @@ export interface ImageProcessingState {
   batchProgress: number; // Overall batch progress
   totalItemsToProcess: number; // Total number of items in the current batch
   processedItemsCount: number; // Number of completed items
-  backgroundRemovalModel: string; // New field for the selected background removal model
+  backgroundRemovalModel: string; // Model for background removal
+  backgroundType: string; // Type of background to add after removal (none, solid, custom)
+  backgroundColor: string; // Background color in hex format
+  backgroundOpacity: number; // Background opacity percentage (0-100)
 }
 
 export interface ImageProcessingOptions {
@@ -40,6 +43,9 @@ export interface ImageProcessingOptions {
   selfHosted: boolean;
   serverUrl: string;
   backgroundRemovalModel: string; // Include the model in options
+  backgroundType: string;
+  backgroundColor: string;
+  backgroundOpacity: number;
 }
 
 export interface UseImageProcessingResult extends ImageProcessingState {
@@ -62,4 +68,7 @@ export interface UseImageProcessingResult extends ImageProcessingState {
   clearImageCache: () => void;
   clearAnalyticsData: () => void; 
   setBackgroundRemovalModel: (model: string) => void; // New setter for the model
+  setBackgroundType: (type: string) => void;
+  setBackgroundColor: (color: string) => void;
+  setBackgroundOpacity: (opacity: number) => void;
 }

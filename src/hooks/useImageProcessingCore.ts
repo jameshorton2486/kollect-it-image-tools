@@ -25,7 +25,10 @@ export function useImageProcessingCore(initialImages: File[]): UseImageProcessin
     batchProgress, setBatchProgress,
     totalItemsToProcess, setTotalItemsToProcess,
     processedItemsCount, setProcessedItemsCount,
-    backgroundRemovalModel, setBackgroundRemovalModel
+    backgroundRemovalModel, setBackgroundRemovalModel,
+    backgroundType, setBackgroundType,
+    backgroundColor, setBackgroundColor,
+    backgroundOpacity, setBackgroundOpacity
   } = useImageProcessingState();
 
   // Initialize and clean up effects
@@ -36,16 +39,22 @@ export function useImageProcessingCore(initialImages: File[]): UseImageProcessin
     selfHosted,
     serverUrl,
     backgroundRemovalModel,
+    backgroundType,
+    backgroundColor,
+    backgroundOpacity,
     setProcessedImages
   });
   
-  // Save API key and model selection to localStorage
+  // Save settings to localStorage
   useEffect(() => {
     if (apiKey) {
       localStorage.setItem('removebg_api_key', apiKey);
     }
     localStorage.setItem('background_removal_model', backgroundRemovalModel);
-  }, [apiKey, backgroundRemovalModel]);
+    localStorage.setItem('background_type', backgroundType);
+    localStorage.setItem('background_color', backgroundColor);
+    localStorage.setItem('background_opacity', backgroundOpacity.toString());
+  }, [apiKey, backgroundRemovalModel, backgroundType, backgroundColor, backgroundOpacity]);
 
   // Action methods
   const {
@@ -70,6 +79,9 @@ export function useImageProcessingCore(initialImages: File[]): UseImageProcessin
     selfHosted,
     serverUrl,
     backgroundRemovalModel,
+    backgroundType,
+    backgroundColor,
+    backgroundOpacity,
     isProcessing,
     setIsProcessing,
     setShowBeforeAfter,
@@ -105,6 +117,12 @@ export function useImageProcessingCore(initialImages: File[]): UseImageProcessin
     setServerUrl,
     backgroundRemovalModel,
     setBackgroundRemovalModel,
+    backgroundType,
+    setBackgroundType,
+    backgroundColor,
+    setBackgroundColor,
+    backgroundOpacity,
+    setBackgroundOpacity,
     showBeforeAfter,
     toggleBeforeAfterView,
     batchProgress,

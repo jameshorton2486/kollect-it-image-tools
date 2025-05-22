@@ -48,7 +48,8 @@ export async function removeBackgroundWithRembg(
       toast({
         title: "Rembg Server Not Available",
         description: "Using browser processing as fallback",
-        variant: "warning"
+        // Fixed the TypeScript error by using a valid variant
+        variant: "destructive"
       });
       
       // Use browser model as fallback
@@ -70,7 +71,8 @@ export async function removeBackgroundWithRembg(
     toast({
       title: "Background Removal Fallback",
       description: "Server not available. Using browser processing instead.",
-      variant: "warning"
+      // Fixed the TypeScript error by using a valid variant
+      variant: "destructive"
     });
     
     return await removeBackgroundInBrowser(imageFile);

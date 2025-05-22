@@ -1,3 +1,4 @@
+
 import { toast } from '@/hooks/use-toast';
 import { ProcessedImage } from "@/types/imageProcessing";
 import { trackEvent } from '@/utils/analyticsUtils';
@@ -20,6 +21,9 @@ export async function processAllImagesUtil(
   selfHosted: boolean,
   serverUrl: string,
   backgroundRemovalModel: string,
+  backgroundType: string,
+  backgroundColor: string,
+  backgroundOpacity: number,
   setProcessedImages: React.Dispatch<React.SetStateAction<ProcessedImage[]>>,
   setIsProcessing: React.Dispatch<React.SetStateAction<boolean>>,
   setBatchProgress: React.Dispatch<React.SetStateAction<number>>,
@@ -56,7 +60,8 @@ export async function processAllImagesUtil(
       maxWidth,
       maxHeight,
       removeBackground,
-      model: removeBackground ? backgroundRemovalModel : 'none'
+      model: removeBackground ? backgroundRemovalModel : 'none',
+      backgroundType: removeBackground ? backgroundType : 'none'
     });
     
     // Process images with a small delay between each to prevent overwhelming the server
@@ -73,6 +78,9 @@ export async function processAllImagesUtil(
           selfHosted,
           serverUrl,
           backgroundRemovalModel,
+          backgroundType,
+          backgroundColor,
+          backgroundOpacity,
           setProcessedImages
         );
         
@@ -111,7 +119,8 @@ export async function processAllImagesUtil(
       retriedCount,
       processingTime: batchProcessingTime,
       cancelled: batchProcessingCancelled,
-      model: removeBackground ? backgroundRemovalModel : 'none'
+      model: removeBackground ? backgroundRemovalModel : 'none',
+      backgroundType: removeBackground ? backgroundType : 'none'
     });
     
     if (batchProcessingCancelled) {
