@@ -41,7 +41,8 @@ export function useImageProcessingEffects({
   useEffect(() => {
     if (initialImages.length > 0 && processedImages.length === 0) {
       console.log('Initializing images:', initialImages.map(file => file.name));
-      setProcessedImages(initializeProcessedImages(initialImages));
+      const newProcessedImages = initialImages.map(file => initializeProcessedImages(file));
+      setProcessedImages(newProcessedImages);
     }
   }, [initialImages, processedImages.length, setProcessedImages]);
   

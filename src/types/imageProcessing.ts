@@ -7,7 +7,7 @@ export interface ProcessedImage {
   original: File;
   originalUrl: string;
   preview: string;
-  processed?: File | Blob | null; // Changed from boolean to File | Blob | null
+  processed?: File | Blob | null;
   optimizedFiles: Record<string, ProcessedFormat>;
   blob?: Blob;
   newSize?: number;
@@ -41,7 +41,7 @@ export interface ProcessedImage {
   finalWidth?: number;
   finalHeight?: number;
   error?: string;
-  processedBlob?: Blob; // Adding this property for compatibility
+  processedBlob?: Blob;
 }
 
 export interface ProcessedFormat {
@@ -56,8 +56,8 @@ export interface ProcessedFormat {
 export interface CompressionStats {
   formatSizes: Record<string, number>;
   originalSize: number;
-  percentSaved?: number; // Optional for backward compatibility
-  totalSaved?: number; // Optional for backward compatibility
+  percentSaved?: number;
+  totalSaved?: number;
   qualityScores?: Record<string, number>;
   processingTimes?: Record<string, number>;
 }
@@ -66,7 +66,7 @@ export interface CompressionStats {
 export interface CompressionSettings {
   jpeg: {
     quality: number;
-    lossless?: boolean; // Added for consistency
+    lossless?: boolean;
   };
   webp: {
     quality: number;
@@ -74,11 +74,11 @@ export interface CompressionSettings {
   };
   png: {
     quality: number;
-    lossless?: boolean; // Added for consistency
+    lossless?: boolean;
   };
   avif: {
     quality: number;
-    lossless?: boolean; // Added for consistency
+    lossless?: boolean;
   };
 }
 
@@ -116,7 +116,6 @@ export interface ImageProcessingOptions {
   resizeMode: ResizeMode;
   resizeQuality: number;
   compressionLevel: number;
-  // Additional properties needed by processing functions
   backgroundType?: string;
   backgroundColor?: string;
   backgroundOpacity?: number;
@@ -126,7 +125,6 @@ export interface ImageProcessingOptions {
   cropSettings?: any;
 }
 
-// Use this type instead of ImageProcessingSettings which seems to be causing errors
 export type ImageProcessingSettings = ImageProcessingOptions;
 
 export interface ProcessingResult {

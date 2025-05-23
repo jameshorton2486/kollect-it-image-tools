@@ -23,3 +23,33 @@ export async function estimateImageSizes(
     avif: avifSize
   };
 }
+
+/**
+ * Process a single image in multiple formats
+ */
+export async function processSingleImageInMultipleFormats(
+  image: File,
+  settings: any
+) {
+  // Mock implementation
+  console.log('Processing image in multiple formats:', image.name, settings);
+  return {
+    jpeg: new Blob([]),
+    webp: new Blob([]),
+    avif: new Blob([]),
+    original: image
+  };
+}
+
+/**
+ * Convert image to specific format
+ */
+export async function convertToFormat(
+  image: File,
+  format: string,
+  quality: number = 80
+) {
+  // Mock implementation
+  console.log('Converting image to format:', format, quality);
+  return new Blob([]);
+}

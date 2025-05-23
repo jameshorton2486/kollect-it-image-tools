@@ -1,6 +1,6 @@
 
-import { toast } from '@/components/ui/use-toast';
-import { ProcessedImage } from "@/types/imageProcessing";
+import { toast } from 'sonner';
+import { ProcessedImage, ImageProcessingSettings } from "@/types/imageProcessing";
 import { processSingleImage } from '@/utils/imageProcessingUtils';
 import { createObjectUrl } from '@/utils/imageUtils';
 import { 
@@ -34,13 +34,12 @@ export async function processImageUtil(
   
   const updatedImages = [...processedImages];
   updatedImages[index].isProcessing = true;
-  updatedImages[index].processingProgress = 0; // Initialize progress
-  updatedImages[index].retryCount = 0; // Reset retry count
+  updatedImages[index].processingProgress = 0;
+  updatedImages[index].retryCount = 0;
   setProcessedImages(updatedImages);
   
-  // Track start of processing for timeout monitoring
   const startTime = Date.now();
-  const maxProcessingTime = 30000; // 30 seconds timeout
+  const maxProcessingTime = 30000;
   let timeoutId: number | undefined;
   
   try {
@@ -57,7 +56,6 @@ export async function processImageUtil(
       }
     });
     
-    // Set timeout to prevent infinite processing
     timeoutId = window.setTimeout(() => {
       const elapsedTime = Date.now() - startTime;
       logger.error(`Processing timeout for image ${image.original.name}`, {
@@ -65,7 +63,6 @@ export async function processImageUtil(
         data: { elapsedTime }
       });
       
-      // Reset processing state
       setProcessedImages(current => {
         const updated = [...current];
         if (updated[index]) {
@@ -76,20 +73,14 @@ export async function processImageUtil(
         return updated;
       });
       
-      toast({
-        variant: "destructive",
-        title: "Processing Timed Out",
-        description: `The image "${image.original.name}" took too long to process`
-      });
+      toast.error(`The image "${image.original.name}" took too long to process`);
     }, maxProcessingTime);
     
-    // Get image dimensions if available
     const imageWidth = image.dimensions?.width || 0;
     const imageHeight = image.dimensions?.height || 0;
     const resolutionCategory = imageWidth && imageHeight ? 
       categorizeResolution(imageWidth, imageHeight) : 'mediumRes';
     
-    // Start performance measurement
     const originalSize = image.original.size;
     const imageResolution = image.dimensions ? 
       `${image.dimensions.width}x${image.dimensions.height}` : 
@@ -101,10 +92,8 @@ export async function processImageUtil(
       imageResolution
     );
     
-    // Get optimal processing settings
     const optimalSettings = getOptimalProcessingSettings(imageWidth, imageHeight);
     
-    // Get processing optimizations
     const processingOptimizations = imageWidth && imageHeight ?
       getProcessingOptimizations(image.original, imageWidth, imageHeight) :
       null;
@@ -115,11 +104,9 @@ export async function processImageUtil(
       });
     }
     
-    // Update progress in steps to show activity
     const progressUpdater = setInterval(() => {
       setProcessedImages(current => {
         const updated = [...current];
-        // If still processing, increase progress by small amounts
         if (updated[index]?.isProcessing && updated[index].processingProgress! < 90) {
           updated[index].processingProgress = Math.min(90, (updated[index].processingProgress || 0) + 5);
           return updated;
@@ -128,46 +115,39 @@ export async function processImageUtil(
       });
     }, 300);
     
-    // If Rembg is selected but selfHosted is false, warn and switch to browser mode
     if (backgroundRemovalModel === 'rembg' && !selfHosted) {
       logger.warn("Rembg server not available, falling back to browser model", {
         module: 'ImageProcessing'
       });
       
-      toast({
-        title: "Rembg Server Not Available",
-        description: "Switching to browser-based background removal as fallback.",
-        variant: "destructive"
-      });
-      
-      // Use browser model as fallback
+      toast.error("Rembg Server Not Available. Switching to browser-based background removal as fallback.");
       backgroundRemovalModel = 'browser';
     }
     
-    // Performance note for high-resolution images
     if (optimalSettings.useDownsampling) {
-      toast({
-        title: "Processing High-Resolution Image",
-        description: `Optimizing processing for ${imageResolution} image.`,
-      });
+      toast.info(`Optimizing processing for ${imageResolution} image.`);
     }
     
-    // Process with automatic retry - pass the original File from the ProcessedImage
-    const processedResult = await processSingleImage(
-      image.original, // Pass the File, not the whole ProcessedImage
-      compressionLevel,
+    // Create processing settings object
+    const settings: ImageProcessingSettings = {
       maxWidth,
       maxHeight,
+      quality: compressionLevel,
+      format: 'jpeg',
+      preserveAspectRatio: true,
+      stripMetadata: true,
+      progressiveLoading: true,
       removeBackground,
-      apiKey,
-      selfHosted,
-      serverUrl,
-      backgroundRemovalModel,
+      resizeMode: 'fit',
+      resizeQuality: 80,
+      compressionLevel,
       backgroundType,
       backgroundColor,
       backgroundOpacity,
       backgroundImage
-    ).catch(error => {
+    };
+    
+    const processedResult = await processSingleImage(image.original, settings).catch(error => {
       logger.error(`Error processing image: ${error instanceof Error ? error.message : String(error)}`, {
         module: 'ImageProcessing',
         data: { error }
@@ -177,13 +157,11 @@ export async function processImageUtil(
     
     clearInterval(progressUpdater);
     
-    // Clear the timeout as processing completed
     if (timeoutId) {
       clearTimeout(timeoutId);
       timeoutId = undefined;
     }
     
-    // Complete performance measurement
     endMeasuring(perfMeasurement);
     
     if (processedResult) {
@@ -191,61 +169,45 @@ export async function processImageUtil(
         module: 'ImageProcessing',
         data: {
           originalSize: image.original.size,
-          processedSize: processedResult.size,
-          compressionRatio: 1 - (processedResult.size / image.original.size),
+          processedSize: processedResult.processed ? processedResult.processed.size : 0,
+          compressionRatio: processedResult.averageCompressionRate,
           processingTime: perfMeasurement.endTime! - perfMeasurement.startTime
         }
       });
       
-      updatedImages[index].processed = processedResult;
-      // Create a new preview URL for the processed image
-      updatedImages[index].preview = createObjectUrl(processedResult);
+      updatedImages[index] = processedResult;
       updatedImages[index].isProcessing = false;
-      updatedImages[index].processingProgress = 100; // Mark as complete
+      updatedImages[index].processingProgress = 100;
       updatedImages[index].hasBackgroundRemoved = removeBackground;
-      updatedImages[index].processingError = undefined; // Clear any previous errors
+      updatedImages[index].processingError = undefined;
       setProcessedImages(updatedImages);
       
-      toast({
-        title: "Success",
-        description: `Processed ${image.original.name}${removeBackground ? ` with ${backgroundRemovalModel} background removal` : ''}${
-          updatedImages[index].retryCount ? ` after ${updatedImages[index].retryCount} retries` : ''
-        }`
-      });
+      toast.success(`Processed ${image.original.name}${removeBackground ? ` with ${backgroundRemovalModel} background removal` : ''}`);
     } else {
       logger.error(`Failed to process image ${image.original.name}`, {
         module: 'ImageProcessing'
       });
       
       updatedImages[index].isProcessing = false;
-      updatedImages[index].processingProgress = undefined; // Reset progress on failure
-      updatedImages[index].processingError = "Processing failed"; // Add error message
+      updatedImages[index].processingProgress = undefined;
+      updatedImages[index].processingError = "Processing failed";
       setProcessedImages(updatedImages);
       
-      toast({
-        variant: "destructive",
-        title: "Processing Failed",
-        description: `Failed to process ${image.original.name}`
-      });
+      toast.error(`Failed to process ${image.original.name}`);
     }
   } catch (error) {
-    // Clear the timeout if it exists
     if (timeoutId) {
       clearTimeout(timeoutId);
     }
     
     handleError(error, `Error processing image ${image?.original?.name || 'unknown'}`, false);
     
-    toast({
-      variant: "destructive",
-      title: "Processing Error",
-      description: error instanceof Error ? error.message : "An unknown error occurred"
-    });
+    toast.error(error instanceof Error ? error.message : "An unknown error occurred");
     
     const updatedErrorImages = [...processedImages];
     updatedErrorImages[index].isProcessing = false;
-    updatedErrorImages[index].processingProgress = undefined; // Reset progress on failure
-    updatedErrorImages[index].processingError = error instanceof Error ? error.message : "Unknown error"; // Add error message
+    updatedErrorImages[index].processingProgress = undefined;
+    updatedErrorImages[index].processingError = error instanceof Error ? error.message : "Unknown error";
     setProcessedImages(updatedErrorImages);
   }
 }

@@ -20,13 +20,7 @@ interface UseImageProcessingCoreConfig {
   initialCompressionSettings?: CompressionSettings;
 }
 
-const DEFAULT_OUTPUT_FORMAT: OutputFormat = {
-  jpeg: true,
-  webp: true,
-  png: false,
-  avif: false,
-  original: false
-};
+const DEFAULT_OUTPUT_FORMAT: OutputFormat = 'webp';
 
 const DEFAULT_COMPRESSION_SETTINGS: CompressionSettings = {
   jpeg: { 
@@ -96,7 +90,6 @@ export function useImageProcessingCore(initialImages: File[] = []) {
 
   // Estimate file sizes based on current settings
   const estimateImageSizes = () => {
-    // Base calculation on the first image if available
     const firstImage = processedImages[0];
     if (!firstImage) {
       return {
@@ -109,7 +102,6 @@ export function useImageProcessingCore(initialImages: File[] = []) {
 
     const originalSize = firstImage.originalFile.size;
     
-    // Approximate compression ratios based on format and quality
     const jpegRatio = compressionSettings.jpeg.quality / 100 * 0.7;
     const webpRatio = compressionSettings.webp.lossless ? 0.8 : compressionSettings.webp.quality / 100 * 0.5;
     const avifRatio = compressionSettings.avif.quality / 100 * 0.4;

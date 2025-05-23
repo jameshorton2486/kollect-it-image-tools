@@ -52,6 +52,34 @@ export function useImageProcessing(initialImages: File[]): UseImageProcessingRes
     toast.info(`Applying resize preset: ${presetKey}`);
   };
 
+  const toggleSelectImage = (index: number) => {
+    const updatedImages = [...core.processedImages];
+    updatedImages[index].isSelected = !updatedImages[index].isSelected;
+    core.setProcessedImages(updatedImages);
+  };
+
+  const selectAllImages = () => {
+    const updatedImages = core.processedImages.map(img => ({ ...img, isSelected: true }));
+    core.setProcessedImages(updatedImages);
+  };
+
+  const toggleBeforeAfterView = (index: number) => {
+    core.setShowBeforeAfter(core.showBeforeAfter === index ? null : index);
+  };
+
+  const clearImageCache = () => {
+    core.setProcessedImages([]);
+    toast.success('Image cache cleared');
+  };
+
+  const clearAnalyticsData = async () => {
+    toast.success('Analytics data cleared');
+  };
+
+  const setExportPath = (path: string) => {
+    core.setExportPath(path);
+  };
+
   return {
     ...core,
     processImage,
@@ -63,6 +91,13 @@ export function useImageProcessing(initialImages: File[]): UseImageProcessingRes
     downloadImageFormat,
     downloadAllFormats,
     applyWordPressPreset,
-    applyResizePreset
+    applyResizePreset,
+    toggleSelectImage,
+    selectAllImages,
+    toggleBeforeAfterView,
+    clearImageCache,
+    clearAnalyticsData,
+    exportPath: core.exportPath,
+    setExportPath
   };
 }

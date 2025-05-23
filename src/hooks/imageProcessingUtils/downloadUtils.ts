@@ -19,15 +19,11 @@ export function downloadAllImagesUtil(
   const selectedImages = processedImages.filter(img => img.isSelected && img.processed);
   
   if (selectedImages.length === 0) {
-    toast({
-      title: "No Images to Download",
-      description: "No processed images to download"
-    });
+    toast.error("No processed images to download");
     return;
   }
   
   // Track bulk download event
-  // We'll mock this function call since it seems to have issues
   console.log('Tracking bulk download event', selectedImages.length);
   
   selectedImages.forEach((image, index) => {
@@ -38,8 +34,5 @@ export function downloadAllImagesUtil(
     }, index * 100); // Stagger downloads slightly
   });
   
-  toast({
-    title: "Bulk Download Started",
-    description: `Downloading ${selectedImages.length} images`
-  });
+  toast.success(`Downloading ${selectedImages.length} images`);
 }
