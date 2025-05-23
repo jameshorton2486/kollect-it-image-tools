@@ -95,7 +95,7 @@ const KollectItIntegrationSection: React.FC<KollectItIntegrationSectionProps> = 
         });
       
       if (imagesToUpload.length === 0) {
-        toast.error("No Images to Upload", "Please process and select images first.");
+        toast.error("No Images to Upload");
         return;
       }
       
@@ -115,7 +115,7 @@ const KollectItIntegrationSection: React.FC<KollectItIntegrationSectionProps> = 
       );
       
       if (result.successCount > 0) {
-        toast.success("Upload Successful", `Successfully uploaded ${result.successCount} images to Kollect-It`);
+        toast.success(`Successfully uploaded ${result.successCount} images to Kollect-It`);
         
         setShowSuccessMessage(true);
         
@@ -126,10 +126,10 @@ const KollectItIntegrationSection: React.FC<KollectItIntegrationSectionProps> = 
       }
       
       if (result.failureCount > 0) {
-        toast.error("Upload Partially Failed", `Failed to upload ${result.failureCount} images`);
+        toast.error(`Failed to upload ${result.failureCount} images`);
       }
     } catch (error) {
-      toast.error("Upload Failed", error instanceof Error ? error.message : "Unknown error occurred");
+      toast.error(error instanceof Error ? error.message : "Unknown error occurred");
     } finally {
       setIsUploading(false);
     }

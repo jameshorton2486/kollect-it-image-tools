@@ -1,7 +1,7 @@
 
 import { useCallback } from 'react';
 import { ProcessedImage, OutputFormat, CompressionSettings } from '@/types/imageProcessing';
-import { useProcessingActions } from './useImageProcessingActions/useProcessingActions';
+import useProcessingActions from './useImageProcessingActions/useProcessingActions';
 import { useSelectionActions } from './useImageProcessingActions/useSelectionActions';
 import { useViewActions } from './useImageProcessingActions/useViewActions';
 import { useSystemActions } from './useImageProcessingActions/useSystemActions';

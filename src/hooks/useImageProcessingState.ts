@@ -64,12 +64,21 @@ export function useImageProcessingState() {
   );
   
   // Multi-format options
-  const [outputFormat, setOutputFormat] = useState<OutputFormat>('auto');
+  const [outputFormat, setOutputFormat] = useState<OutputFormat>({
+    jpeg: true,
+    webp: true,
+    png: false,
+    avif: false,
+    original: false
+  });
+  
   const [compressionSettings, setCompressionSettings] = useState<CompressionSettings>({
     jpeg: { quality: 80 },
     webp: { quality: 80, lossless: false },
-    avif: { quality: 70, lossless: false }
+    png: { quality: 80 },
+    avif: { quality: 70 }
   });
+  
   const [stripMetadata, setStripMetadata] = useState<boolean>(true);
   const [progressiveLoading, setProgressiveLoading] = useState<boolean>(true);
   

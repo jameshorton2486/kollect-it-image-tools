@@ -1,252 +1,159 @@
 
-import { UseImageProcessingResult } from './useImageProcessingTypes';
-import { useImageProcessingState } from './useImageProcessingState';
-import { useImageProcessingEffects } from './useImageProcessingEffects';
-import { useImageProcessingActions } from './useImageProcessingActions';
-import { useEffect } from 'react';
-import { WordPressPreset } from '@/types/imageProcessing';
-import { WORDPRESS_SIZE_PRESETS } from '@/types/imageResizing';
-import { estimateImageSizes } from '@/utils/imageProcessing/multiFormatProcessing';
-import useImageResizer from './useImageResizer';
+import { useState, useEffect } from 'react';
+import { ProcessedImage, OutputFormat, CompressionSettings } from '@/types/imageProcessing';
+import { normalizeProcessedImage } from '@/utils/imageProcessing/batchProcessingHelper';
+import { toast } from 'sonner';
 
-// Stub for missing hook
-const useImageProcessingEffects = ({
-  initialImages,
-  processedImages,
-  apiKey,
-  selfHosted,
-  serverUrl,
-  backgroundRemovalModel,
-  backgroundType,
-  backgroundColor,
-  backgroundOpacity,
-  backgroundImage,
-  kollectItApiKey,
-  kollectItUploadUrl,
-  setProcessedImages
-}: any) => {
-  // This would contain actual effects in a real implementation
+interface UseImageProcessingCoreConfig {
+  initialCompressionLevel?: number;
+  initialMaxWidth?: number;
+  initialMaxHeight?: number;
+  initialRemoveBackground?: boolean;
+  initialApiKey?: string | null;
+  initialSelfHosted?: boolean;
+  initialServerUrl?: string;
+  initialBackgroundRemovalModel?: string;
+  initialBackgroundType?: string;
+  initialBackgroundColor?: string;
+  initialBackgroundOpacity?: number;
+  initialOutputFormat?: OutputFormat;
+  initialCompressionSettings?: CompressionSettings;
+}
+
+const DEFAULT_OUTPUT_FORMAT: OutputFormat = {
+  jpeg: true,
+  webp: true,
+  png: false,
+  avif: false,
+  original: false
 };
 
-/**
- * Core hook for image processing that combines state, effects, and actions
- */
-export function useImageProcessingCore(initialImages: File[]): UseImageProcessingResult {
-  // Core state management
-  const {
-    processedImages, setProcessedImages,
-    compressionLevel, setCompressionLevel,
-    maxWidth, setMaxWidth,
-    maxHeight, setMaxHeight,
-    preserveAspectRatio, setPreserveAspectRatio,
-    isProcessing, setIsProcessing,
-    removeBackground, setRemoveBackground,
-    apiKey, setApiKey,
-    selfHosted, setSelfHosted,
-    serverUrl, setServerUrl,
-    showBeforeAfter, setShowBeforeAfter,
-    batchProgress, setBatchProgress,
-    totalItemsToProcess, setTotalItemsToProcess,
-    processedItemsCount, setProcessedItemsCount,
-    backgroundRemovalModel, setBackgroundRemovalModel,
-    backgroundType, setBackgroundType,
-    backgroundColor, setBackgroundColor,
-    backgroundOpacity, setBackgroundOpacity,
-    backgroundImage, setBackgroundImage,
-    kollectItApiKey, setKollectItApiKey,
-    kollectItUploadUrl, setKollectItUploadUrl,
-    exportPath, setExportPath,
-    // Multi-format options
-    outputFormat, setOutputFormat,
-    compressionSettings, setCompressionSettings,
-    stripMetadata, setStripMetadata,
-    progressiveLoading, setProgressiveLoading,
-    estimatedSizes, setEstimatedSizes,
-    // Resize options
-    resizeMode, setResizeMode,
-    resizeUnit, setResizeUnit,
-    resizeQuality, setResizeQuality
-  } = useImageProcessingState();
+const DEFAULT_COMPRESSION_SETTINGS: CompressionSettings = {
+  jpeg: { 
+    quality: 80 
+  },
+  webp: { 
+    quality: 80, 
+    lossless: false 
+  },
+  png: { 
+    quality: 80 
+  },
+  avif: { 
+    quality: 65
+  }
+};
+
+export function useImageProcessingCore(initialImages: File[] = []) {
+  // Core image state
+  const [processedImages, setProcessedImages] = useState<ProcessedImage[]>([]);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  // Processing settings
+  const [compressionLevel, setCompressionLevel] = useState(80);
+  const [maxWidth, setMaxWidth] = useState(1200);
+  const [maxHeight, setMaxHeight] = useState(1200);
+  const [preserveAspectRatio, setPreserveAspectRatio] = useState(true);
+  const [outputFormat, setOutputFormat] = useState<OutputFormat>(DEFAULT_OUTPUT_FORMAT);
+  const [compressionSettings, setCompressionSettings] = useState<CompressionSettings>(DEFAULT_COMPRESSION_SETTINGS);
+  const [stripMetadata, setStripMetadata] = useState(true);
+  const [progressiveLoading, setProgressiveLoading] = useState(true);
+  const [resizeMode, setResizeMode] = useState<'fit' | 'fill' | 'crop' | 'scale'>('fit');
+  const [resizeQuality, setResizeQuality] = useState(90);
+  const [resizeUnit, setResizeUnit] = useState<'px' | '%'>('px');
+
+  // Background removal
+  const [removeBackground, setRemoveBackground] = useState(false);
+  const [apiKey, setApiKey] = useState<string | null>(null);
+  const [selfHosted, setSelfHosted] = useState(false);
+  const [serverUrl, setServerUrl] = useState('https://api.remove.bg/v1.0/removebg');
+  const [backgroundRemovalModel, setBackgroundRemovalModel] = useState('u2net');
+  const [backgroundType, setBackgroundType] = useState('color');
+  const [backgroundColor, setBackgroundColor] = useState('#FFFFFF');
+  const [backgroundOpacity, setBackgroundOpacity] = useState(100);
+  const [backgroundImage, setBackgroundImage] = useState<File | null>(null);
+
+  // Export settings
+  const [exportPath, setExportPath] = useState('optimized-images');
+
+  // Batch processing state
+  const [batchProgress, setBatchProgress] = useState(0);
+  const [totalItemsToProcess, setTotalItemsToProcess] = useState(0);
+  const [processedItemsCount, setProcessedItemsCount] = useState(0);
+  const [showBeforeAfter, setShowBeforeAfter] = useState<number | null>(null);
   
-  // Resizer hook for size estimation
-  const { estimateFileSizes } = useImageResizer();
-  
-  // Update estimated sizes when compression settings or selected image changes
+  // Integration settings
+  const [kollectItApiKey, setKollectItApiKey] = useState<string | null>(null);
+  const [kollectItUploadUrl, setKollectItUploadUrl] = useState('https://api.kollect-it.com/upload');
+
+  // Initialize processed images array
   useEffect(() => {
-    // Get first selected image for size estimation
-    const selectedImage = processedImages.find(img => img.isSelected);
-    if (selectedImage?.original) {
-      // Estimate sizes for the selected image
-      estimateImageSizes(
-        selectedImage.original,
-        maxWidth,
-        maxHeight,
-        compressionSettings
-      ).then(sizes => {
-        setEstimatedSizes(sizes);
-      }).catch(err => {
-        console.error("Failed to estimate image sizes:", err);
-      });
+    if (initialImages.length > 0) {
+      const newProcessedImages = initialImages.map(file => normalizeProcessedImage(file));
+      setProcessedImages(newProcessedImages);
     }
-  }, [
-    processedImages, 
-    maxWidth, 
-    maxHeight, 
-    compressionSettings.jpeg.quality, 
-    compressionSettings.webp.quality, 
-    compressionSettings.avif.quality,
-    compressionSettings.webp.lossless,
-    compressionSettings.avif.lossless
-  ]);
+  }, []);
 
-  // Initialize and clean up effects
-  useImageProcessingEffects({
-    initialImages,
-    processedImages,
-    apiKey,
-    selfHosted,
-    serverUrl,
-    backgroundRemovalModel,
-    backgroundType,
-    backgroundColor,
-    backgroundOpacity,
-    backgroundImage,
-    kollectItApiKey,
-    kollectItUploadUrl,
-    setProcessedImages
-  });
-  
-  // Save settings to localStorage
-  useEffect(() => {
-    if (apiKey) {
-      localStorage.setItem('removebg_api_key', apiKey);
+  // Estimate file sizes based on current settings
+  const estimateImageSizes = () => {
+    // Base calculation on the first image if available
+    const firstImage = processedImages[0];
+    if (!firstImage) {
+      return {
+        original: 0,
+        jpeg: null,
+        webp: null,
+        avif: null
+      };
     }
-    localStorage.setItem('background_removal_model', backgroundRemovalModel);
-    localStorage.setItem('background_type', backgroundType);
-    localStorage.setItem('background_color', backgroundColor);
-    localStorage.setItem('background_opacity', backgroundOpacity.toString());
-    if (kollectItApiKey) {
-      localStorage.setItem('kollect_it_api_key', kollectItApiKey);
-    }
-    if (kollectItUploadUrl) {
-      localStorage.setItem('kollect_it_upload_url', kollectItUploadUrl);
-    }
-    localStorage.setItem('export_path', exportPath);
-  }, [apiKey, backgroundRemovalModel, backgroundType, backgroundColor, backgroundOpacity, kollectItApiKey, kollectItUploadUrl, exportPath]);
 
-  // Temporary mock implementations for actions
-  const processImage = async (index: number) => { 
-    console.log(`Processing image at index ${index}`);
-  };
-  
-  const processAllImages = async () => {
-    console.log('Processing all images');
-  };
-  
-  const downloadImage = (index: number) => {
-    console.log(`Downloading image at index ${index}`);
-  };
-  
-  const downloadAllImages = () => {
-    console.log('Downloading all images');
-  };
-  
-  const toggleSelectImage = (index: number) => {
-    console.log(`Toggling selection for image at index ${index}`);
-  };
-  
-  const selectAllImages = (selected: boolean) => {
-    console.log(`Setting all images selected state to: ${selected}`);
-  };
-  
-  const toggleBeforeAfterView = (index: number | null) => {
-    console.log(`Toggling before/after view for image at index ${index}`);
-  };
-  
-  const cancelBatchProcessing = () => {
-    console.log('Cancelling batch processing');
-  };
-  
-  const clearImageCache = () => {
-    console.log('Clearing image cache');
-  };
-  
-  const clearAnalyticsData = () => {
-    console.log('Clearing analytics data');
-  };
-  
-  const downloadImageFormat = (imageIndex: number, format: string) => {
-    console.log(`Downloading image ${imageIndex} in format ${format}`);
-  };
-  
-  const downloadAllFormats = (imageIndex: number) => {
-    console.log(`Downloading all formats for image ${imageIndex}`);
-  };
-  
-  // Handle applying WordPress presets
-  const applyWordPressPreset = (preset: WordPressPreset) => {
-    // Handle sizes.full if it exists, otherwise use sizes as is
-    const width = preset.width || preset.sizes?.width || 2048;
-    const height = preset.height || preset.sizes?.height || 2048;
+    const originalSize = firstImage.originalFile.size;
     
-    setMaxWidth(width);
-    setMaxHeight(height);
+    // Approximate compression ratios based on format and quality
+    const jpegRatio = compressionSettings.jpeg.quality / 100 * 0.7;
+    const webpRatio = compressionSettings.webp.lossless ? 0.8 : compressionSettings.webp.quality / 100 * 0.5;
+    const avifRatio = compressionSettings.avif.quality / 100 * 0.4;
     
-    // Apply other settings if they exist in the preset
-    if (preset.compressionSettings) {
-      setCompressionSettings(preset.compressionSettings);
-    }
-    
-    if (preset.stripMetadata !== undefined) {
-      setStripMetadata(preset.stripMetadata);
-    }
-    
-    if (preset.progressiveLoading !== undefined) {
-      setProgressiveLoading(preset.progressiveLoading);
-    }
-    
-    if (preset.outputFormat) {
-      setOutputFormat(preset.outputFormat);
-    }
+    return {
+      original: originalSize,
+      jpeg: Math.round(originalSize * jpegRatio),
+      webp: Math.round(originalSize * webpRatio),
+      avif: Math.round(originalSize * avifRatio)
+    };
   };
 
-  // Apply resize preset from WordPress sizes
-  const applyResizePreset = (presetKey: string) => {
-    const preset = WORDPRESS_SIZE_PRESETS[presetKey];
-    if (preset) {
-      setMaxWidth(preset.width);
-      if (preset.height) {
-        setMaxHeight(preset.height);
-      }
-      setPreserveAspectRatio(!preset.crop);
-      setResizeMode(preset.crop ? 'crop' : 'fit');
-    }
-  };
-  
-  // Handle showing HTML code preview
-  const viewHtmlCode = (imageIndex: number) => {
-    // This just returns the index to be handled by the UI component
-    return imageIndex;
-  };
-  
   return {
+    // Core image state
     processedImages,
     setProcessedImages,
+    isProcessing,
+    setIsProcessing,
+    
+    // Processing settings
     compressionLevel,
     setCompressionLevel,
     maxWidth,
-    setMaxWidth,
+    setMaxWidth, 
     maxHeight,
     setMaxHeight,
-    preserveAspectRatio,
+    preserveAspectRatio, 
     setPreserveAspectRatio,
-    isProcessing,
-    processImage,
-    processAllImages,
-    downloadImage,
-    downloadAllImages,
-    toggleSelectImage,
-    selectAllImages,
+    outputFormat,
+    setOutputFormat,
+    compressionSettings,
+    setCompressionSettings,
+    stripMetadata,
+    setStripMetadata,
+    progressiveLoading,
+    setProgressiveLoading,
+    resizeMode,
+    setResizeMode,
+    resizeQuality,
+    setResizeQuality,
+    resizeUnit,
+    setResizeUnit,
+    
+    // Background removal
     removeBackground,
     setRemoveBackground,
     apiKey,
@@ -265,41 +172,28 @@ export function useImageProcessingCore(initialImages: File[]): UseImageProcessin
     setBackgroundOpacity,
     backgroundImage,
     setBackgroundImage,
+    
+    // Export settings
+    exportPath,
+    setExportPath,
+    
+    // Batch processing state
+    batchProgress,
+    setBatchProgress,
+    totalItemsToProcess,
+    setTotalItemsToProcess,
+    processedItemsCount,
+    setProcessedItemsCount,
+    showBeforeAfter,
+    setShowBeforeAfter,
+    
+    // Integration settings
     kollectItApiKey,
     setKollectItApiKey,
     kollectItUploadUrl,
     setKollectItUploadUrl,
-    showBeforeAfter,
-    toggleBeforeAfterView,
-    batchProgress,
-    totalItemsToProcess,
-    processedItemsCount,
-    cancelBatchProcessing,
-    clearImageCache,
-    clearAnalyticsData,
-    exportPath,
-    setExportPath,
-    // Multi-format options
-    outputFormat,
-    setOutputFormat,
-    compressionSettings,
-    setCompressionSettings,
-    stripMetadata,
-    setStripMetadata,
-    progressiveLoading,
-    setProgressiveLoading,
-    estimatedSizes,
-    applyWordPressPreset,
-    downloadImageFormat,
-    downloadAllFormats,
-    viewHtmlCode,
-    // Resize options
-    resizeMode,
-    setResizeMode,
-    resizeUnit, 
-    setResizeUnit,
-    resizeQuality,
-    setResizeQuality,
-    applyResizePreset
+    
+    // Helper methods
+    estimateImageSizes
   };
 }

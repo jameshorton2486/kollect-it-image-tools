@@ -1,3 +1,4 @@
+
 import { ResizeMode, ResizeUnit } from './imageResizing';
 
 // Core Types
@@ -7,7 +8,7 @@ export interface ProcessedImage {
   originalUrl: string;
   preview: string;
   processed?: File | Blob;
-  optimizedFiles: Record<string, Blob>;
+  optimizedFiles: Record<string, ProcessedFormat>;
   blob?: Blob;
   newSize?: number;
   averageCompressionRate: number;
@@ -39,6 +40,7 @@ export interface ProcessedImage {
   format?: string;
   finalWidth?: number;
   finalHeight?: number;
+  error?: string;
 }
 
 export interface ProcessedFormat {
@@ -156,4 +158,36 @@ export interface ProcessorBodyProps {
 
 export interface WordPressPresetsSectionProps {
   onApplyPreset: (preset: WordPressPreset) => void;
+}
+
+// Analytics data types
+export interface ImageProcessingEvent {
+  timestamp: number;
+  imageCount: number;
+  totalInputSize: number;
+  totalOutputSize: number;
+  compressionRate: number;
+  processingTime: number;
+  formats: {
+    [key: string]: number;
+  };
+}
+
+export interface AnalyticsData {
+  events: ImageProcessingEvent[];
+  totalProcessed: number;
+  totalSizeSaved: number;
+  averageCompressionRate: number;
+  formatUsage: {
+    [key: string]: number;
+  };
+  monthlyTrends: {
+    [key: string]: {
+      count: number;
+      sizeSaved: number;
+    };
+  };
+  mostUsedPresets: {
+    [key: string]: number;
+  };
 }
