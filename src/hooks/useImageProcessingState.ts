@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { ProcessedImage, OutputFormat, CompressionSettings } from '@/types/imageProcessing';
 import { ResizeMode, ResizeUnit } from '@/types/imageResizing';
@@ -66,7 +67,7 @@ export function useImageProcessingState() {
   const [stripMetadata, setStripMetadata] = useState<boolean>(true);
   const [progressiveLoading, setProgressiveLoading] = useState<boolean>(true);
   
-  // Resize options - updated to support all ResizeMode values
+  // Resize options - updated to match the ResizeMode and ResizeUnit types
   const [resizeMode, setResizeMode] = useState<ResizeMode>('fit');
   const [resizeUnit, setResizeUnit] = useState<ResizeUnit>('px');
   const [resizeQuality, setResizeQuality] = useState<number>(80);

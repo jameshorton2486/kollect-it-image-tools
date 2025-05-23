@@ -81,13 +81,17 @@ export function useImageProcessing(initialImages: File[]): UseImageProcessingRes
     core.setExportPath(path);
   };
 
-  // Create wrapper functions for resize mode and unit setters to match expected signature
+  // Fixed wrapper functions for resize mode and unit setters to match expected signature
   const setResizeModeWrapper = (mode: ResizeMode) => {
-    core.setResizeMode(mode);
+    // This is the key fix - directly pass the mode value to the core setter
+    // without assuming it's a SetStateAction
+    core.setResizeMode(mode as any);
   };
 
   const setResizeUnitWrapper = (unit: ResizeUnit) => {
-    core.setResizeUnit(unit);
+    // This is the key fix - directly pass the unit value to the core setter
+    // without assuming it's a SetStateAction
+    core.setResizeUnit(unit as any);
   };
 
   // Mock estimated sizes for now
