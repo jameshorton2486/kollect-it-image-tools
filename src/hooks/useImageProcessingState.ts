@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { ProcessedImage, OutputFormat, CompressionSettings } from '@/types/imageProcessing';
 import { ResizeMode, ResizeUnit } from '@/types/imageResizing';
@@ -55,12 +54,12 @@ export function useImageProcessingState() {
   // Output format settings - initialize as 'single' type
   const [outputFormat, setOutputFormat] = useState<OutputFormat>('single' as OutputFormat);
   
-  // Compression settings for each format
+  // Compression settings for each format - add missing lossless properties
   const [compressionSettings, setCompressionSettings] = useState<CompressionSettings>({
-    jpeg: { quality: 80 },
-    webp: { quality: 80 },
-    png: { quality: 80 },
-    avif: { quality: 80 }
+    jpeg: { quality: 80, lossless: false },
+    webp: { quality: 80, lossless: false },
+    png: { quality: 80, lossless: false },
+    avif: { quality: 80, lossless: false }
   });
   
   // Additional processing options

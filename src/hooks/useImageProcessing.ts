@@ -1,6 +1,7 @@
 
 import { useImageProcessingCore } from './useImageProcessingCore';
 import { UseImageProcessingResult } from './useImageProcessingTypes';
+import { ResizeMode, ResizeUnit } from '@/types/imageResizing';
 import { toast } from 'sonner';
 
 /**
@@ -80,6 +81,15 @@ export function useImageProcessing(initialImages: File[]): UseImageProcessingRes
     core.setExportPath(path);
   };
 
+  // Create wrapper functions for resize mode and unit setters to match expected signature
+  const setResizeModeWrapper = (mode: ResizeMode) => {
+    core.setResizeMode(mode);
+  };
+
+  const setResizeUnitWrapper = (unit: ResizeUnit) => {
+    core.setResizeUnit(unit);
+  };
+
   // Mock estimated sizes for now
   const estimatedSizes = {
     original: 0,
@@ -107,6 +117,8 @@ export function useImageProcessing(initialImages: File[]): UseImageProcessingRes
     clearAnalyticsData,
     exportPath: core.exportPath,
     setExportPath,
+    setResizeMode: setResizeModeWrapper,
+    setResizeUnit: setResizeUnitWrapper,
     estimatedSizes
   };
 }
