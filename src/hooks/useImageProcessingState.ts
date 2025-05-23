@@ -66,7 +66,7 @@ export function useImageProcessingState() {
   const [stripMetadata, setStripMetadata] = useState<boolean>(true);
   const [progressiveLoading, setProgressiveLoading] = useState<boolean>(true);
   
-  // Resize options
+  // Resize options - updated to support all ResizeMode values
   const [resizeMode, setResizeMode] = useState<ResizeMode>('fit');
   const [resizeUnit, setResizeUnit] = useState<ResizeUnit>('px');
   const [resizeQuality, setResizeQuality] = useState<number>(80);
