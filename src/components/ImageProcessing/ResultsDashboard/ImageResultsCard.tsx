@@ -1,136 +1,170 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Clipboard, Download, Check, FileImage, Ban } from "lucide-react";
 import { ProcessedImage } from '@/types/imageProcessing';
-import { Table, TableBody, TableRow, TableCell } from '@/components/ui/table';
-import { Download, Copy, Clock, FileCheck } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { formatBytes } from '@/utils/imageUtils';
+import { motion } from 'framer-motion';
+import { toast } from 'sonner';
 
 interface ImageResultsCardProps {
   image: ProcessedImage;
+  imageIndex: number;
   onDownloadFormat: (index: number, format: string) => void;
   onCopyHtml: (index: number) => void;
-  imageIndex: number;
-  processingTime?: number; // in milliseconds
+  processingTime?: number;
 }
 
 const ImageResultsCard: React.FC<ImageResultsCardProps> = ({ 
   image, 
+  imageIndex, 
   onDownloadFormat,
   onCopyHtml,
-  imageIndex,
-  processingTime = 0
+  processingTime
 }) => {
-  const originalSize = image.original?.size || 0;
-  const processedSize = image.processed?.size || 0;
+  const [copied, setCopied] = React.useState(false);
+  const stats = React.useMemo(() => {
+    if (!image.compressionStats) return null;
+    
+    // Get total saved size
+    const originalSize = image.compressionStats.originalSize || 0;
+    const outputSizes = Object.values(image.compressionStats.formatSizes || {});
+    const smallestOutputSize = outputSizes.length > 0 ? Math.min(...outputSizes) : originalSize;
+    
+    // Calculate savings
+    const savedBytes = originalSize - smallestOutputSize;
+    const savingsPercentage = originalSize > 0 ? (savedBytes / originalSize) * 100 : 0;
+    
+    return {
+      originalSize,
+      smallestOutputSize,
+      savedBytes,
+      savingsPercentage,
+      availableFormats: Object.keys(image.compressionStats.formatSizes || {})
+    };
+  }, [image]);
   
-  // Calculate size reduction percentage
-  const sizeReduction = originalSize > 0 && processedSize > 0
-    ? Math.round((1 - processedSize / originalSize) * 100)
-    : 0;
-  
-  // Format file sizes for display
-  const formatFileSize = (bytes: number) => {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+  // Handle copy HTML button
+  const handleCopyHtml = () => {
+    onCopyHtml(imageIndex);
+    setCopied(true);
+    toast.success("HTML snippet copied to clipboard");
+    
+    setTimeout(() => {
+      setCopied(false);
+    }, 2000);
   };
-
-  // Get dimensions as string
-  const getOriginalDimensions = () => {
-    if (image.dimensions) {
-      return `${image.dimensions.width}×${image.dimensions.height}px`;
-    }
-    return 'Unknown';
-  };
   
-  const getProcessedDimensions = () => {
-    // For processed images, we could either get dimensions from the image object
-    // or calculate them based on the original dimensions and resize settings
-    if (image.dimensions && image.processedDimensions) {
-      return `${image.processedDimensions.width}×${image.processedDimensions.height}px`;
-    }
-    return 'Unknown';
-  };
-  
-  // Get available formats
-  const availableFormats = image.processedFormats 
-    ? Object.keys(image.processedFormats) 
-    : [];
+  if (!stats) return null;
 
   return (
-    <Card className="mb-4">
-      <CardHeader className="py-4">
-        <CardTitle className="text-lg flex items-center">
-          <FileCheck className="w-5 h-5 mr-2 text-green-500" />
-          Resizing Results
+    <Card className="shadow-sm border-border">
+      <CardHeader className="py-3 bg-muted/20">
+        <CardTitle className="text-sm flex items-center justify-between">
+          <span>Optimization Results</span>
+          {processingTime && (
+            <span className="text-xs text-sage-gray">{(processingTime / 1000).toFixed(2)}s</span>
+          )}
         </CardTitle>
       </CardHeader>
-      <CardContent className="pt-0">
-        <Table>
-          <TableBody>
-            <TableRow>
-              <TableCell className="font-medium">Original</TableCell>
-              <TableCell>
-                {getOriginalDimensions()} ({formatFileSize(originalSize)})
-              </TableCell>
-            </TableRow>
-            
-            <TableRow>
-              <TableCell className="font-medium">Resized</TableCell>
-              <TableCell className="flex items-center gap-2">
-                {getProcessedDimensions()} ({formatFileSize(processedSize)})
-                {sizeReduction > 0 && (
-                  <Badge className="bg-green-100 text-green-800">
-                    {sizeReduction}% smaller
-                  </Badge>
-                )}
-              </TableCell>
-            </TableRow>
-            
-            {processingTime > 0 && (
-              <TableRow>
-                <TableCell className="font-medium flex items-center">
-                  <Clock className="w-4 h-4 mr-1" /> Processing Time
-                </TableCell>
-                <TableCell>{(processingTime / 1000).toFixed(2)}s</TableCell>
-              </TableRow>
+      <CardContent className="p-3 space-y-3">
+        {/* Results Stats */}
+        <div className="grid grid-cols-2 gap-2">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3 }}
+            className="p-2 border border-border rounded-md"
+          >
+            <div className="text-xs text-sage-gray">Original Size</div>
+            <div className="font-medium">{formatBytes(stats.originalSize)}</div>
+          </motion.div>
+          
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3, delay: 0.1 }}
+            className="p-2 border border-border rounded-md"
+          >
+            <div className="text-xs text-sage-gray">Optimized Size</div>
+            <div className="font-medium">{formatBytes(stats.smallestOutputSize)}</div>
+          </motion.div>
+        </div>
+        
+        {/* Savings Bar */}
+        <div className="space-y-1">
+          <div className="flex justify-between text-xs text-sage-gray">
+            <span>Size Reduction</span>
+            <span className="font-medium text-success-green">
+              {Math.round(stats.savingsPercentage)}% saved
+            </span>
+          </div>
+          <div className="h-2 w-full bg-muted/70 rounded-full overflow-hidden">
+            <motion.div
+              initial={{ width: "0%" }}
+              animate={{ width: `${Math.min(100, stats.savingsPercentage)}%` }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="h-full bg-success-green"
+            />
+          </div>
+          <div className="text-xs text-sage-gray">
+            Saved {formatBytes(stats.savedBytes)}
+          </div>
+        </div>
+        
+        {/* Available Formats */}
+        {stats.availableFormats.length > 0 && (
+          <div className="space-y-1">
+            <div className="text-xs text-sage-gray">Available Formats</div>
+            <div className="flex flex-wrap gap-1">
+              {stats.availableFormats.map(format => (
+                <Button
+                  key={format}
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs flex items-center gap-1"
+                  onClick={() => onDownloadFormat(imageIndex, format)}
+                >
+                  <FileImage className="h-3 w-3" />
+                  {format.toUpperCase()}
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
+        
+        {/* Action Buttons */}
+        <div className="flex justify-between">
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-xs flex items-center gap-2"
+            onClick={handleCopyHtml}
+          >
+            {copied ? (
+              <>
+                <Check className="h-3 w-3" />
+                Copied!
+              </>
+            ) : (
+              <>
+                <Clipboard className="h-3 w-3" />
+                Copy HTML
+              </>
             )}
-            
-            <TableRow>
-              <TableCell className="font-medium">Available Formats</TableCell>
-              <TableCell>
-                <div className="flex flex-wrap gap-2">
-                  {availableFormats.map(format => (
-                    <Button 
-                      key={format}
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => onDownloadFormat(imageIndex, format)}
-                      className="flex items-center"
-                    >
-                      <Download className="w-3 h-3 mr-1" />
-                      {format.toUpperCase()}
-                    </Button>
-                  ))}
-                  
-                  {availableFormats.length > 0 && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onCopyHtml(imageIndex)}
-                      className="flex items-center"
-                    >
-                      <Copy className="w-3 h-3 mr-1" />
-                      HTML
-                    </Button>
-                  )}
-                </div>
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
+          </Button>
+          
+          <Button
+            variant="default"
+            size="sm"
+            className="text-xs"
+            onClick={() => onDownloadFormat(imageIndex, stats.availableFormats[0] || 'jpeg')}
+          >
+            <Download className="h-3 w-3 mr-2" />
+            Download
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );

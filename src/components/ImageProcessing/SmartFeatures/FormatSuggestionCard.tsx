@@ -1,128 +1,81 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from "@/components/ui/card";
+import { Lightbulb } from 'lucide-react';
 import { ProcessedImage } from '@/types/imageProcessing';
-import { Table, TableBody, TableRow, TableCell } from '@/components/ui/table';
-import { InfoIcon, CheckCircle, AlertTriangle } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
 
 interface FormatSuggestionCardProps {
-  image: ProcessedImage | null;
+  image: ProcessedImage;
   currentFormat: string;
   imageType: 'photo' | 'graphic' | 'screenshot' | 'unknown';
 }
 
-const FormatSuggestionCard: React.FC<FormatSuggestionCardProps> = ({ 
-  image, 
+const FormatSuggestionCard: React.FC<FormatSuggestionCardProps> = ({
+  image,
   currentFormat,
-  imageType = 'unknown'
+  imageType
 }) => {
-  if (!image) return null;
-  
-  const fileSize = image.original?.size || 0;
-  const fileSizeKB = Math.round(fileSize / 1024);
-  const fileSizeMB = (fileSize / (1024 * 1024)).toFixed(2);
-  
-  // Determine the best format based on image type
-  const getBestFormat = () => {
+  // Get the best format recommendation based on image type
+  const getBestFormatRecommendation = () => {
+    // Check if image has transparency
+    let hasTransparency = false;
+    if (image.original.type === 'image/png') {
+      // We assume PNGs might have transparency
+      hasTransparency = true;
+    }
+    
+    // Make recommendations based on image type and transparency
+    if (hasTransparency) {
+      return {
+        primary: 'webp',
+        fallback: 'png',
+        reason: 'This image may have transparency. WebP offers better compression than PNG while preserving transparency.'
+      };
+    }
+    
     switch (imageType) {
       case 'photo':
-        return { 
-          format: 'webp', 
-          reason: 'Best for photos with good compression and quality balance'
+        return {
+          primary: 'webp',
+          fallback: 'jpeg',
+          reason: 'Photos compress well with WebP, with JPEG as a good fallback for older browsers.'
         };
       case 'graphic':
-        return { 
-          format: 'png', 
-          reason: 'Preserves sharp lines and transparency in graphics'
+        return {
+          primary: 'webp',
+          fallback: 'png',
+          reason: 'Graphics with limited colors compress effectively with WebP.'
         };
       case 'screenshot':
-        return { 
-          format: 'webp', 
-          reason: 'Good balance of quality and file size for screenshots'
+        return {
+          primary: 'webp',
+          fallback: 'jpeg',
+          reason: 'Screenshots typically compress well with WebP.'
         };
       default:
-        // Fallback to a smart guess based on size
-        return fileSize > 1024 * 1024 ? 
-          { format: 'webp', reason: 'Recommended for large images to reduce file size' } :
-          { format: 'jpeg', reason: 'Good general-purpose format with wide compatibility' };
+        return {
+          primary: 'webp',
+          fallback: 'jpeg',
+          reason: 'WebP offers the best balance between quality and file size for most images.'
+        };
     }
   };
   
-  const bestFormat = getBestFormat();
-  const isUsingRecommended = currentFormat === bestFormat.format;
+  const recommendation = getBestFormatRecommendation();
   
-  // Size warnings
-  const getSizeWarning = () => {
-    if (fileSize > 2 * 1024 * 1024) {
-      return {
-        type: 'warning',
-        message: 'Image is very large. Consider resizing or using WebP/AVIF format.'
-      };
-    } else if (fileSize < 10 * 1024) {
-      return {
-        type: 'info',
-        message: 'Image is very small. Further compression may not be needed.'
-      };
-    }
+  // Only show if the current format differs from the recommendation
+  if (currentFormat === recommendation.primary) {
     return null;
-  };
-  
-  const sizeWarning = getSizeWarning();
-  
+  }
+
   return (
-    <Card className="mb-4">
-      <CardHeader className="py-4">
-        <CardTitle className="text-lg flex items-center">
-          <InfoIcon className="w-5 h-5 mr-2 text-blue-500" />
-          Smart Format Suggestions
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="pt-0">
-        <Table>
-          <TableBody>
-            <TableRow>
-              <TableCell className="font-medium">Current Format</TableCell>
-              <TableCell>
-                <Badge variant="outline">{currentFormat.toUpperCase()}</Badge>
-              </TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell className="font-medium">Recommended Format</TableCell>
-              <TableCell className="flex items-center">
-                <Badge 
-                  variant={isUsingRecommended ? "secondary" : "outline"}
-                  className={isUsingRecommended ? "bg-green-100 text-green-800" : ""}
-                >
-                  {bestFormat.format.toUpperCase()}
-                </Badge>
-                {isUsingRecommended && (
-                  <CheckCircle className="w-4 h-4 ml-2 text-green-600" />
-                )}
-              </TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell className="font-medium">Recommendation Reason</TableCell>
-              <TableCell>{bestFormat.reason}</TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell className="font-medium">Current Size</TableCell>
-              <TableCell>
-                {fileSizeKB > 1024 ? `${fileSizeMB} MB` : `${fileSizeKB} KB`}
-                {sizeWarning && (
-                  <div className="flex items-center mt-1 text-sm">
-                    <AlertTriangle 
-                      className={`w-4 h-4 mr-1 ${
-                        sizeWarning.type === 'warning' ? 'text-amber-500' : 'text-blue-500'
-                      }`} 
-                    />
-                    {sizeWarning.message}
-                  </div>
-                )}
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
+    <Card className="shadow-sm border-border">
+      <CardContent className="p-3 flex gap-2">
+        <Lightbulb className="h-4 w-4 text-warning-amber mt-0.5" />
+        <div>
+          <div className="text-xs font-medium">Format Suggestion</div>
+          <p className="text-xs text-sage-gray">{recommendation.reason}</p>
+        </div>
       </CardContent>
     </Card>
   );
