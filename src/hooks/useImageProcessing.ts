@@ -80,6 +80,14 @@ export function useImageProcessing(initialImages: File[]): UseImageProcessingRes
     core.setExportPath(path);
   };
 
+  // Mock estimated sizes for now
+  const estimatedSizes = {
+    original: 0,
+    jpeg: null as number | null,
+    webp: null as number | null,
+    avif: null as number | null
+  };
+
   return {
     ...core,
     processImage,
@@ -98,6 +106,7 @@ export function useImageProcessing(initialImages: File[]): UseImageProcessingRes
     clearImageCache,
     clearAnalyticsData,
     exportPath: core.exportPath,
-    setExportPath
+    setExportPath,
+    estimatedSizes
   };
 }
