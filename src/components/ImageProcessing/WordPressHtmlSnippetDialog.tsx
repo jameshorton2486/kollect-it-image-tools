@@ -17,8 +17,10 @@ import { Input } from "@/components/ui/input";
 import { ProcessedImage } from '@/types/imageProcessing';
 import { generatePictureHtml, generateWordPressMetadata } from '@/utils/wordPressUtils';
 import { saveHtmlSnippet } from '@/utils/googleDriveUtils';
-import { Copy, Check, Code, Save, Upload } from "lucide-react";
 import { toast } from 'sonner';
+import HtmlTab from './WordPressSnippet/HtmlTab';
+import JsonTab from './WordPressSnippet/JsonTab';
+import UsageTab from './WordPressSnippet/UsageTab';
 
 interface WordPressHtmlSnippetDialogProps {
   open: boolean;
@@ -43,7 +45,6 @@ const WordPressHtmlSnippetDialog: React.FC<WordPressHtmlSnippetDialogProps> = ({
   // Update alt text when image changes
   React.useEffect(() => {
     if (image) {
-      // Generate alt text from file name
       const fileName = image.newFilename || image.original.name;
       const nameWithoutExtension = fileName.split('.')[0];
       const formattedName = nameWithoutExtension
@@ -143,109 +144,26 @@ const WordPressHtmlSnippetDialog: React.FC<WordPressHtmlSnippetDialogProps> = ({
               <TabsTrigger value="usage">Usage Guide</TabsTrigger>
             </TabsList>
             
-            <TabsContent value="html" className="space-y-4">
-              <div className="bg-muted/30 p-4 rounded-md overflow-auto max-h-[400px]">
-                <pre className="text-sm font-mono whitespace-pre-wrap">
-                  {htmlSnippet}
-                </pre>
-              </div>
-              
-              <div className="flex flex-wrap gap-2">
-                <Button 
-                  variant="outline" 
-                  className="flex-1"
-                  onClick={() => handleCopy(htmlSnippet)}
-                >
-                  {copied && activeTab === 'html' ? (
-                    <Check className="mr-2 h-4 w-4" />
-                  ) : (
-                    <Copy className="mr-2 h-4 w-4" />
-                  )}
-                  {copied && activeTab === 'html' ? "Copied!" : "Copy HTML"}
-                </Button>
-                
-                <Button 
-                  variant="outline" 
-                  className="flex-1"
-                  onClick={handleSaveToGoogleDrive}
-                >
-                  <Save className="mr-2 h-4 w-4" />
-                  Save to Google Drive
-                </Button>
-                
-                <Button 
-                  className="flex-1"
-                  onClick={() => {
-                    const htmlFile = new Blob([htmlSnippet], { type: 'text/html' });
-                    const url = URL.createObjectURL(htmlFile);
-                    const link = document.createElement('a');
-                    link.href = url;
-                    link.download = `wordpress-snippet-${image.productId || 'image'}.html`;
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                    URL.revokeObjectURL(url);
-                  }}
-                >
-                  <Code className="mr-2 h-4 w-4" />
-                  Download HTML File
-                </Button>
-              </div>
+            <TabsContent value="html">
+              <HtmlTab 
+                htmlSnippet={htmlSnippet}
+                copied={copied && activeTab === 'html'}
+                onCopy={handleCopy}
+                onSaveToGoogleDrive={handleSaveToGoogleDrive}
+                image={image}
+              />
             </TabsContent>
             
-            <TabsContent value="json" className="space-y-4">
-              <div className="bg-muted/30 p-4 rounded-md overflow-auto max-h-[400px]">
-                <pre className="text-sm font-mono whitespace-pre-wrap">
-                  {JSON.stringify(jsonMetadata, null, 2)}
-                </pre>
-              </div>
-              
-              <Button 
-                variant="outline" 
-                className="w-full"
-                onClick={() => handleCopy(JSON.stringify(jsonMetadata, null, 2))}
-              >
-                {copied && activeTab === 'json' ? (
-                  <Check className="mr-2 h-4 w-4" />
-                ) : (
-                  <Copy className="mr-2 h-4 w-4" />
-                )}
-                {copied && activeTab === 'json' ? "Copied!" : "Copy JSON"}
-              </Button>
+            <TabsContent value="json">
+              <JsonTab 
+                jsonMetadata={jsonMetadata}
+                copied={copied && activeTab === 'json'}
+                onCopy={handleCopy}
+              />
             </TabsContent>
             
-            <TabsContent value="usage" className="space-y-4">
-              <div className="text-sm space-y-4">
-                <h3 className="font-medium text-base">How to Use in WordPress</h3>
-                
-                <div>
-                  <h4 className="font-medium mb-1">Using the HTML Block</h4>
-                  <ol className="list-decimal pl-5 space-y-1">
-                    <li>In your WordPress post/page editor, add a new "Custom HTML" block</li>
-                    <li>Paste the copied HTML code into the block</li>
-                    <li>Preview your post/page to see the responsive image in action</li>
-                  </ol>
-                </div>
-                
-                <div>
-                  <h4 className="font-medium mb-1">Using the Gutenberg Image Block</h4>
-                  <ol className="list-decimal pl-5 space-y-1">
-                    <li>Upload all image formats (AVIF, WebP, JPEG) to your Media Library</li>
-                    <li>Add an Image block to your page</li>
-                    <li>For advanced usage, convert the block to Custom HTML and paste the snippet</li>
-                  </ol>
-                </div>
-                
-                <div className="p-3 bg-blue-50 rounded border border-blue-200">
-                  <h4 className="font-medium mb-1 text-blue-800">Browser Support</h4>
-                  <p>The <code>&lt;picture&gt;</code> element provides built-in fallbacks:</p>
-                  <ul className="list-disc pl-5 space-y-1 text-blue-700">
-                    <li>AVIF: ~79% of browsers (Chrome, Firefox, Opera)</li>
-                    <li>WebP: ~96% of browsers (almost universal support)</li>
-                    <li>JPEG: 100% of browsers (universal fallback)</li>
-                  </ul>
-                </div>
-              </div>
+            <TabsContent value="usage">
+              <UsageTab />
             </TabsContent>
           </Tabs>
         </div>
