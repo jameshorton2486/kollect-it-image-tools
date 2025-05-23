@@ -68,22 +68,28 @@ export const processSingleImage = async (
       reader.readAsDataURL(compressedImage);
     });
 
+    // Create a formatted optimized file record
+    const format = settings.format || 'jpeg';
+    const optimizedFiles = {
+      [format]: {
+        blob: compressedImage,
+        url: URL.createObjectURL(compressedImage),
+        size: compressedImage.size,
+        format: format,
+        quality: settings.quality
+      }
+    };
+
     // Create a processed image object with all required properties
     const processedImage: ProcessedImage = {
       // Original properties
       originalFile: image,
       originalUrl: URL.createObjectURL(image),
-      optimizedFiles: {
-        [settings.format]: {
-          blob: compressedImage,
-          url: URL.createObjectURL(compressedImage),
-          size: compressedImage.size
-        }
-      },
+      optimizedFiles: optimizedFiles,
       averageCompressionRate: 1 - (compressedImage.size / image.size),
       totalSizeReduction: image.size - compressedImage.size,
-      status: 'completed',
-      processed: true,
+      status: 'success',
+      processed: compressedImage,
       originalWidth: imageBitmap.width,
       originalHeight: imageBitmap.height,
       
@@ -95,25 +101,17 @@ export const processSingleImage = async (
       compressionStats: {
         originalSize: image.size,
         formatSizes: {
-          [settings.format]: compressedImage.size
-        }
+          [format]: compressedImage.size
+        },
+        percentSaved: 1 - (compressedImage.size / image.size),
+        totalSaved: image.size - compressedImage.size
       },
       dimensions: {
         width: canvas.width,
         height: canvas.height
       },
-      
-      // Legacy properties
-      originalName: image.name,
-      originalSize: image.size,
-      mimeType: image.type,
-      base64,
-      blob: compressedImage,
-      finalWidth: canvas.width,
-      finalHeight: canvas.height,
-      format: settings.format,
-      quality: settings.quality,
-      newSize: compressedImage.size
+      processedBlob: compressedImage,
+      blob: compressedImage
     };
 
     return processedImage;
@@ -130,7 +128,7 @@ export const processSingleImage = async (
       totalSizeReduction: 0,
       status: 'error',
       error: error.message,
-      processed: false,
+      processed: null,
       originalWidth: 0,
       originalHeight: 0,
       
@@ -138,7 +136,8 @@ export const processSingleImage = async (
       preview: URL.createObjectURL(image),
       isProcessing: false,
       isSelected: true,
-      processingError: error.message
+      processingError: error.message,
+      dimensions: { width: 0, height: 0 }
     };
     
     throw error;

@@ -16,7 +16,7 @@ export default function useImageResizer() {
     originalSize: number,
     width: number,
     height: number,
-    format: OutputFormat,
+    format: string,
     quality: number
   ) => {
     // Simple estimation logic - would be more sophisticated in a real app

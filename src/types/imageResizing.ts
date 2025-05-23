@@ -2,12 +2,12 @@
 /**
  * Possible modes for image resizing
  */
-export type ResizeMode = 'fit' | 'fill' | 'crop' | 'scale';
+export type ResizeMode = 'fit' | 'fill' | 'crop' | 'scale' | 'stretch';
 
 /**
  * Units for image dimensions
  */
-export type ResizeUnit = 'px' | '%';
+export type ResizeUnit = 'px' | '%' | 'in' | 'cm';
 
 /**
  * WordPress size presets

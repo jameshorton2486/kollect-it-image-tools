@@ -7,7 +7,7 @@ export interface ProcessedImage {
   original: File;
   originalUrl: string;
   preview: string;
-  processed?: File | Blob;
+  processed?: File | Blob | null; // Changed from boolean to File | Blob | null
   optimizedFiles: Record<string, ProcessedFormat>;
   blob?: Blob;
   newSize?: number;
@@ -41,6 +41,7 @@ export interface ProcessedImage {
   finalWidth?: number;
   finalHeight?: number;
   error?: string;
+  processedBlob?: Blob; // Adding this property for compatibility
 }
 
 export interface ProcessedFormat {
@@ -55,8 +56,8 @@ export interface ProcessedFormat {
 export interface CompressionStats {
   formatSizes: Record<string, number>;
   originalSize: number;
-  percentSaved: number;
-  totalSaved: number;
+  percentSaved?: number; // Optional for backward compatibility
+  totalSaved?: number; // Optional for backward compatibility
   qualityScores?: Record<string, number>;
   processingTimes?: Record<string, number>;
 }
@@ -65,6 +66,7 @@ export interface CompressionStats {
 export interface CompressionSettings {
   jpeg: {
     quality: number;
+    lossless?: boolean; // Added for consistency
   };
   webp: {
     quality: number;
@@ -72,19 +74,15 @@ export interface CompressionSettings {
   };
   png: {
     quality: number;
+    lossless?: boolean; // Added for consistency
   };
   avif: {
     quality: number;
+    lossless?: boolean; // Added for consistency
   };
 }
 
-export interface OutputFormat {
-  jpeg: boolean;
-  webp: boolean;
-  png: boolean;
-  avif: boolean;
-  original: boolean;
-}
+export type OutputFormat = 'auto' | 'avif' | 'webp' | 'jpeg' | 'png' | 'original';
 
 // WordPress types
 export interface WordPressPreset {

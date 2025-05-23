@@ -2,29 +2,23 @@
 import { ProcessedImage } from '@/types/imageProcessing';
 
 /**
- * Converts a File to a URL string for preview
+ * Initialize a processed image from a File
  */
-export const fileToURL = (file: File): string => {
-  return URL.createObjectURL(file);
-};
-
-/**
- * Creates a ProcessedImage object from a File
- */
-export const createProcessedImage = (file: File): ProcessedImage => {
-  const url = fileToURL(file);
+export const initializeProcessedImages = (file: File): ProcessedImage => {
+  const url = URL.createObjectURL(file);
+  
   return {
     originalFile: file,
     original: file,
     originalUrl: url,
     preview: url,
     optimizedFiles: {},
+    processed: null,
+    status: 'pending',
+    isProcessing: false,
+    isSelected: true,
     averageCompressionRate: 0,
     totalSizeReduction: 0,
-    status: 'pending',
-    processed: false,
-    isProcessing: false,
-    isSelected: false,
     originalWidth: 0,
     originalHeight: 0,
     dimensions: {
@@ -35,34 +29,20 @@ export const createProcessedImage = (file: File): ProcessedImage => {
 };
 
 /**
- * Estimate file size based on dimensions and format
+ * Download a processed image
  */
-export const estimateImageSize = (width: number, height: number, format: string, quality: number): number => {
-  // Bytes per pixel approximation based on format and quality
-  let bytesPerPixel = 4; // Default for PNG
-  
-  if (format === 'jpeg' || format === 'jpg') {
-    bytesPerPixel = quality / 100 * 0.25;
-  } else if (format === 'webp') {
-    bytesPerPixel = quality / 100 * 0.15;
-  } else if (format === 'avif') {
-    bytesPerPixel = quality / 100 * 0.1;
+export const downloadProcessedImage = (image: ProcessedImage): void => {
+  if (!image.processed) {
+    console.error('No processed image to download');
+    return;
   }
   
-  return Math.round(width * height * bytesPerPixel);
-};
-
-/**
- * Format bytes to a human-readable string
- */
-export const formatBytes = (bytes: number, decimals = 2): string => {
-  if (bytes === 0) return '0 Bytes';
-  
-  const k = 1024;
-  const dm = decimals < 0 ? 0 : decimals;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-  
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+  const url = URL.createObjectURL(image.processed);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = image.newFilename || image.originalFile.name;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 };

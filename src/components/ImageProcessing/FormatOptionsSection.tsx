@@ -70,8 +70,8 @@ const FormatOptionsSection: React.FC<FormatOptionsSectionProps> = ({
     avif: '79.15%'
   };
 
-  // Define format descriptions as a record with proper type
-  const formatDescription: Record<OutputFormat, string> = {
+  // Define format descriptions properly with string keys
+  const formatDescription: Record<string, string> = {
     'auto': 'Automatically selects the best format based on file size and browser support',
     'avif': 'Best compression (up to 90% reduction), modern browsers only',
     'webp': 'Good compression (up to 80% reduction), wide browser support',
@@ -109,8 +109,8 @@ const FormatOptionsSection: React.FC<FormatOptionsSectionProps> = ({
         <div>
           <Label htmlFor="output-format">Output Format Strategy</Label>
           <Select
-            value={outputFormat}
-            onValueChange={(value) => onOutputFormatChange(value as OutputFormat)}
+            value={outputFormat as unknown as string}
+            onValueChange={(value) => onOutputFormatChange(value as unknown as OutputFormat)}
             disabled={isProcessing}
           >
             <SelectTrigger id="output-format" className="mt-1">
@@ -125,7 +125,7 @@ const FormatOptionsSection: React.FC<FormatOptionsSectionProps> = ({
             </SelectContent>
           </Select>
           <p className="text-xs text-muted-foreground mt-1">
-            {formatDescription[outputFormat]}
+            {formatDescription[outputFormat as unknown as string] || ''}
           </p>
         </div>
 
@@ -199,7 +199,7 @@ const FormatOptionsSection: React.FC<FormatOptionsSectionProps> = ({
               <div className="flex items-center space-x-2 mt-1">
                 <Switch 
                   id="webp-lossless" 
-                  checked={compressionSettings.webp.lossless}
+                  checked={compressionSettings.webp.lossless || false}
                   onCheckedChange={(checked) => handleLosslessChange('webp', checked)}
                   disabled={isProcessing}
                 />
@@ -237,7 +237,7 @@ const FormatOptionsSection: React.FC<FormatOptionsSectionProps> = ({
               <div className="flex items-center space-x-2 mt-1">
                 <Switch 
                   id="avif-lossless" 
-                  checked={compressionSettings.avif.lossless}
+                  checked={compressionSettings.avif.lossless || false}
                   onCheckedChange={(checked) => handleLosslessChange('avif', checked)}
                   disabled={isProcessing}
                 />
