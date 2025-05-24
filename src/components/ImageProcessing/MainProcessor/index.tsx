@@ -1,9 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import ProcessorHeader from './ProcessorHeader';
 import BatchProcessingProgress from '@/components/ImageProcessing/BatchProcessingProgress';
 import EmptyState from '@/components/ImageProcessing/EmptyState';
+import GoogleDriveConfig from '@/components/ImageProcessing/GoogleDriveConfig';
 import { ImageProcessorProps, ProcessedImage } from '@/types/imageProcessing';
 import { clearImageCache } from '@/utils/imageCacheUtils';
 import { clearAnalyticsData } from '@/utils/analytics';
@@ -81,6 +81,8 @@ const MainProcessor: React.FC<ImageProcessorProps> = ({ images, onReset, onProce
 
   return (
     <div className="space-y-6 animate-fade-in">
+      <GoogleDriveConfig />
+      
       <Card className="w-full shadow-md border-border">
         <CardHeader className="border-b border-gray-100 bg-muted/30">
           <ProcessorHeader 

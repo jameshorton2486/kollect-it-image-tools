@@ -1,17 +1,21 @@
-
 import { toast } from 'sonner';
+import { googleDriveService } from './googleDriveService';
 
-// Base folder paths
-export const DRIVE_BASE_PATH = 'G:\\My Drive\\Kollect-It\\Kollect-It Media';
-export const RAW_UPLOADS_PATH = `${DRIVE_BASE_PATH}\\Raw Uploads`;
-export const PROCESSED_IMAGES_PATH = `${DRIVE_BASE_PATH}\\Processed Images`;
-export const HTML_SNIPPETS_PATH = `${DRIVE_BASE_PATH}\\HTML Snippets`;
+// Base folder paths - these are now virtual paths for reference
+export const DRIVE_BASE_PATH = 'Google Drive/Kollect-It Media';
+export const RAW_UPLOADS_PATH = `${DRIVE_BASE_PATH}/Raw Uploads`;
+export const PROCESSED_IMAGES_PATH = `${DRIVE_BASE_PATH}/Processed Images`;
+export const HTML_SNIPPETS_PATH = `${DRIVE_BASE_PATH}/HTML Snippets`;
 
 export interface FolderStructure {
   basePath: string;
   rawUploadsPath: string;
   processedImagesPath: string;
   htmlSnippetsPath: string;
+  baseFolderId?: string;
+  rawUploadsFolderId?: string;
+  processedImagesFolderId?: string;
+  htmlSnippetsFolderId?: string;
 }
 
 export const DEFAULT_FOLDER_STRUCTURE: FolderStructure = {
@@ -23,88 +27,148 @@ export const DEFAULT_FOLDER_STRUCTURE: FolderStructure = {
 
 /**
  * Creates the necessary folder structure if it doesn't exist
- * Note: In a web application, this is simulated as actual folder creation
- * would require Node.js/Electron or similar platform with file system access
  */
-export function ensureFolderStructure(): FolderStructure {
-  // In a real application, this would use Node.js fs or Electron APIs
-  // to check if folders exist and create them if they don't
-  
-  // For now, we'll just simulate this process
-  console.log('Ensuring folder structure exists at:', DRIVE_BASE_PATH);
-  
-  // Get folder structure from localStorage or use default
-  const savedStructure = localStorage.getItem('driveFileStructure');
-  let folderStructure = DEFAULT_FOLDER_STRUCTURE;
-  
-  if (savedStructure) {
-    try {
-      folderStructure = JSON.parse(savedStructure);
-    } catch (error) {
-      console.error('Error parsing saved folder structure, using default', error);
-    }
-  } else {
-    // Save default structure to localStorage
-    localStorage.setItem('driveFileStructure', JSON.stringify(folderStructure));
+export async function ensureFolderStructure(): Promise<FolderStructure> {
+  if (!googleDriveService.isConfigured()) {
+    console.log('Google Drive not configured, using simulated folder structure');
+    return DEFAULT_FOLDER_STRUCTURE;
   }
+
+  try {
+    const folderIds = await googleDriveService.ensureFolderStructure();
+    
+    const folderStructure: FolderStructure = {
+      ...DEFAULT_FOLDER_STRUCTURE,
+      baseFolderId: folderIds.baseFolderId,
+      rawUploadsFolderId: folderIds.rawUploadsFolderId,
+      processedImagesFolderId: folderIds.processedImagesFolderId,
+      htmlSnippetsFolderId: folderIds.htmlSnippetsFolderId,
+    };
+
+    // Save structure to localStorage for reference
+    localStorage.setItem('driveFileStructure', JSON.stringify(folderStructure));
+    
+    return folderStructure;
+  } catch (error) {
+    console.error('Error ensuring folder structure:', error);
+    return DEFAULT_FOLDER_STRUCTURE;
+  }
+}
+
+/**
+ * Gets the product folder path and creates it if necessary
+ */
+export async function getProductFolderPath(productId: string): Promise<{ path: string; folderId?: string }> {
+  const folderStructure = await ensureFolderStructure();
   
-  return folderStructure;
+  if (!googleDriveService.isConfigured()) {
+    return { path: `${PROCESSED_IMAGES_PATH}/${productId}` };
+  }
+
+  try {
+    // Check if product folder exists
+    let productFolderId = await googleDriveService.findFolderByName(
+      productId, 
+      folderStructure.processedImagesFolderId
+    );
+
+    // Create if it doesn't exist
+    if (!productFolderId && folderStructure.processedImagesFolderId) {
+      productFolderId = await googleDriveService.createFolder(
+        productId, 
+        folderStructure.processedImagesFolderId
+      );
+    }
+
+    return {
+      path: `${PROCESSED_IMAGES_PATH}/${productId}`,
+      folderId: productFolderId || undefined,
+    };
+  } catch (error) {
+    console.error('Error getting product folder:', error);
+    return { path: `${PROCESSED_IMAGES_PATH}/${productId}` };
+  }
 }
 
 /**
- * Gets the product folder path
+ * Saves a file to Google Drive
  */
-export function getProductFolderPath(productId: string): string {
-  return `${PROCESSED_IMAGES_PATH}\\${productId}`;
+export async function saveFileToDrive(
+  file: File, 
+  targetPath: string, 
+  folderId?: string
+): Promise<boolean> {
+  if (!googleDriveService.isConfigured()) {
+    console.log(`[Drive] Simulating save of ${file.name} to ${targetPath}`);
+    toast.success(`File saved to ${targetPath}/${file.name} (simulated)`);
+    return true;
+  }
+
+  try {
+    const result = await googleDriveService.uploadFile(file, file.name, folderId);
+    
+    if (result.success) {
+      toast.success(`File uploaded to Google Drive: ${file.name}`);
+      return true;
+    } else {
+      toast.error(`Upload failed: ${result.error}`);
+      return false;
+    }
+  } catch (error) {
+    console.error('Upload error:', error);
+    toast.error('Failed to upload file to Google Drive');
+    return false;
+  }
 }
 
 /**
- * Simulates saving a file to the Google Drive structure
- * @param file The file to save
- * @param targetPath The target path to save to
- * @returns Promise that resolves when the file is "saved"
+ * Saves HTML content to Google Drive
  */
-export function saveFileToDrive(file: File, targetPath: string): Promise<boolean> {
-  return new Promise((resolve) => {
-    // In a real app, this would use APIs to write to the file system
-    console.log(`[Drive] Saving file ${file.name} to ${targetPath}`);
-    
-    // Simulate a slight delay for the "save" operation
-    setTimeout(() => {
-      toast.success(`File saved to ${targetPath}\\${file.name}`);
-      resolve(true);
-    }, 300);
-  });
+export async function saveHtmlSnippet(productId: string, html: string): Promise<boolean> {
+  const filename = `${productId}-wordpress-html.html`;
+  const htmlBlob = new Blob([html], { type: 'text/html' });
+  const htmlFile = new File([htmlBlob], filename, { type: 'text/html' });
+
+  if (!googleDriveService.isConfigured()) {
+    console.log(`[Drive] Simulating HTML save for ${productId}`);
+    toast.success(`HTML snippet saved to ${HTML_SNIPPETS_PATH}/${filename} (simulated)`);
+    return true;
+  }
+
+  try {
+    const folderStructure = await ensureFolderStructure();
+    const result = await googleDriveService.uploadFile(
+      htmlFile, 
+      filename, 
+      folderStructure.htmlSnippetsFolderId
+    );
+
+    if (result.success) {
+      toast.success(`HTML snippet uploaded to Google Drive: ${filename}`);
+      return true;
+    } else {
+      toast.error(`HTML upload failed: ${result.error}`);
+      return false;
+    }
+  } catch (error) {
+    console.error('HTML upload error:', error);
+    toast.error('Failed to upload HTML snippet');
+    return false;
+  }
 }
 
 /**
- * Simulates saving HTML content to a file in the HTML Snippets folder
+ * Saves a full HTML page with preview to Google Drive
  */
-export function saveHtmlSnippet(productId: string, html: string): Promise<boolean> {
-  return new Promise((resolve) => {
-    const filename = `${productId}-wordpress-html.html`;
-    const targetPath = `${HTML_SNIPPETS_PATH}\\${filename}`;
-    
-    console.log(`[Drive] Saving HTML snippet for product ${productId} to ${targetPath}`);
-    
-    // Simulate a slight delay for the "save" operation
-    setTimeout(() => {
-      toast.success(`HTML snippet saved to ${targetPath}`);
-      resolve(true);
-    }, 300);
-  });
-}
-
-/**
- * Simulates saving a full HTML page with preview to the HTML Snippets folder
- */
-export function saveHtmlPreview(productId: string, html: string, title: string = 'WordPress Image Preview'): Promise<boolean> {
-  return new Promise((resolve) => {
-    const filename = `${productId}-preview.html`;
-    const targetPath = `${HTML_SNIPPETS_PATH}\\${filename}`;
-    
-    // Wrap the HTML in a complete HTML document with preview styling
-    const fullHtml = `
+export async function saveHtmlPreview(
+  productId: string, 
+  html: string, 
+  title: string = 'WordPress Image Preview'
+): Promise<boolean> {
+  const filename = `${productId}-preview.html`;
+  
+  // ... keep existing code (HTML template generation)
+  const fullHtml = `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -170,15 +234,11 @@ export function saveHtmlPreview(productId: string, html: string, title: string =
 </body>
 </html>
     `;
-    
-    console.log(`[Drive] Saving HTML preview for product ${productId} to ${targetPath}`);
-    
-    // Simulate a slight delay for the "save" operation
-    setTimeout(() => {
-      toast.success(`HTML preview saved to ${targetPath}`);
-      resolve(true);
-    }, 300);
-  });
+
+  const htmlBlob = new Blob([fullHtml], { type: 'text/html' });
+  const htmlFile = new File([htmlBlob], filename, { type: 'text/html' });
+
+  return await saveFileToDrive(htmlFile, `${HTML_SNIPPETS_PATH}/${filename}`);
 }
 
 /**
@@ -188,14 +248,12 @@ export function generateProductId(image: File | string, existingId?: string): st
   if (existingId) return existingId;
   
   const filename = typeof image === 'string' ? image : image.name;
-  // Extract base name without extension and convert to kebab case
   const baseName = filename
     .split('.')[0]
     .toLowerCase()
     .replace(/\s+/g, '-')
     .replace(/[^a-z0-9-]/g, '');
     
-  // Add a timestamp for uniqueness
   const timestamp = Date.now().toString().slice(-6);
   return `${baseName}-${timestamp}`;
 }
@@ -204,9 +262,7 @@ export function generateProductId(image: File | string, existingId?: string): st
  * Extracts the product name from a product ID
  */
 export function getProductNameFromId(productId: string): string {
-  // Remove the timestamp suffix (last 6 digits)
   const nameWithDashes = productId.replace(/-\d{6}$/, '');
-  // Convert to title case
   return nameWithDashes
     .split('-')
     .map(word => word.charAt(0).toUpperCase() + word.slice(1))
@@ -218,11 +274,10 @@ export function getProductNameFromId(productId: string): string {
  */
 export function exportAllProductsAsZip(products: string[]): Promise<boolean> {
   return new Promise((resolve) => {
-    const zipFilePath = `${DRIVE_BASE_PATH}\\kollect-it-export-${Date.now()}.zip`;
+    const zipFilePath = `${DRIVE_BASE_PATH}/kollect-it-export-${Date.now()}.zip`;
     
     console.log(`[Drive] Exporting ${products.length} product(s) to ${zipFilePath}`);
     
-    // Simulate a longer delay for the "zip" operation
     setTimeout(() => {
       toast.success(`All products exported to ${zipFilePath}`);
       resolve(true);
